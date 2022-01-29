@@ -1,11 +1,15 @@
-clear
-close all
+%% Project: 
+% Date: 29/01/22
 
-%% CLACULATION AND REPRESENTATION OF BEZIER CURVES
+%% CALCULATION AND REPRESENTATION OF BEZIER CURVES
 % Using two diferent methods, visualizing first the drawing of a curve
 % using De Casteljau's algorithm, and then the simple calculation of the
 % curve.
 
+clear
+close all
+
+%% General setup 
 % To start: define a points matrix "P" with first row representing x
 % coordinate, and second row representing y coordinate.
 % Use sample cases below, or define own vector such as:

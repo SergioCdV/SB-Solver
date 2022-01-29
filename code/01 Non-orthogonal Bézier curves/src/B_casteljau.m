@@ -1,3 +1,6 @@
+%% Project: 
+% Date: 29/01/2022
+
 %% B_castljau 
 % Function for calculation of Bezier curve using De Casteljau's algorithm
 
@@ -7,7 +10,6 @@
 % Output: - the resulting Bézier curve
 
 function [curve] = B_casteljau(points,tvec)
-
     % Number of points
     L = length(points);
     
@@ -15,15 +17,12 @@ function [curve] = B_casteljau(points,tvec)
     steps = length(tvec);
     
     % Initialize variable for n-order curve
-    B = zeros(2,steps);
+    curve = zeros(2,steps);
     
     % Use De Casteljau's algorithm to calculate the curve at each interval
     for i = 1:steps
         t = tvec(i);
         P = casteljau(points,L,t);
-        B(:,i) = P(:,1,L);
+        curve(:,i) = P(:,1,L);
     end
-    
-    % Final curve output
-    curve = B;
 end
