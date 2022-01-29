@@ -1,30 +1,36 @@
-% This function uses the classical implementation for calculation of
-% the Bezier curve as defined by the determined points.
-% The time vector represents the number of points at which the curve B will
-% be calculated
+%% B_classic
+% This function uses the classical implementation for calculating a Bezier curve as defined by the determined points.
+% The time vector represents the number of points at which the curve B will be calculated
 
-function curve = B_classic(points,tvec)
+% Inputs: - array points, the Bézier curve control points 
+%         - vector tvec, the control parameter t vector 
 
-% Determine order
-n = length(points)-1;
+% Output: - the resulting Bézier curve
 
-% Find number of steps (time increments)
-steps = length(tvec);
+function [curve] = B_classic(points,tvec)
 
-% Initialize variable for n-order curve
-B = zeros(2,steps); 
-
-% Calculation of bezier curve, recursively
-for i=0:n
+    % Determine order
+    n = length(points)-1;
     
-    % binomial coefficient (n i)
-    bin = factorial(n)/factorial(i)/factorial(n-i);
+    % Find number of steps (time increments)
+    steps = length(tvec);
     
-    % Bernstein basis polynomial
-    bern = bin.*tvec.^i.*(1-tvec).^(n-i);
+    % Initialize variable for n-order curve
+    B = zeros(2,steps); 
     
-    % bezier curve as added to that of the previous step
-    B = B + points(:,i+1)*bern;
+    % Calculation of bezier curve, recursively
+    for i=0:n
+        
+        % binomial coefficient (n i)
+        bin = factorial(n)/factorial(i)/factorial(n-i);
+        
+        % Bernstein basis polynomial
+        bern = bin.*tvec.^i.*(1-tvec).^(n-i);
+        
+        % bezier curve as added to that of the previous step
+        B = B + points(:,i+1)*bern;
+    end
+    
+    % Final output
+    curve = B;
 end
-
-curve = B;

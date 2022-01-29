@@ -1,4 +1,4 @@
-clear all
+clear
 close all
 
 %% CLACULATION AND REPRESENTATION OF BEZIER CURVES

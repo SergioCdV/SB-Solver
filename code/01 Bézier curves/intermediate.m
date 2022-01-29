@@ -21,6 +21,10 @@ c = parula(L);
 % Calulate Bezier curve (recursive)
 P = casteljau(points,L,t);
 
+%Preallocation for speed 
+dotmarker = zeros(L,L); 
+linemarker = zeros(L,L); 
+
 % Plotting in a double iteration
 for i=1:L
     for j=1:L-i
@@ -33,7 +37,7 @@ for i=1:L
         end
 
         % Plot the lines between points
-        if (j > 1) & (L > 2)
+        if (j > 1) && (L > 2)
             linemarker(i,j) = plot(P(1,j-1:j,i+1),P(2,j-1:j,i+1),'Color',c(i,:));
         elseif (L < 3)
             linemarker = [];
