@@ -1,20 +1,24 @@
-function DV = velocity_variation(P, mu, B, r0, tau, tfapp, n)
+%% Project: 
+% Date: 31/01/22
 
-% Computation of the performance index to be minimized in optimization, the
-% total DeltaV needed in the trajectory
+%% Extract coordinates %%
+% Function to compute the total DV needed for a given trajectory, used as
+% an optimisation objective function
 
-% Compute magnitude of necessary propulsive acceleration in flight
-amag = acceleration(P, mu, B, r0, tfapp, n);
+% Inputs: - scalar mu, the gravitational parameter of the system 
+%         - scalar r0, the characteristic or dimensionalising distance of
+%         - scalar tf, the approximated time of flight of the mission
+%         - array P, the set of control points to estimate the position vector 
+%         - array B, the polynomial basis in use in the approximation
 
-% % summation for integral
-% dt = tau(2) - tau(1);
-% DV = dt*sum(amag);
+% Outputs: - scalar DV, the total velocity change
 
-% in case the time intervals are not constant
-DV = 0;
-for i = 2:length(tau)
-    dt = (tau(i) - tau(i-1))*tfapp;
-    DV = DV + abs(amag(i))/dt;
+function [DV] = velocity_variation(mu, r0, tau, tf, P, B)
+    % Compute magnitude of necessary propulsive acceleration in flight
+    a = acceleration(mu, r0, tf, P, B);
+
+    % Trapezoidal approximation of the DV integral
+    DV = trapz(tau, a);
 end
 
 

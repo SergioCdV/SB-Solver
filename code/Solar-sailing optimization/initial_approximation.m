@@ -1,37 +1,36 @@
-function [tfapp, Papp, Bapp, Capp] = initial_approximation(initial, final, tau, m, mu, amax, r0)
+%% Project: 
+% Date: 31/01/22
 
-n_init = 3; % order of bezier functions
+%% Initial approximation %%
+% Function to estimate the initial time of flight, control points and curve approximation
 
-%% Initial guess for transfer time (hohmann transfer
-tfapp = 2*abs(sqrt(mu/final.pos(1))*(sqrt(2*initial.a/(final.a + initial.a))*(1-final.a/initial.a)+sqrt(final.a/initial.a)-1))/amax;
+% Inputs: - scalar mu, the gravitational parameter of the system 
+%         - scalar r0, the characteristic or dimensionalising distance of
+%         - scalar amax, the maximum acceleration allowed for the
+%           spacecraft
+%         - array P, the set of control points to estimate the position vector 
+%         - array B, the polynomial basis in use in the approximation
 
+% Outputs: - scalar tfapp, the initial approximation of the time of flight
+%          - array Papp, the initial estimation of the boundary control
+%            points
+%          - array Bapp, the Bernstein polynomials basis in use
+%          - array Capp, the initial estimation of the spacecraft state vector
 
-%% Initial estimate of control points
-Papp = boundary_conditions(initial, final, tfapp, n_init, r0);
+function [tfapp, Papp, Bapp, Capp] = initial_approximation(mu, r0, amax, tau, initial, final)
+    % Approximation order in the Bernstein curve
+    n_init = 3; 
 
+    % Initial guess for transfer time (as Hohmann transfer)
+    tfapp = 2*abs(sqrt(mu/final(1))*(sqrt(2*initial(10)/(final(10) + initial(10)))*(1-final(10)/initial(10))+sqrt(final(10)/initial(10))-1))/amax;
 
-%% initial estimate of bernstein polynomials
-Bapp = zeros(3,m,n_init+1); % (coordinates, discretisation, and control point)
+    % Initial estimate of control points (using the boundary conditions)
+    Papp = boundary_conditions(initial, final, tfapp, n_init, r0, 'Bernstein');
 
-for i = 0:2 % cicle through 0th, 1st, 2nd derivatives
-    for j=0:n_init % for each of the control points
-       Bapp(i+1,:,j+1) = bernstein(n_init,j,tau,i);
-    end
-end
+    % Bernstein polynomial basis
+    Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1); bernstein_derivative(n_init,tau,2)];
 
-
-
-%% Initial approximation data values (coordinate evolution)
-
-% first index indicates the derivative order (0th, 1st, 2nd)
-% second index indicates the discretization step
-% third index indicates the coordinate (rho, theta, z)
-Capp = zeros(3,m,3);
-
-for i=1:3 % for coordinates
-    for j=1:3 % for derivatives
-        Capp(j,:,i) = squeeze(Bapp(j,:,:))*Papp(:,i);
-    end
-end
-
+    % State vector approximations
+    n = n_init+1;
+    Capp = [Papp*Bapp(1:n,:); Papp*Bapp(n+1:2*n,:); Papp*Bapp(2*n+1:3*n,:)];
 end

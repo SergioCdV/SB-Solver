@@ -6,33 +6,29 @@
 
 % Inputs: - scalar mu, the gravitational parameter of the system 
 %         - scalar r0, the characteristic or dimensionalising distance of
-%         - scalar tfapp, the approximated time of flight of the mission
+%         - scalar tf, the approximated time of flight of the mission
 %         - array P, the set of control points to estimate the position vector 
 %         - array B, the polynomial basis in use in the approximation
-%         - vector n, ranging the polynomial basis cardinal
 
 % Outputs: - scalar a, the acceleration vector norm
 
-function [a] = acceleration(mu, r0, tfapp, P, B, n)
-    % initialize cell array
-    C = cell(1,3);
-    
+function [a] = acceleration(mu, r0, tf, P, B)
     % Extract the spacecraft coodinates evaluating the Bézier curve approximation
-    for i = 1:3 
-        for j = 1:3 
-            C{i}(:,j) = squeeze(B{i}(j,:,:))*P(i,1:(n(i)+1))';
-        end
+    C = zeros(9,size(B,2));     % Preallocation for speed
+    k = size(B,1)/3;            % Number of control points
+    for i = 1:3
+        C(1+3*(i-1):3*i,:) = P*B(1+k*(i-1):k*i,:);
     end
-        
-    [rho, theta, z] = extract_coordinates(C, r0, tfapp);
+
+    [rho, v, gamma] = extract_coordinates(C, r0, tf);
     
     % Heliocentric position vector
-    r = sqrt(rho.o.^2 + z.o.^2);
+    r = sqrt(rho(1,:).^2 + rho(3,:).^2);
     
     % Equations of motion
-    arho = rho.DD - rho.o.*theta.D.^2 + mu.*rho.o./r.^3;
-    atheta = rho.o.*theta.DD + 2.*rho.D.*theta.D;
-    az = z.DD + mu.*z.o./r.^3;
+    arho = gamma(1,:) - rho(1,:).*v(2,:).^2 + mu.*rho(1,:)/r.^3;
+    atheta = rho(1,:).*gamma(2,:) + 2.*v(1,:).*v(2,:);
+    az = gamma(3,:) + mu.*rho(3,:)./r.^3;
     
     % Magnitude of the acceleration
     a = sqrt(arho.^2 + atheta.^2 + az.^2);

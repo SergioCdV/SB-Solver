@@ -1,38 +1,22 @@
-function [B, P0, C0] = initial_fitting(n, tau, Capp, m)
+%% Project: 
+% Date: 01/02/22
 
-% initialziation of arrays
-B = cell(1,3);
-C0 = cell(1,3);
+%% Initial fitting %%
+% Function to estimate the trajectory approximation
 
-for k=1:3
-    B{k} = zeros(3,m,n(k)+1);
-    C0{k} = zeros(m,3);
-end
+% Inputs: - scalar n, the degree of the approximation 
+%         - vector tau, the control parameter vector 
+%         - Capp, the initial trajectory estimation
 
-P0 = zeros(3,max(n)+1); % 3 coordinates, order n
+% Outputs: - array B, the Bernstein polynomials basis in use
+%          - array P, the estimation of the boundary control points
+%          - array C, the initial estimation of the spacecraft state vector
 
+function [B, P, C] = initial_fitting(n, tau, C)
+    % The Bernstein-basis polinomials for the increasd order are calculated
+    B = [bernstein_basis(n,tau); bernstein_derivative(n,tau,1); bernstein_derivative(n,tau,2)];
 
-%% The Bernstein-basis polinomials for the increasd order are calculated
-
-for k = 1:3 % for coordinates
-    for i = 1:3 % for derivatives
-        for j=0:n(k)
-           B{k}(i,:,j+1) = bernstein(n(k),j,tau,(i-1));
-        end
-    end
-end
-
-%% The points are fitted
-
-for k = 1:3 % for coordinates
-    P0(k,1:(n(k)+1)) = (squeeze(B{k}(1,:,:))\squeeze(Capp(1,:,k))')';
-end
-
-
-for k=1:3 % for coordinates
-    for j=1:3 % for derivatives
-        C0{k}(:,j) = squeeze(B{k}(j,:,:))*P0(k,1:(n(k)+1))';
-    end
-end
-
+    % State vector fitting
+    P = C(1:3,:)*pinv(B(1:n+1,:));
+    C = repmat(P,1,3)*B;
 end

@@ -1,32 +1,38 @@
-function tf = flight_time(P, B, m, tfapp, r0, n)
+%% Project: 
+% Date: 31/01/22
 
-% FLIGHT_TIME function for to calculate total flight time from the set of
-% points.
+%% Flight time %%
+% Function to estimate the time of flight
 
+% Inputs: - vector s, the vector to be transformed
+%         - scalar r0, the dimensionalising characteristic distance 
+%         - scalar tf, the estimated time of flight 
+%         - scalar order, the order of the derivative to be dimensionalise
 
-% The coordinates are calculated using the points and the Bernstein
-% matrices
+% Outputs: - vector r, the dimensional position vector 
+%          - vector v, the dimensional velocity vector 
+%          - vector gamma, the dimensional velocity vector
 
-% extract coordinates
-for k=1:3 % for coordinates
-    for j=1:3 % for derivatives
-        C{k}(:,j) = squeeze(B{k}(j,:,:))*P(k,1:(n(k)+1))';
+function [tf] = flight_time(P, B, m, tf, r0)
+    % Trajectory approximation
+    C = zeros(9,size(B,2));     % Preallocation for speed
+    k = size(B,1)/3;            % Number of control points
+    for i = 1:3
+        C(1+3*(i-1):3*i,:) = P*B(1+k*(i-1):k*i,:);
     end
-end
+    
+    % Trajectory position, velocity and acceleration coordinates
+    [rho, v, ~] = extract_coordinates(C, r0, tf);
+    v = sqrt(v(1,:).^2 + (rho(1,:).*v(2,:)).^2 + v(3,:).^2);
 
+    % Time steps estimations along the discretization points
+    dt = zeros(1,m-1);          % Preallocation for speed
 
-[rho, theta, z] = extract_coordinates(C, r0, tfapp);
-v = sqrt(rho.D.^2 + (rho.o.*theta.D).^2 + z.D.^2);
+    for i = 2:m
+       dr = sqrt((rho(1,i)-rho(1,i-1))^2 + (rho(3,i)-rho(3,i-1))^2 + (rho(1,i)*(rho(2,i)-rho(2,i-1)))^2);
+       dt(i) = dr / norm(v(:,i));
+    end
 
-dt = zeros(1,m-1);
-
-for i=2:m % for intervals (discretization points)
-   dr = sqrt((rho.o(i)-rho.o(i-1))^2 + (z.o(i)-z.o(i-1))^2 + (rho.o(i)*(theta.o(i)-theta.o(i-1)))^2);
-   dt(i) = dr / abs(v(i));
-end
-
-% multiplied by the initial estimate to recover dimension
-tf = sum(dt);
-
-
+    % Final estimation of the time of flight
+    tf = sum(dt);
 end

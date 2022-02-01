@@ -17,29 +17,26 @@
 
 function [P] = boundary_conditions(x0, xf, tfapp, n, r0, basis)
     % Constants 
-    adimv = [r0, 1, r0];        % Dimensionalising units vector
-    P = zeros(n+1, 3);          % Preallocation of the boundary control points
+    adimv = [r0; 1; r0];        % Dimensionalising units vector
+    P = zeros(3, 4);            % Preallocation of the boundary control points
 
     % Switch the polynomial basis to be used
     switch (basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
-            P(1,:) = x0(1:3)./adimv;            
-            P(2,:) = x0(4:6)*tfapp./n./adimv + x0(1:3)./adimv;          
-            P(3,:) = xf(1:3)./adimv - xf(4:6)*tfapp./n./adimv;
-            P(4,:) = xf(1:3)./adimv;
+            P(:,1) = x0(1:3)./adimv;            
+            P(:,2) = x0(4:6)*tfapp./n./adimv + x0(1:3)./adimv;          
+            P(:,3) = xf(1:3)./adimv - xf(4:6)*tfapp./n./adimv;
+            P(:,4) = xf(1:3)./adimv;
 
         case 'Orthogonal Bernstein'
             % Control points for an orthogonal Bézier curve
-            P(1,:) = x0(1:3)./adimv;            
-            P(2,:) = x0(4:6)*tfapp./n./adimv + x0(1:3)./adimv;          
-            P(3,:) = xf(1:3)./adimv - xf(4:6)*tfapp./n./adimv;
-            P(4,:) = xf(1:3)./adimv;
+            P(:,1) = x0(1:3)./adimv;            
+            P(:,2) = x0(4:6)*tfapp./n./adimv + x0(1:3)./adimv;          
+            P(:,3) = xf(1:3)./adimv - xf(4:6)*tfapp./n./adimv;
+            P(:,4) = xf(1:3)./adimv;
 
         otherwise 
             error('Selected polynomial basis has not been implemented');
     end
-
-    % Final reshaping 
-    P = P.';
 end

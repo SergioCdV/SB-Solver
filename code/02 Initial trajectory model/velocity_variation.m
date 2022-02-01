@@ -14,7 +14,7 @@ amag = acceleration(P, mu, B, r0, tfapp, n);
 DV = 0;
 for i = 2:length(tau)
     dt = (tau(i) - tau(i-1))*tfapp;
-    DV = DV + abs(amag(i))/dt;
+    DV = DV + abs(amag(i))*dt;
 end
 
 

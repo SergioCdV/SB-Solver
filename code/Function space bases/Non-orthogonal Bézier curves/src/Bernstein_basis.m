@@ -4,14 +4,14 @@
 %% Bernstein basis
 % Function for calculation the Bernstein polynomial basis of degree n
 
-% Inputs: - vector tvec, the control parameter t vector 
-%         - scalar n, the cardinal of the basis
+% Inputs:  - scalar n, the cardinal of the basis
+%          - vector tvec, the control parameter t vector 
 
 % Output: - array B, the Bernstein polynomial basis of dimensions    
 %           n x length(t)
 
 % Iterative portion of De Casteljau's algorithm
-function [B] = Bernstein_basis(tvec, n)    
+function [B] = bernstein_basis(n, tvec)    
     % Find number of steps (time increments)
     steps = length(tvec);
     

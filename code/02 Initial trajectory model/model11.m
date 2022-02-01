@@ -11,7 +11,7 @@
 
 %% Variables to be defined for each run
 
-m = 90; % number of discretization points
+m = 10; % number of discretization points
 time_distribution = 'linear'; % distribution of time intervals
 sigma = 1; % if normal distribution is selected
 amax = 1.5e-4; % maximum acceleration available [m/s^2]
