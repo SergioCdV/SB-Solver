@@ -8,18 +8,16 @@
 %         - scalar r0, the dimensionalising characteristic distance 
 %         - scalar tf, the estimated time of flight 
 %         - scalar order, the order of the derivative to be dimensionalise
+%         - vector n, the degrees of approximation to each position
+%           coordinate
 
 % Outputs: - vector r, the dimensional position vector 
 %          - vector v, the dimensional velocity vector 
 %          - vector gamma, the dimensional velocity vector
 
-function [tf] = flight_time(P, B, m, tf, r0)
+function [tf] = flight_time(P, B, m, tf, r0, n)
     % Trajectory approximation
-    C = zeros(9,size(B,2));     % Preallocation for speed
-    k = size(B,1)/3;            % Number of control points
-    for i = 1:3
-        C(1+3*(i-1):3*i,:) = P*B(1+k*(i-1):k*i,:);
-    end
+    C = evaluate_state(P, B, n);
     
     % Trajectory position, velocity and acceleration coordinates
     [rho, v, ~] = extract_coordinates(C, r0, tf);

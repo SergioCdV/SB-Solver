@@ -9,17 +9,14 @@
 %         - scalar tf, the approximated time of flight of the mission
 %         - array P, the set of control points to estimate the position vector 
 %         - array B, the polynomial basis in use in the approximation
+%         - vector n, with the degrees of approximation of each position
+%           coordinate
 
 % Outputs: - scalar a, the acceleration vector norm
 
-function [a] = acceleration(mu, r0, tf, P, B)
-    % Extract the spacecraft coodinates evaluating the Bézier curve approximation
-    C = zeros(9,size(B,2));     % Preallocation for speed
-    k = size(B,1)/3;            % Number of control points
-    for i = 1:3
-        C(1+3*(i-1):3*i,:) = P*B(1+k*(i-1):k*i,:);
-    end
-
+function [a] = acceleration(mu, r0, tf, P, B, n)
+    % Extract the vector components of the state
+    C = evaluate_state(P, B, n);
     [rho, v, gamma] = extract_coordinates(C, r0, tf);
     
     % Heliocentric position vector
