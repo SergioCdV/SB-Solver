@@ -15,15 +15,19 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, r0, tfapp, n, P, P0, B, amax)
+function [c, ceq] = constraints(mu, initial, final, r0, n, x, B, amax)
+    % Extract the optimization variables
+    P = reshape(x(1:end-1), [3, max(n)+1]);
+    tf = x(end);
+
     % Non-linear inequality on the acceleration magnitude (a < a_max)
-    amag = acceleration(mu, r0, tfapp, P, B, n);
+    amag = acceleration(mu, r0, tf, P, B, n);
     c = (amag - amax).';
 
     % Boundary conditions
-    ceq = zeros(6,1);
-    for i = 1:3
-        eq = P(i,1:n(i)+1)-P0(i,1:n(i)+1);
-        ceq(1+2*(i-1):2*i) = [eq(1,1); eq(1,end)];
-    end
+    C = evaluate_state(P,B,n);
+    ceq = [C(1:3,1)-initial(1:3)./[r0;1;r0]; ...
+           C(1:3,end)-final(1:3)./[r0;1;r0]; ...
+           C(4:6,1)-initial(4:6)./[r0;1;r0]*tf; ...
+           C(4:6,end)-final(4:6)./[r0;1;r0]*tf];
 end

@@ -102,7 +102,7 @@ end
 % each point.
 
 % Call function
-B = OBernstein_basis(tvec, 8);
+B = OB_basis((8),tvec);
 figure 
 hold on 
 for i = 1:size(B,1)

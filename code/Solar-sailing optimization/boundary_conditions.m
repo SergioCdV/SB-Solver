@@ -25,18 +25,18 @@ function [P] = boundary_conditions(x0, xf, tfapp, n, r0, basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
             P(:,1) = x0(1:3)./adimv;            
-            P(:,2) = x0(4:6)*tfapp./n./adimv + x0(1:3)./adimv;          
+            P(:,2) = x0(1:3)./adimv + x0(4:6)*tfapp./n./adimv;          
             P(:,3) = xf(1:3)./adimv - xf(4:6)*tfapp./n./adimv;
             P(:,4) = xf(1:3)./adimv;
 
         case 'Orthogonal Bernstein'
             % Control points for an orthogonal Bézier curve
             P(:,1) = x0(1:3)./adimv;            
-            P(:,2) = x0(4:6)*tfapp./n./adimv + x0(1:3)./adimv;          
+            P(:,2) = x0(1:3)./adimv + x0(4:6)*tfapp./n./adimv;          
             P(:,3) = xf(1:3)./adimv - xf(4:6)*tfapp./n./adimv;
             P(:,4) = xf(1:3)./adimv;
 
         otherwise 
-            error('Selected polynomial basis has not been implemented');
+            error('No valid collocation polynomial basis has been selected');
     end
 end

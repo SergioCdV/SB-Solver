@@ -4,13 +4,13 @@
 %% Orthogonal Bernstein polynomials
 % This function uses the direct definition of orthogonal Bernstein polynomials
 
-% Inputs: - vector tvec, the control parameter t vector 
-%         - scalar degree, the number of polynomials in the basis
+% Inputs: - scalar degree, the number of polynomials in the basis
+%         - vector tvec, the control parameter t vector 
 
 % Output: - Phi, an array of Bernstein polynomials in the form length(tvec) 
 %           degree x length(tvec)
 
-function [Phi] = OBernstein_basis(tvec, degree)    
+function [Phi] = OB_basis(degree, tvec)    
     % Find number of steps (time increments)
     steps = length(tvec);
     
@@ -23,11 +23,8 @@ function [Phi] = OBernstein_basis(tvec, degree)
         k = i+1;
 
         for j = 0:i 
-            % Indexing parameter 
-            l = j+1; 
-
             % Compute the non-orthonomal basis 
-            B = Bernstein_basis(tvec, degree-j);
+            B = bernstein_basis(degree-j, tvec);
 
             % Compute the scaling 
             num = nchoosek(2*degree+1-j,i-j) * nchoosek(i,j);

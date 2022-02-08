@@ -19,17 +19,17 @@ function  [r, v, gamma] = extract_coordinates(s, r0, tf)
     v = zeros(3,size(s,2));         % Velocity vector 
     gamma = zeros(3,size(s,2));     % Acceleration vector 
 
-    % Non-dimensional position coordinates 
+    % Dimensional position coordinates 
     r(1,:) = s(1,:)*r0;
     r(2,:) = s(2,:);
     r(3,:) = s(3,:)*r0;
 
-    % Non-dimensional velocity coordinates 
+    % Dimensional velocity coordinates 
     v(1,:) = s(4,:)*r0/tf;
     v(2,:) = s(5,:)/tf;
     v(3,:) = s(6,:)*r0/tf;
 
-    % Non-dimensional acceleration coordinates
+    % Dimensional acceleration coordinates
     gamma(1,:) = s(7,:)*r0/tf^2;
     gamma(2,:) = s(8,:)/tf^2;
     gamma(3,:) = s(9,:)*r0/tf^2;

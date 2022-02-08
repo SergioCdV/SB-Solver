@@ -21,12 +21,12 @@ function [B, P, C] = initial_fitting(n, tau, C, basis)
 
     for i = 1:length(n)
         switch (basis)
-            case 'Non-orthogonal'
+            case 'Bernstein'
                 B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1); bernstein_derivative(n(i),tau,2)];
-            case 'Orthogonal'
-                B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1); bernstein_derivative(n(i),tau,2)];
+            case 'Orthogonal Bernstein'
+                B{i} = [OB_basis(n(i),tau); OB_derivative(n(i),tau,1); OB_derivative(n(i),tau,2)];
             otherwise
-                error('No valid Bernstein basis was selected');
+                error('No valid collocation polynomial basis has been selected');
         end
     end
 

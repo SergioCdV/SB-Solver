@@ -18,7 +18,7 @@ function [B] = OB_classic(points,tvec)
     n = length(points)-1;
 
     % Generate the polynomial basis 
-    bern = OBernstein_basis(tvec,n);
+    bern = OB_basis(n,tvec);
     
     % Bézier curve as a dot product
     B = points*bern;
