@@ -13,7 +13,7 @@
 function [Phi] = OB_derivative(degree, tvec, order)
     % Find number of steps (time increments)
     steps = length(tvec);
-    
+
     % Initialize variable for n-order curve
     Phi = zeros(degree+1,steps); 
     
@@ -29,7 +29,7 @@ function [Phi] = OB_derivative(degree, tvec, order)
                 case 1
                     B = dbernstein(degree-j, tvec);
                 case 2
-                    B = ddbernstein(degree-j, tvec);
+                    B = ddbernstein(degree-j, tvec)
                 otherwise
                     error('A higher-order Bernstein polynomial derivative is required, but has not been implemented')
             end
@@ -37,7 +37,7 @@ function [Phi] = OB_derivative(degree, tvec, order)
             % Compute the scaling 
             num = nchoosek(2*degree+1-j,i-j) * nchoosek(i,j);
             den = nchoosek(degree-j,i-j);
-            K = num/den; 
+            K = num/den;
 
             % Compute the orthonomal basis
             Phi(k,:) = Phi(k,:) + (-1)^j * K * B(i-j+1,:);
@@ -60,17 +60,20 @@ function [B] = dbernstein(n, tau)
         j = i+1; 
 
         % Definition of the basis
-        if (i == n)
-            B(j,:) = n.*tau.^(n-1);
+        if (n == 0)
+            B(j,:) = ones(1,length(tau));
 
         elseif (i == 0)
             B(j,:) = -n.*(1-tau).^(n-1);
 
-        elseif (i < n)
+        elseif (i <= n-1) && (i >= 1)
             K(1) = factorial(n) / (factorial(i-1)*factorial(n-i));
             K(2) = factorial(n) / (factorial(i)*factorial(n-i-1));
 
             B(j,:) = K(1)*tau.^(i-1).*(1-tau).^(n-i) - K(2)*tau.^i.*(1-tau).^(n-i-1);
+
+        elseif (i == n)
+            B(j,:) = n.*tau.^(n-1);
         end
     end
 end
@@ -86,8 +89,8 @@ function [B] = ddbernstein(n, tau)
         j = i+1; 
 
         % Definition of the basis
-        if (i == (n-1))
-            B(j,:) = n.*(n-1).*(n-2).*tau.^(n-3).*(1-tau)-2.*n.*(n-1).*tau.^(n-2);
+        if (n == 0)
+            B(j,:) = ones(1,length(tau));
 
         elseif (i == n)
             B(j,:) = n.*(n-1).*tau.^(n-2);
@@ -97,13 +100,18 @@ function [B] = ddbernstein(n, tau)
 
         elseif (i == 1)
             B(j,:) = n.*(n-1).*(n-2).*tau.*(1-tau).^(n-3)-2.*n.*(n-1).*(1-tau).^(n-2);
-           
-        else
+
+        elseif (i >= 2) && (i <= n-2)
             K(1) = factorial(n) / (factorial(i-2)*factorial(n-i));
             K(2) = 2 * factorial(n) / (factorial(i-1)*factorial(n-i-1));
             K(3) = factorial(n) / (factorial(i)*factorial(n-i-2));
 
             B(j,:) = K(1)*tau.^(i-2).*(1-tau).^(n-i) - K(2)*tau.^(i-1).*(1-tau).^(n-i-1) + K(3)*tau.^i.*(1-tau).^(n-i-2);
+
+        elseif (i == n-1)
+            B(j,:) = n.*(n-1).*(n-2).*tau.^(n-3).*(1-tau)-2.*n.*(n-1).*tau.^(n-2);
+
         end
+         B
     end
 end
