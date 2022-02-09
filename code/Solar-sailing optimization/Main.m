@@ -24,7 +24,7 @@ amax = 1.5e-4;                           % Maximum acceleration available [m/s^2
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [20 20 20];
+n = [8 8 8];
 
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
@@ -61,7 +61,7 @@ end
 [tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, 'Bernstein');
 
 % Initial fitting for n+1 control points
-[B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
+[B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
 
 %% Optimisiation
 % Initial guess 

@@ -41,6 +41,5 @@ function [tfapp, Papp, Bapp, Capp] = initial_approximation(mu, r0, amax, tau, in
     end
 
     % State vector approximations
-    n = n_init+1;
-    Capp = [Papp*Bapp(1:n,:); Papp*Bapp(n+1:2*n,:); Papp*Bapp(2*n+1:3*n,:)];
+    Capp = kron(eye(3),Papp)*Bapp;
 end
