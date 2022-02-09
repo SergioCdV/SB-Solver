@@ -25,7 +25,7 @@ function [Phi] = OB_derivative(degree, tvec, order)
         % compute the derivatives of the Bernstein basis
         for j = 0:i 
             % Switch the derivative order
-            B = bernstein_derivative(degree, tvec, order);
+            B = bernstein_derivative(degree-j, tvec, order);
 
             % Compute the scaling 
             num = nchoosek(2*degree+1-j,i-j) * nchoosek(i,j);

@@ -16,7 +16,7 @@ fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
 m = 300;                                 % Number of discretization points
-time_distribution = 'Linear';            % Distribution of time intervals
+time_distribution = 'Legendre-Gauss';            % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Constraints
@@ -24,7 +24,7 @@ amax = 1.5e-4;                           % Maximum acceleration available [m/s^2
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [12 12 12];
+n = [20 20 20];
 
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
@@ -61,7 +61,7 @@ end
 [tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, 'Bernstein');
 
 % Initial fitting for n+1 control points
-[B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
+[B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
 
 %% Optimisiation
 % Initial guess 
