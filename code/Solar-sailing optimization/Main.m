@@ -15,7 +15,7 @@ animations = 0;     % Set to 1 to generate the gif
 fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
-m = 80;                                 % Number of discretization points
+m = 300;                                 % Number of discretization points
 time_distribution = 'Linear';            % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
@@ -24,7 +24,7 @@ amax = 1.5e-4;                           % Maximum acceleration available [m/s^2
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [5 5 5];
+n = [12 12 12];
 
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
@@ -58,10 +58,10 @@ end
 [initial, final] = initial_data(r0, 1);
 
 % Initial guess for the boundary control points
-[tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, 'Orthogonal Bernstein');
+[tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, 'Bernstein');
 
 % Initial fitting for n+1 control points
-[B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
+[B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
 
 %% Optimisiation
 % Initial guess 

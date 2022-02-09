@@ -24,60 +24,43 @@ end
 
 %% Auxiliary functions 
 % First order basis of the Bernstein tangent space
-function [B] = dbernstein(n, tau)
+function [dB] = dbernstein(n, tau)
     % Preallocation for speed 
-    B = zeros(n+1,length(tau));
+    dB = zeros(n+1,length(tau));
 
-    % Computation of the basis 
-    for i = 0:n
-        % Indexing parameter 
-        j = i+1; 
-
-        % Definition of the basis
-        if (i == 0)
-            B(j,:) = -n.*(1-tau).^(n-1);
-            
-        elseif (i < n)
-            K(1) = factorial(n) / (factorial(i-1)*factorial(n-i));
-            K(2) = factorial(n) / (factorial(i)*factorial(n-i-1));
-
-            B(j,:) = K(1)*tau.^(i-1).*(1-tau).^(n-i) - K(2)*tau.^i.*(1-tau).^(n-i-1);
-
-        else
-            B(j,:) = n.*tau.^(n-1);
+    if (n ~= 0)
+        B = bernstein_basis(n-1,tau);
+    
+        % Computation of the derivative basis 
+        for i = 0:n
+            if (i == 0)
+                dB(i+1,:) = -n*B(i+1,:);
+            elseif (i == n)
+                dB(i+1,:) = n*B(i,:);
+            else
+                dB(i+1,:) = n*(B(i,:)-B(i+1,:));
+            end
         end
     end
 end
 
 % Second order basis of the Bernstein tangent space 
-function [B] = ddbernstein(n, tau)
+function [dB] = ddbernstein(n, tau)
     % Preallocation for speed 
-    B = zeros(n+1,length(tau));
+    dB = zeros(n+1,length(tau));
 
-    % Computation of the basis 
-    for i = 0:n
-        % Indexing parameter 
-        j = i+1; 
-
-        % Definition of the basis
-        if (i == 0)
-            B(j,:) = n.*(n-1).*(1-tau).^(n-2);
-
-        elseif (i == 1)
-            B(j,:) = n.*(n-1).*(n-2).*tau.*(1-tau).^(n-3)-2.*n.*(n-1).*(1-tau).^(n-2);
-            
-        elseif (i == (n-1))
-            B(j,:) = n.*(n-1).*(n-2).*tau.^(n-3).*(1-tau)-2.*n.*(n-1).*tau.^(n-2);
-
-        elseif (i == n)
-            B(j,:) = n.*(n-1).*tau.^(n-2);
-           
-        else
-            K(1) = factorial(n) / (factorial(i-2)*factorial(n-i));
-            K(2) = 2 * factorial(n) / (factorial(i-1)*factorial(n-i-1));
-            K(3) = factorial(n) / (factorial(i)*factorial(n-i-2));
-
-            B(j,:) = K(1)*tau.^(i-2).*(1-tau).^(n-i) - K(2)*tau.^(i-1).*(1-tau).^(n-i-1) + K(3)*tau.^i.*(1-tau).^(n-i-2);
+    if (n ~= 0)
+        B = dbernstein(n-1,tau);
+    
+        % Computation of the derivative basis 
+        for i = 0:n
+            if (i == 0)
+                dB(i+1,:) = -n*B(i+1,:);
+            elseif (i == n)
+                dB(i+1,:) = n*B(i,:);
+            else
+                dB(i+1,:) = n*(B(i,:)-B(i+1,:));
+            end
         end
     end
 end

@@ -25,14 +25,7 @@ function [Phi] = OB_derivative(degree, tvec, order)
         % compute the derivatives of the Bernstein basis
         for j = 0:i 
             % Switch the derivative order
-            switch (order)
-                case 1
-                    B = dbernstein(degree-j, tvec);
-                case 2
-                    B = ddbernstein(degree-j, tvec)
-                otherwise
-                    error('A higher-order Bernstein polynomial derivative is required, but has not been implemented')
-            end
+            B = bernstein_derivative(degree, tvec, order);
 
             % Compute the scaling 
             num = nchoosek(2*degree+1-j,i-j) * nchoosek(i,j);
@@ -45,73 +38,5 @@ function [Phi] = OB_derivative(degree, tvec, order)
 
         % Final scaling
         Phi(k,:) = sqrt(2*(degree-i)+1)*Phi(k,:);
-    end
-end
-
-%% Auxiliary functions 
-% First order basis of the Bernstein tangent space
-function [B] = dbernstein(n, tau)
-    % Preallocation for speed 
-    B = zeros(n+1,length(tau));
-
-    % Computation of the basis 
-    for i = 0:n
-        % Indexing parameter 
-        j = i+1; 
-
-        % Definition of the basis
-        if (n == 0)
-            B(j,:) = ones(1,length(tau));
-
-        elseif (i == 0)
-            B(j,:) = -n.*(1-tau).^(n-1);
-
-        elseif (i <= n-1) && (i >= 1)
-            K(1) = factorial(n) / (factorial(i-1)*factorial(n-i));
-            K(2) = factorial(n) / (factorial(i)*factorial(n-i-1));
-
-            B(j,:) = K(1)*tau.^(i-1).*(1-tau).^(n-i) - K(2)*tau.^i.*(1-tau).^(n-i-1);
-
-        elseif (i == n)
-            B(j,:) = n.*tau.^(n-1);
-        end
-    end
-end
-
-% Second order basis of the Bernstein tangent space 
-function [B] = ddbernstein(n, tau)
-    % Preallocation for speed 
-    B = zeros(n+1,length(tau));
-
-    % Computation of the basis 
-    for i = 0:n
-        % Indexing parameter 
-        j = i+1; 
-
-        % Definition of the basis
-        if (n == 0)
-            B(j,:) = ones(1,length(tau));
-
-        elseif (i == n)
-            B(j,:) = n.*(n-1).*tau.^(n-2);
-
-        elseif (i == 0)
-            B(j,:) = n.*(n-1).*(1-tau).^(n-2);
-
-        elseif (i == 1)
-            B(j,:) = n.*(n-1).*(n-2).*tau.*(1-tau).^(n-3)-2.*n.*(n-1).*(1-tau).^(n-2);
-
-        elseif (i >= 2) && (i <= n-2)
-            K(1) = factorial(n) / (factorial(i-2)*factorial(n-i));
-            K(2) = 2 * factorial(n) / (factorial(i-1)*factorial(n-i-1));
-            K(3) = factorial(n) / (factorial(i)*factorial(n-i-2));
-
-            B(j,:) = K(1)*tau.^(i-2).*(1-tau).^(n-i) - K(2)*tau.^(i-1).*(1-tau).^(n-i-1) + K(3)*tau.^i.*(1-tau).^(n-i-2);
-
-        elseif (i == n-1)
-            B(j,:) = n.*(n-1).*(n-2).*tau.^(n-3).*(1-tau)-2.*n.*(n-1).*tau.^(n-2);
-
-        end
-         B
     end
 end
