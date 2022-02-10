@@ -27,14 +27,25 @@ function [tfapp, Papp, Bapp, Capp] = initial_approximation(mu, r0, amax, tau, in
     %tfapp = 1.5*pi*sqrt((final(10)+initial(10))^3/mu);
     %tfapp = abs(sqrt(mu/final(1))-sqrt(mu/initial(1)))/amax;
 
-    % Initial estimate of control points (using the boundary conditions)
-    Papp = boundary_conditions(initial, final, tfapp, n_init, r0, basis);
-
-    % Bernstein polynomial basis
     switch (basis)
         case 'Bernstein'
+                % Initial estimate of control points (using the boundary conditions)
+                Papp = boundary_conditions(initial, final, tfapp, n_init, r0, basis);
+
+                % Bernstein polynomial basis
                 Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1); bernstein_derivative(n_init,tau,2)];
         case 'Orthogonal Bernstein'
+                % Linear system of interest 
+                b = [initial(1:6)./[r0;1;r0;tfapp/r0;tfapp;tfapp/r0]; final(1:6)./[r0;1;r0;tfapp/r0;tfapp;tfapp/r0]];    % Boundary conditions
+                b = [b([1 7 4 10]); b([2 8 5 11]); b([3 9 6 12])];
+                A = [OB_basis(n_init,[0 1]).'; OB_derivative(n_init,[0 1],1).'];                                         % Linear system
+                A = kron(eye(3),A);
+
+                % Initial estimate of control points (using the boundary conditions)
+                Papp = A\b; 
+                Papp = reshape(Papp, [n_init+1 3]).';
+
+                % Bernstein polynomial basis
                 Bapp = [OB_basis(n_init,tau); OB_derivative(n_init,tau,1); OB_derivative(n_init,tau,2)];
         otherwise
             error('No valid collocation polynomial basis has been selected')

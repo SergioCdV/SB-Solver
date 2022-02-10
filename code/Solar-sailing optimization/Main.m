@@ -16,7 +16,7 @@ fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
 m = 300;                                 % Number of discretization points
-time_distribution = 'Legendre-Gauss';            % Distribution of time intervals
+time_distribution = 'Linear';            % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Constraints
@@ -24,7 +24,7 @@ amax = 1.5e-4;                           % Maximum acceleration available [m/s^2
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [8 8 8];
+n = [12 12 8];
 
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
@@ -58,10 +58,10 @@ end
 [initial, final] = initial_data(r0, 1);
 
 % Initial guess for the boundary control points
-[tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, 'Bernstein');
+[tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, 'Orthogonal Bernstein');
 
 % Initial fitting for n+1 control points
-[B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
+[B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
 
 %% Optimisiation
 % Initial guess 
@@ -69,8 +69,8 @@ x0 = [reshape(P0, [size(P0,1)*size(P0,2) 1])];
 x0 = [x0; tfapp];
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(length(x0)-1,1); 0];
-P_ub = [Inf*ones(length(x0)-1,1); 3*tfapp];
+P_lb = [-Inf*ones(length(x0)-1,1); 0.8*tfapp];
+P_ub = [Inf*ones(length(x0)-1,1); 2*tfapp];
 
 % Objective function
 objective = @(x)velocity_variation(mu, r0, tau, x, B, n);
