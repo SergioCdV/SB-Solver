@@ -22,17 +22,30 @@ function [B, P, C] = initial_fitting(n, tau, C, basis)
     for i = 1:length(n)
         switch (basis)
             case 'Bernstein'
+                B{i} = [bernstein_basis(n(i),tau) bernstein_derivative(n(i),tau,1) bernstein_derivative(n(i),tau,2)];
+            case 'Orthogonal Bernstein'
+                B{i} = [OB_basis(n(i),tau) OB_derivative(n(i),tau,1) OB_derivative(n(i),tau,2)];
+            otherwise
+                error('No valid collocation polynomial basis has been selected');
+        end
+    end
+
+    % Compute the position control points leveraging the complete state vector
+    C = [C(1:3,:) C(4:6,:) C(7:9,:)];
+    for i = 1:length(n)
+        P(i,1:n(i)+1) = C(i,:)*pinv(B{i});
+    end
+
+    % Reshape the Bernstein basis
+    for i = 1:length(n)
+        switch (basis)
+            case 'Bernstein'
                 B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1); bernstein_derivative(n(i),tau,2)];
             case 'Orthogonal Bernstein'
                 B{i} = [OB_basis(n(i),tau); OB_derivative(n(i),tau,1); OB_derivative(n(i),tau,2)];
             otherwise
                 error('No valid collocation polynomial basis has been selected');
         end
-    end
-
-    % Compute the position control points
-    for i = 1:length(n)
-        P(i,1:n(i)+1) = C(i,:)*pinv(B{i}(1:n(i)+1,:));
     end
     
     % Evaluate the state vector

@@ -105,5 +105,5 @@ tf_final = sol(end);
 C = evaluate_state(P,B,n);
 
 % Results
-display_results(P0, P, B, m, exitflag, output, tfapp, r0, n)
+display_results(P0, P, B, m, exitflag, output, x0(end), r0, n)
 plots();
