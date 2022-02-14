@@ -16,7 +16,7 @@ fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
 m = 300;                                 % Number of discretization points
-time_distribution = 'Linear';            % Distribution of time intervals
+time_distribution = 'Legendre-Gauss';            % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Constraints
@@ -24,7 +24,7 @@ amax = 1.5e-4;                           % Maximum acceleration available [m/s^2
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [12 12 8];
+n = [12 12 12];
 
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
@@ -85,7 +85,7 @@ beq = [];
 nonlcon = @(x)constraints(mu, initial, final, r0, n, x, B, amax);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
-options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'interior-point');
+options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp-legacy');
 options.MaxFunctionEvaluations = 1e6;
 
 % Optimisation

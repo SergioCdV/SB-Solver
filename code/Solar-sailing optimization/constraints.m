@@ -22,7 +22,7 @@ function [c, ceq] = constraints(mu, initial, final, r0, n, x, B, amax)
 
     % Non-linear inequality on the acceleration magnitude (a < a_max)
     amag = acceleration(mu, r0, tf, P, B, n);
-    c = (amag - amax).';
+    c = (amag - amax);
 
     % Boundary conditions
     C = evaluate_state(P,B,n);

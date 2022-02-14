@@ -23,7 +23,7 @@ function [a] = acceleration(mu, r0, tf, P, B, n)
     r = sqrt(rho(1,:).^2 + rho(3,:).^2);
     
     % Equations of motion
-    arho = gamma(1,:) - rho(1,:).*v(2,:).^2 + mu.*rho(1,:)/r.^3;
+    arho = gamma(1,:) + mu.*rho(1,:)/r.^3 - rho(1,:).*v(2,:).^2;
     atheta = rho(1,:).*gamma(2,:) + 2.*v(1,:).*v(2,:);
     az = gamma(3,:) + mu.*rho(3,:)./r.^3;
     
