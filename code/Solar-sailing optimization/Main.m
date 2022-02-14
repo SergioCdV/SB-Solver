@@ -29,7 +29,6 @@ n = [12 12 8];
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
 mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2]
-T = 2*pi*sqrt(r0^3/mu);                 % Orbital period of the Earth
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -56,10 +55,10 @@ end
 
 %% Boundary conditions of the problem
 % Initial data
-[initial, final] = initial_data(r0, T, 1);
+[initial, final] = initial_data(r0, 1);
 
 % Initial guess for the boundary control points
-[tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, T, amax, tau, initial, final, 'Orthogonal Bernstein');
+[tfapp, Papp, ~, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, 'Orthogonal Bernstein');
 
 % Initial fitting for n+1 control points
 [B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
@@ -74,7 +73,7 @@ P_lb = [-Inf*ones(length(x0)-1,1); 0.8*tfapp];
 P_ub = [Inf*ones(length(x0)-1,1); 2*tfapp];
 
 % Objective function
-objective = @(x)velocity_variation(mu, r0, T, tau, x, B, n);
+objective = @(x)velocity_variation(mu, r0, tau, x, B, n);
 
 % Linear constraints
 A = [];
@@ -83,7 +82,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, initial, final, r0, T, n, x, B, amax);
+nonlcon = @(x)constraints(mu, initial, final, r0, n, x, B, amax);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'interior-point');
@@ -94,17 +93,17 @@ options.MaxFunctionEvaluations = 1e6;
 
 % Solution 
 P = reshape(sol(1:end-1), [size(P0,1) size(P0,2)]);
-tf_final = sol(end)*T;
+tf_final = sol(end);
 
 % Dimensionalising 
 %tf_final = flight_time(P, B, m, tfapp, r0, n);  % Final time of flight
 
-[c,ceq] = constraints(mu, initial, final, r0, T, n, sol, B, amax);
+[c,ceq] = constraints(mu, initial, final, r0, n, sol, B, amax);
 
 %% Results
 % State vector approximation calculation
 C = evaluate_state(P,B,n);
 
 % Results
-display_results(P0, P, B, m, exitflag, output, x0(end), T, n)
-%plots();
+display_results(P0, P, B, m, exitflag, output, x0(end), r0, n)
+plots();

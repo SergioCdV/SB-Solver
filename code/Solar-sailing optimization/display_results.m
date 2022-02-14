@@ -13,10 +13,10 @@
 %         - scalar exitflag, the optimisation exitflag
 %         - structure output, containing information about the optimisation process 
 %         - scalar tfapp, the initial estimated time of flight 
-%         - scalar T, the dimensionalising characteristic time
+%         - scalar r0, the dimensionalising characteristic distance 
 %         - scalar n, the order of the approximation 
 
-function display_results(P0, P, B, m, exitflag, output, tfapp, T, n)
+function display_results(P0, P, B, m, exitflag, output, tfapp, r0, n)
     % Constants
     days2sec = 86400;
 
@@ -31,9 +31,9 @@ function display_results(P0, P, B, m, exitflag, output, tfapp, T, n)
     fprintf("Constraint violation: %f \n", output.constrviolation);
 
     % Time of flight results
-    tf(1) = flight_time(P0, B, m, T, n);
-    tf(2) = flight_time(P, B, m, T, n);
-    fprintf("Initial estimation of flight time: %0.2f days\n", tfapp*T/days2sec);
+    tf(1) = flight_time(P0, B, m, tfapp, r0, n);
+    tf(2) = flight_time(P, B, m, tfapp, r0, n);
+    fprintf("Initial estimation of flight time: %0.2f days\n", tfapp/days2sec);
     fprintf("Initial calculation of flight time: %0.2f days\n", tf(1)/days2sec);
     fprintf("Final calculation of flight time: %0.2f days\n\n", tf(2)/days2sec);
 end

@@ -7,9 +7,6 @@
 
 % Inputs: - scalar mu, the gravitational parameter of the system 
 %         - scalar r0, the characteristic or dimensionalising distance of
-%           the mission
-%         - scalar T, the characteristic or dimensionalising time of
-%           the mission
 %         - vector x, the vector of optimization variables
 %         - array B, the polynomial basis in use in the approximation
 %         - vector n, the degree of approximation to each position
@@ -17,13 +14,19 @@
 
 % Outputs: - scalar DV, the total velocity change
 
-function [DV] = velocity_variation(mu, r0, T, tau, x, B, n)
+function [DV] = velocity_variation(mu, r0, tau, x, B, n)
     % Extract the variables of the problem 
     P = reshape(x(1:end-1), [3, max(n)+1]);
+    tf = x(end);
 
     % Compute the magnitude of necessary propulsive acceleration in flight
-    a = acceleration(mu, P, B, n, r0, T);
+    a = acceleration(mu, r0, tf, P, B, n);
 
     % Trapezoidal approximation of the DV integral
-    DV = trapz(tau, a)*(r0/T);
+    DV = trapz(tau, a)*tf;
 end
+
+
+
+
+

@@ -6,9 +6,6 @@
 
 % Inputs: - scalar mu, the gravitational parameter of the system 
 %         - scalar r0, the characteristic or dimensionalising distance of
-%           the mission
-%         - scalar T, the characteristic or dimensionalising time of the
-%           mission
 %         - scalar amax, the maximum acceleration allowed for the
 %           spacecraft
 %         - array P, the set of control points to estimate the position vector 
@@ -21,7 +18,7 @@
 %          - array Bapp, the Bernstein polynomials basis in use
 %          - array Capp, the initial estimation of the spacecraft state vector
 
-function [tfapp, Papp, Bapp, Capp] = initial_approximation(mu, r0, T, amax, tau, initial, final, basis)
+function [tfapp, Papp, Bapp, Capp] = initial_approximation(mu, r0, amax, tau, initial, final, basis)
     % Approximation order in the Bernstein curve
     n_init = 3; 
 
@@ -29,20 +26,19 @@ function [tfapp, Papp, Bapp, Capp] = initial_approximation(mu, r0, T, amax, tau,
     tfapp = 2*abs(sqrt(mu/final(10))*(sqrt(2*initial(10)/(final(10) + initial(10)))*(1-final(10)/initial(10))+sqrt(final(10)/initial(10))-1))/amax;
     %tfapp = 1.5*pi*sqrt((final(10)+initial(10))^3/mu);
     %tfapp = abs(sqrt(mu/final(1))-sqrt(mu/initial(1)))/amax;
-    tfapp = tfapp/T;
 
     switch (basis)
         case 'Bernstein'
                 % Initial estimate of control points (using the boundary conditions)
-                Papp = boundary_conditions(initial, final, n_init, r0, T, basis);
+                Papp = boundary_conditions(initial, final, tfapp, n_init, r0, basis);
 
                 % Bernstein polynomial basis
                 Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1); bernstein_derivative(n_init,tau,2)];
         case 'Orthogonal Bernstein'
                 % Linear system of interest 
-                b = [initial(1:6)./[r0;1;r0;T/r0;T;T/r0]; final(1:6)./[r0;1;r0;T/r0;T;T/r0]];    % Boundary conditions
+                b = [initial(1:6)./[r0;1;r0;tfapp/r0;tfapp;tfapp/r0]; final(1:6)./[r0;1;r0;tfapp/r0;tfapp;tfapp/r0]];    % Boundary conditions
                 b = [b([1 7 4 10]); b([2 8 5 11]); b([3 9 6 12])];
-                A = [OB_basis(n_init,[0 1]).'; OB_derivative(n_init,[0 1],1).'];                 % Linear system
+                A = [OB_basis(n_init,[0 1]).'; OB_derivative(n_init,[0 1],1).'];                                         % Linear system
                 A = kron(eye(3),A);
 
                 % Initial estimate of control points (using the boundary conditions)
