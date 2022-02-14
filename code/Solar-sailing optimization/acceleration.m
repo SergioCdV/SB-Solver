@@ -14,10 +14,15 @@
 
 % Outputs: - scalar a, the acceleration vector norm
 
-function [a] = acceleration(mu, r0, tf, P, B, n)
+function [a] = acceleration(mu, P, B, n, r0, T)
     % Extract the vector components of the state
     C = evaluate_state(P, B, n);
-    [rho, v, gamma] = extract_coordinates(C, r0, tf);
+    [rho, v, gamma] = extract_coordinates(C);
+
+    % Dimensionalising
+    rho = rho.*[r0; 1; r0];
+    v = v.*[r0/T;1/T;r0/T]; 
+    gamma = gamma.*[r0/T^2;1/T^2;r0/T^2];
     
     % Heliocentric position vector
     r = sqrt(rho(1,:).^2 + rho(3,:).^2);
@@ -28,5 +33,5 @@ function [a] = acceleration(mu, r0, tf, P, B, n)
     az = gamma(3,:) + mu.*rho(3,:)./r.^3;
     
     % Magnitude of the acceleration
-    a = sqrt(arho.^2 + atheta.^2 + az.^2);
+    a = sqrt(arho.^2 + atheta.^2 + az.^2)/(r0/T^2);
 end

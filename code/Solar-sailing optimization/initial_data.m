@@ -5,17 +5,18 @@
 % Function to generate the boundary conditions of interest 
 
 % Inputs: - scalar r0, the characteristic distance of the mission
+%         - scalar T, the characteristic time
 %         - scalar cases, the case study to be studied
 
 % Outputs: - vector initial, the initial state vector 
 %          - vector final, the final state vector
 
-function  [initial, final] = initial_data(r0, cases)
+function  [initial, final] = initial_data(r0, T, cases)
     switch (cases)
         case 1
-            [initial, final] = case_1(r0);
+            [initial, final] = case_1(r0,T);
         case 2 
-            [initial, final] = case_2(r0);
+            [initial, final] = case_2(r0,T);
         otherwise 
             error('No valid mission was selected');
     end
@@ -23,7 +24,7 @@ end
 
 %% Auxiliary functions
 % Test case 1 data. Source: https://ssd.jpl.nasa.gov/horizons.cgi
-function [initial, final] = case_1(r0)
+function [initial, final] = case_1(r0,T)
     % Preallocation for correct shaping 
     initial = zeros(11,1);                          % Initial boundary conditions
     final = zeros(11,1);                            % Final boundary conditions
@@ -62,7 +63,7 @@ function [initial, final] = case_1(r0)
 end
 
 % Test case 2 data. Source: https://ssd.jpl.nasa.gov/horizons.cgi
-function [initial, final] = case_2(r0)
+function [initial, final] = case_2(r0,T)
     % Preallocation for correct shaping 
     initial = zeros(11,1);                          % Initial boundary conditions
     final = zeros(11,1);                            % Final boundary conditions

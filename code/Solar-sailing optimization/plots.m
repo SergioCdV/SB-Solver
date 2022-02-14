@@ -54,14 +54,17 @@ grid on;
 
 %% Propulsive acceleration plot
 % Acceleration coordinates
-[r, v, gamma] = extract_coordinates(C, r0, tf_final);
+[r, v, gamma] = extract_coordinates(C);
+r = r*r0; 
+v = v*(r0/T); 
+gamma = gamma*(r0/T^2);
 
 % Plot
 figure_propulsion = figure(fig+1);
 set(figure_propulsion,'position',[xpos + 1.2*imsize,ypos,1.2*imsize,imsize])
 title('Spacecraft acceleration in time')
 hold on
-plot(time_days, acceleration(mu, r0, tf_final, P, B, n), 'k','LineWidth',1)
+plot(time_days, (r0/T^2)*acceleration(mu, P, B, n), 'k','LineWidth',1)
 plot(time_days, gamma(1,:), 'LineWidth',0.3)
 plot(time_days, gamma(2,:), 'LineWidth',0.3)
 plot(time_days, gamma(3,:), 'LineWidth',0.3)
