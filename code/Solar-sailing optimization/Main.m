@@ -16,7 +16,7 @@ fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
 m = 300;                                 % Number of discretization points
-time_distribution = 'Legendre-Gauss';            % Distribution of time intervals
+time_distribution = 'Linear';            % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Constraints
@@ -24,7 +24,7 @@ amax = 1.5e-4;                           % Maximum acceleration available [m/s^2
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [12 12 12];
+n = [15 12 8];
 
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
@@ -94,10 +94,6 @@ options.MaxFunctionEvaluations = 1e6;
 % Solution 
 P = reshape(sol(1:end-1), [size(P0,1) size(P0,2)]);
 tf_final = sol(end);
-
-% Dimensionalising 
-%tf_final = flight_time(P, B, m, tfapp, r0, n);  % Final time of flight
-
 [c,ceq] = constraints(mu, initial, final, r0, n, sol, B, amax);
 
 %% Results

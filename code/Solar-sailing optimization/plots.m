@@ -54,17 +54,24 @@ grid on;
 
 %% Propulsive acceleration plot
 % Acceleration coordinates
-[r, v, gamma] = extract_coordinates(C, r0, tf_final);
+[rho, v, gamma] = extract_coordinates(C, r0, tf_final);
+
+r = sqrt(rho(1,:).^2 + rho(3,:).^2);
+
+% Equations of motion
+ac(1,:) = gamma(1,:) + mu.*rho(1,:)/r.^3 - rho(1,:).*v(2,:).^2;
+ac(2,:) = rho(1,:).*gamma(2,:) + 2.*v(1,:).*v(2,:);
+ac(3,:)  = gamma(3,:) + mu.*rho(3,:)./r.^3;
 
 % Plot
 figure_propulsion = figure(fig+1);
 set(figure_propulsion,'position',[xpos + 1.2*imsize,ypos,1.2*imsize,imsize])
 title('Spacecraft acceleration in time')
 hold on
-%plot(time_days, sqrt(gamma(1,:).^2+gamma(2,:).^2+gamma(3,:).^2), 'k','LineWidth',1)
-plot(time_days, gamma(1,:), 'LineWidth',0.3)
-plot(time_days, gamma(2,:), 'LineWidth',0.3)
-plot(time_days, gamma(3,:), 'LineWidth',0.3)
+plot(time_days, sqrt(ac(1,:).^2+ac(2,:).^2+ac(3,:).^2), 'k','LineWidth',1)
+plot(time_days, ac(1,:), 'LineWidth',0.3)
+plot(time_days, ac(2,:), 'LineWidth',0.3)
+plot(time_days, ac(3,:), 'LineWidth',0.3)
 yline(amax, '--k')
 xlabel('Flight time [days]')
 ylabel('$\vec{a}$ [m/$s^2$]')
