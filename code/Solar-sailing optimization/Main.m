@@ -15,8 +15,8 @@ animations = 0;     % Set to 1 to generate the gif
 fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
-m = 300;                                 % Number of discretization points
-time_distribution = 'Linear';            % Distribution of time intervals
+m = 200;                                 % Number of discretization points
+time_distribution = 'Bezier';            % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Constraints
@@ -49,6 +49,10 @@ switch (time_distribution)
         tau = (tau-tau(1))/(tau(end)-tau(1));
     case 'Legendre-Gauss'
         tau = LG_nodes(0,1,m);
+    case 'Bezier'
+        tau = B_nodes(0,1,m);
+    case 'Orthonormal Bezier'
+        tau = OB_nodes(0,1,m);
     otherwise
         error('An appropriate time array distribution must be specified')
 end
