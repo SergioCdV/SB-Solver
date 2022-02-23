@@ -24,7 +24,6 @@ function [c, ceq] = constraints(mu, initial, final, r0, n, x, B, amax)
     amag = acceleration(mu, r0, tf, P, B, n);
     c = (amag - amax*ones(size(amag)));
     c = c.';
-    c = zeros(size(c));
 
     % Boundary conditions
     C = evaluate_state(P,B,n);

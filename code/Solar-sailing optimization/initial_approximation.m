@@ -23,9 +23,9 @@ function [tfapp, Papp, Bapp, Capp] = initial_approximation(mu, r0, amax, tau, in
     n_init = 3; 
 
     % Initial guess for transfer time (as Hohmann transfer)
-    tfapp = 2*abs(sqrt(mu/final(10))*(sqrt(2*initial(10)/(final(10) + initial(10)))*(1-final(10)/initial(10))+sqrt(final(10)/initial(10))-1))/amax;
-    %tfapp = 1.5*pi*sqrt((final(10)+initial(10))^3/mu);
-    %tfapp = abs(sqrt(mu/final(1))-sqrt(mu/initial(1)))/amax;
+    a = (norm(initial([1 3]))+norm(final([1 3])))/2;
+    dE = (1/2)*(norm(final([4 6]))^2 - norm(initial([4 6]))^2)-mu*(1/norm(final([1 3]))-1/norm(initial([1 3])));
+    tfapp = abs(dE)/(amax*a*sqrt(mu/a^3));
 
     switch (basis)
         case 'Bernstein'
