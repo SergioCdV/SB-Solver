@@ -15,13 +15,13 @@ animations = 0;     % Set to 1 to generate the gif
 fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
-m = 300;                                 % Number of discretization points
+m = 100;                                 % Number of discretization points
 time_distribution = 'Linear';            % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [4 4];
+n = [5 5];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -53,9 +53,9 @@ end
 %% Boundary conditions of the problem
 % Initial data
 initial = [0;0]; 
-final = [1;1]; 
+final = [4; 1]; 
 V = 1; 
-w = [0; 0.5]; 
+w = [0.1; 0.1]; 
 
 % Initial guess for the boundary control points
 [tfapp, Papp, ~, Capp] = initial_approximation(V, tau, initial, final, 'Bernstein');
@@ -66,14 +66,14 @@ w = [0; 0.5];
 %% Optimisiation
 % Initial guess 
 x0 = [reshape(P0, [size(P0,1)*size(P0,2) 1])];
-x0 = [x0; pi/4*ones(m,1)];
+x0 = [x0; zeros(m,1); tfapp];
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(length(x0)-1,1); 0.8*tfapp];
-P_ub = [Inf*ones(length(x0)-1,1); 2*tfapp];
+P_lb = [-Inf*ones(length(x0)-m-1,1); 0*ones(m,1); 0];
+P_ub = [Inf*ones(length(x0)-m-1,1); pi/4*ones(m,1); 4*tfapp];
 
 % Objective function
-objective = @(x)flight_time(x, B, m, n);
+objective = @(x)flight_time(x);
 
 % Linear constraints
 A = [];
@@ -82,24 +82,27 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(V, w, initial, final, n, m, x, B);
+nonlcon = @(x)constraints(V, w, tfapp, initial, final, n, m, x, B);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
-options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'interior-point');
+options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
 options.MaxFunctionEvaluations = 1e6;
 
 % Optimisation
 [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
 
 % Solution 
-P = reshape(sol(1:end-1), [size(P0,1) size(P0,2)]);
-tf_final = sol(end);
-[c,ceq] = constraints(V, w, initial, final, n, m, sol, B);
+[c,ceq] = constraints(V, w, tfapp, initial, final, n, m, sol, B);
+P = reshape(sol(1:end-m-1), [size(P0,1) size(P0,2)]);
+C = evaluate_state(P,B,n);
+theta = reshape(sol(end-m:end-1), [m 1]).';
+tf = sol(end)*tfapp;
+time = tau*tf;
+
+% Dimensionalising
+C(3:4,:) = C(3:4,:).*[cos(theta);sin(theta)]/tf;
 
 %% Results
-% State vector approximation calculation
-C = evaluate_state(P,B,n);
-
-% Results
-% display_results(P0, P, B, m, exitflag, output, x0(end), r0, n)
-% plots();
+clc
+display_results();
+plots();

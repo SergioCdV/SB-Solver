@@ -12,7 +12,7 @@
 function  [r, v] = extract_coordinates(s)
     % Preallocation 
     r = zeros(2,size(s,2));         % Position vector 
-    v = zeros(3,size(s,2));         % Velocity vector 
+    v = zeros(2,size(s,2));         % Velocity vector 
 
     % Dimensional position coordinates 
     r(1,:) = s(1,:);

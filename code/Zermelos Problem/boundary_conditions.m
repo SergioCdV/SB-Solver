@@ -22,13 +22,13 @@ function [P] = boundary_conditions(x0, xf, basis)
     switch (basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
-            P(:,1) = x0(1:2);            
+            P(:,1) = x0(1:2);        
             P(:,2) = xf(1:2);
 
         case 'Orthogonal Bernstein'
             % Control points for an orthogonal Bézier curve
-            P(:,1) = x0(1:2);            
-            P(:,4) = xf(1:2);
+            P(:,1) = x0(1:2);        
+            P(:,2) = xf(1:2);
 
         otherwise 
             error('No valid collocation polynomial basis has been selected');

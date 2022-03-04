@@ -23,7 +23,7 @@ function [tfapp, Papp, Bapp, Capp] = initial_approximation(V, tau, initial, fina
     n_init = 1; 
 
     % Initial guess for transfer time (as Hohmann transfer)
-    tfapp = 1.5*norm(final-initial)/V;
+    tfapp = norm(final-initial)/V;
 
     switch (basis)
         case 'Bernstein'
@@ -34,15 +34,8 @@ function [tfapp, Papp, Bapp, Capp] = initial_approximation(V, tau, initial, fina
                 Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1)];
 
         case 'Orthogonal Bernstein'
-                % Linear system of interest 
-                b = [initial; final];
-                b = b([1 3 2 4]);
-                A = [OB_basis(n_init,[0 1]).'; OB_derivative(n_init,[0 1],1).'];         % Linear system
-                A = kron(eye(2),A);
-
-                % Initial estimate of control points (using the boundary conditions)
-                Papp = A\b; 
-                Papp = reshape(Papp, [n_init+1 3]).';
+                % Initial estimate of control points (using the non-orthonormal boundary conditions)
+                Papp = boundary_conditions(initial, final, basis);
 
                 % Bernstein polynomial basis
                 Bapp = [OB_basis(n_init,tau); OB_derivative(n_init,tau,1)];
