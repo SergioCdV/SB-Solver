@@ -16,7 +16,7 @@ fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
 m = 100;                                 % Number of discretization points
-time_distribution = 'Linear';            % Distribution of time intervals
+time_distribution = 'Linear';     % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Collocation method 
@@ -54,14 +54,16 @@ end
 % Initial data
 mu = 1; 
 r0 = 1; 
-tf = 5; 
-T = 0.1; 
+rf = 1;
+tf = 0.5; 
+T = 0; 
 m0 = 1; 
-Isp = 1e-3;
+Isp = 0;
 initial = [r0 0 0 sqrt(mu/r0)]; 
+final = [rf pi 0 sqrt(mu/rf)];
 
 % Initial guess for the boundary control points
-[Papp, ~, Capp] = initial_approximation(mu, tf, tau, n, initial, 'Bernstein');
+[Papp, ~, Capp] = initial_approximation(mu, tf, tau, n, initial, final, 'Bernstein');
 
 % Initial fitting for n+1 control points
 [B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
@@ -69,11 +71,12 @@ initial = [r0 0 0 sqrt(mu/r0)];
 %% Optimisiation
 % Initial guess 
 x0 = [reshape(P0, [size(P0,1)*size(P0,2) 1])];
-x0 = [x0; zeros(m,1)];
+L = length(x0)/2;
+x0 = [x0; pi/4*ones(m,1); 1];
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(length(x0)-m,1); 0*ones(m,1)];
-P_ub = [Inf*ones(length(x0)-m,1); zeros(m,1)];
+P_lb = [0*ones(L,1); 0*ones(L,1); zeros(m,1); 0];
+P_ub = [Inf*ones(L,1); 2*pi*ones(L,1); 2*pi*ones(m,1); 100];
 
 % Objective function
 objective = @(x)maximum_radius(x,B,m,n);
@@ -85,7 +88,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, m0, Isp, T, tf, tau, initial, n, m, x, B);
+nonlcon = @(x)constraints(mu, m0, Isp, T, tf, tau, initial, final, n, m, x, B);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -95,10 +98,10 @@ options.MaxFunctionEvaluations = 1e6;
 [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
 
 % Solution 
-[c,ceq] = constraints(mu, m0, Isp, T, tf, tau, initial, n, m, sol, B);
-P = reshape(sol(1:end-m), [size(P0,1) size(P0,2)]);
+[c,ceq] = constraints(mu, m0, Isp, T, tf, tau, initial, final, n, m, sol, B);
+P = reshape(sol(1:end-m-1), [size(P0,1) size(P0,2)]);
 C = evaluate_state(P,B,n);
-theta = reshape(sol(end-m+1:end), [m 1]).';
+theta = reshape(sol(end-m:end-1), [m 1]).';
 time = tau*tf;
 
 % Dimensionalising
@@ -110,7 +113,12 @@ u = T*[cos(theta);sin(theta)];
 % display_results();
 % plots();
 
-x = C(1,:).*cos(C(2,:));
-y = C(2,:).*sin(C(2,:));
+x = Capp(1,:).*cos(Capp(2,:));
+y = Capp(1,:).*sin(Capp(2,:));
+figure
+plot(x,y)
 
+x = C(1,:).*cos(C(2,:));
+y = C(1,:).*sin(C(2,:));
+figure
 plot(x,y)
