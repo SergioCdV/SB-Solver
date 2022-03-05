@@ -29,6 +29,6 @@ function [c, ceq] = constraints(mu, m0, Isp, T, tf, tau, initial, final, n, m, x
            C(1:2,end)-final(1:2).'; C(3,end); C(1,end)*C(4,end)-final(4)];
 
     % Dynamic constraints  
-    D = [C(5,:)-C(1,:).*C(4,:).^2+mu./C(1,:).^2-(T*sin(theta))./(m0-Isp*tf*tau); C(1,:).*C(6,:)+2*C(3,:).*C(4,:)-(T*cos(theta))./(m0-Isp*tf*tau)];
-    ceq = [ceq; reshape(D, [size(D,1)*size(D,2) 1])];
+    %D = [C(5,:)-C(1,:).*C(4,:).^2+mu./C(1,:).^2-(T*sin(theta))./(m0-Isp*tf*tau); C(1,:).*C(6,:)+2*C(3,:).*C(4,:)-(T*cos(theta))./(m0-Isp*tf*tau)];
+    %ceq = [ceq; reshape(D, [size(D,1)*size(D,2) 1])];
 end

@@ -19,5 +19,5 @@ function [r] = maximum_radius(x, B, m, n)
     C = evaluate_state(P,B,n);
 
     % Maximize the radius 
-    r = 1;
+    r = 9;
 end

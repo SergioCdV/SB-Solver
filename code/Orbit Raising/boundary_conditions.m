@@ -18,6 +18,10 @@ function [P] = boundary_conditions(mu, tfapp, n, x0, xf, basis)
     % Constants 
     P = zeros(2,2);            % Preallocation of the boundary control points
 
+    % Correct dimensionalising
+    x0(4) = x0(4)/x0(1);
+    xf(4) = xf(4)/xf(1);
+
     % Switch the polynomial basis to be used
     switch (basis)
         case 'Bernstein'                
