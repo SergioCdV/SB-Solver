@@ -16,7 +16,7 @@ fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
 m = 100;                                 % Number of discretization points
-time_distribution = 'Linear';     % Distribution of time intervals
+time_distribution = 'Gauss-Lobatto';     % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Collocation method 
@@ -55,7 +55,7 @@ end
 mu = 1; 
 r0 = 1; 
 rf = 1;
-tf = 0.5; 
+tf = pi; 
 T = 0; 
 m0 = 1; 
 Isp = 0;
@@ -72,11 +72,11 @@ final = [rf pi 0 sqrt(mu/rf)];
 % Initial guess 
 x0 = [reshape(P0, [size(P0,1)*size(P0,2) 1])];
 L = length(x0)/2;
-x0 = [x0; pi/4*ones(m,1); 1];
+x0 = [x0; pi/4*ones(m,1); 0.5/pi];
 
 % Upper and lower bounds (empty in this case)
 P_lb = [0*ones(L,1); 0*ones(L,1); zeros(m,1); 0];
-P_ub = [Inf*ones(L,1); 2*pi*ones(L,1); 2*pi*ones(m,1); 100];
+P_ub = [10*ones(L,1); 2*pi*ones(L,1); 2*pi*ones(m,1); 1];
 
 % Objective function
 objective = @(x)maximum_radius(x,B,m,n);

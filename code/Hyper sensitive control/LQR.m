@@ -11,13 +11,14 @@
 
 % Outputs: - scalar r, the final orbit radius to be maximized
 
-function [r] = maximum_radius(x, B, m, n)
-    % Maximize the orbital radius transfer
-    P = reshape(x(1:end-m-1), [2, max(n)+1]);
+function [J] = LQR(x,B,n,m,tf)
+    % Obtain the control points 
+    P = reshape(x(1:end-m-1), [1 max(n)+1]);
+    u = reshape(x(end-m:end-1), [1 m]); 
 
-    % Boundary conditions
+    % Evaluate the evolution 
     C = evaluate_state(P,B,n);
 
-    % Maximize the radius 
-    r = x(end);
+    % Cost function 
+    J = (1/2)*sum((C(1,:).^2+u.^2));
 end
