@@ -27,12 +27,9 @@ function [c, ceq] = constraints(mu, m0, Isp, T, tf, tau, initial, final, n, m, x
     ceq = [];
     ceq = [C(1:4,1)-initial(1:4).'; ...
            C(1:4,end)-final(1:4).'];
-
-    C = C(:,2:end-1);
-
+ 
     % Dynamic constraints  
     r = sqrt(C(1,:).^2+C(2,:).^2);
-    D = [C(5,:)+mu./r.^3.*C(1,:); ...
-         C(6,:)+mu./r.^3.*C(2,:)];
+    D = C(5:6,:)+mu./r.^3.*C(1:2,:);
     ceq = [ceq; reshape(D, [size(D,1)*size(D,2) 1])];
 end

@@ -18,11 +18,11 @@
 %          - array Bapp, the Bernstein polynomials basis in use
 %          - array Capp, the initial estimation of the spacecraft state vector
 
-function [Papp, Bapp, Capp, tfapp] = initial_approximation(g, tau, initial, final, basis)
+function [Papp, Bapp, Capp, tfapp] = initial_approximation(tau, initial, final, basis)
     % Approximation order in the Bernstein curve
     n_init = 1; 
 
-    tfapp = sqrt(2*norm(final(1:2)-initial(1:2))/g);
+    tfapp = 1;
 
     switch (basis)
         case 'Bernstein'

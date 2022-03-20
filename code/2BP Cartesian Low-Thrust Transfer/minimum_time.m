@@ -19,6 +19,5 @@ function [r] = minimum_time(x, B, m, n)
     C = evaluate_state(P,B,n);
 
     % Maximize the radius 
-    r = x(end);
-    r = 1; 
+    r = x(end); 
 end

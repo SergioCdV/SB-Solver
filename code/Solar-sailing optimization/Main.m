@@ -24,7 +24,7 @@ amax = 1.5e-4;                           % Maximum acceleration available [m/s^2
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [12 12 8];
+n = [7 7 7];
 
 %% Global constants
 r0 = 149597870700;                      % 1 AU [m] (for dimensionalising)
@@ -73,8 +73,8 @@ x0 = [reshape(P0, [size(P0,1)*size(P0,2) 1])];
 x0 = [x0; tfapp];
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(length(x0)-1,1); 0.8*tfapp];
-P_ub = [Inf*ones(length(x0)-1,1); 2*tfapp];
+P_lb = [-Inf*ones(length(x0)-1,1); 0*tfapp];
+P_ub = [Inf*ones(length(x0)-1,1); Inf];
 
 % Objective function
 objective = @(x)velocity_variation(mu, r0, tau, x, B, n);
@@ -89,7 +89,7 @@ beq = [];
 nonlcon = @(x)constraints(mu, initial, final, r0, n, x, B, amax);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
-options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'interior-point');
+options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
 options.MaxFunctionEvaluations = 1e6;
 
 % Optimisation

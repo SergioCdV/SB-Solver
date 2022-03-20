@@ -52,15 +52,15 @@ end
 
 %% Boundary conditions of the problem
 % Initial data
-mu = 1; 
+mu = 3.986e14/(7e6)^3; 
 r0 = 1; 
 rf = 1;
-tf = 7/4*pi; 
+tf = 2*pi*sqrt(r0^3/mu); 
 T = 0; 
 m0 = 1; 
 Isp = 0;
 initial = [r0 0 0 sqrt(mu/r0)]; 
-final = [0 -rf sqrt(mu/rf) 0];
+final = [-rf 0 0 -sqrt(mu/rf)];
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp] = initial_approximation(mu, tf, tau, n, initial, final, 'Bernstein');
@@ -75,8 +75,8 @@ L = length(x0)/2;
 x0 = [x0; ones(m,1); 1];
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(L,1); 0*ones(L,1); zeros(m,1); 0];
-P_ub = [Inf*ones(L,1); 2*pi*ones(L,1); 2*pi*ones(m,1); 10];
+P_lb = [-Inf*ones(L,1); -Inf*ones(L,1); -Inf*ones(m,1); 0];
+P_ub = [Inf*ones(L,1); Inf*ones(L,1); Inf*ones(m,1); 1];
 
 % Objective function
 objective = @(x)minimum_time(x,B,m,n);
@@ -109,10 +109,6 @@ C(3:4,:) = C(3:4,:)/tf;
 u = T*[cos(theta);sin(theta)];
 
 %% Results
-% clc
-% display_results();
-% plots();
-
 x = Capp(1,:);
 y = Capp(2,:);
 figure

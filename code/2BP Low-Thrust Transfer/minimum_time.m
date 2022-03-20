@@ -14,11 +14,11 @@
 function [r] = minimum_time(x, B, m, n)
     % Maximize the orbital radius transfer
     P = reshape(x(1:end-m-1), [2, max(n)+1]);
+    theta = reshape(x(end-m:end-1), [1,m]);
 
     % Boundary conditions
     C = evaluate_state(P,B,n);
 
     % Maximize the radius 
     r = x(end);
-    r = 1;
 end

@@ -70,7 +70,7 @@ L = length(x0);
 x0 = [x0; tfapp];
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(L-m,1); -10; 0];
+P_lb = [-Inf*ones(L-m,1); -10*ones(m,1); 0];
 P_ub = [Inf*ones(L-m,1); 10*ones(m,1); Inf];
 
 % Objective function

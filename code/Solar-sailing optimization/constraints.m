@@ -22,6 +22,7 @@ function [c, ceq] = constraints(mu, initial, final, r0, n, x, B, amax)
 
     % Non-linear inequality on the acceleration magnitude (a < a_max)
     amag = acceleration(mu, r0, tf, P, B, n);
+    amag = amag(2:end-1);
     c = (amag - amax*ones(size(amag)));
     c = c.';
 

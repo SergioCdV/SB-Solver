@@ -16,23 +16,19 @@
 
 function [P] = boundary_conditions(tfapp, n, x0, xf, basis)
     % Constants 
-    P = zeros(2,4);            % Preallocation of the boundary control points
+    P = zeros(3,2);            % Preallocation of the boundary control points
 
     % Switch the polynomial basis to be used
     switch (basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
-            P(:,1) = x0(1:2);            
-            P(:,2) = x0(1:2) + x0(3:4)*tfapp./n;   
-            P(:,3) = xf(1:2) + xf(3:4)*tfapp./n;
-            P(:,4) = xf(1:2);
+            P(:,1) = x0(1:3);            
+            P(:,2) = xf(1:3);
 
         case 'Orthogonal Bernstein'
             % Control points for an orthogonal Bézier curve
-            P(:,1) = x0(1:2);            
-            P(:,2) = x0(1:2) + x0(3:4)*tfapp./n;   
-            P(:,3) = xf(1:2) + xf(3:4)*tfapp./n;
-            P(:,4) = xf(1:2);
+            P(:,1) = x0(1:3);            
+            P(:,2) = xf(1:3);
 
         otherwise 
             error('No valid collocation polynomial basis has been selected');

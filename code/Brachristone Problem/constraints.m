@@ -11,28 +11,25 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(g, tf, tau, initial, final, n, x, B)
+function [c, ceq] = constraints(g, tf, tau, initial, final, n, m, x, B)
     % Extract the optimization variables
-    P = reshape(x(1:end-1), [2, max(n)+1]);
+    P = reshape(x(1:end-m-1), [3, max(n)+1]);
     C = evaluate_state(P,B,n);
+    u = reshape(x(end-m:end-1), [1 m]);
 
     % Non-linear inequality
     c = [];
 
     % Boundary conditions
-    ceq = [C(1:2,1)-initial(1:2).'; norm(C(3:4,1)); C(1:2,end)-final(1:2).'];
-
-    C = C(:,2:end-1);
-
-    % Dimensionalising 
-    C(3:4,:) = C(3:4,:) / (tf * x(end));
-    C(5:6,:) = C(5:6,:) / (tf * x(end))^2;
+    ceq = [];
+    C(4:6,:) = C(4:6,:) / (tf*x(end));
+    ceq = [C(1:3,1)-initial(1:3).'; C(1:2,end)-final(1:2).'];
 
     % Dynamic constraints  
-    u = atan2(C(3,:),-C(4,:));
-    v = sqrt(C(3,:).^2+C(4,:).^2);
-    du = -(C(5,:).*C(4,:)-C(6,:).*C(3,:))./v.^2; 
+    C = C(:,2:end-1);
+    u = u(:,2:end-1);
+    D = [C(4:5,:)-C(3,:).*[sin(u); -cos(u)]; 
+         C(6,:)-g*cos(u)];
 
-    D = C(5:6,:)-v.*du.*[cos(u);sin(u)]-g*cos(u).*[sin(u);-cos(u)];
     ceq = [ceq; reshape(D, [size(D,1)*size(D,2) 1])];
 end

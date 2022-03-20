@@ -28,5 +28,5 @@ function [a] = acceleration(mu, r0, tf, P, B, n)
     az = gamma(3,:) + mu.*rho(3,:)./r.^3;
     
     % Magnitude of the acceleration
-    a = sqrt(arho.^2 + atheta.^2 + az.^2);
+    a = sqrt(arho.^2+ atheta.^2 + az.^2);
 end

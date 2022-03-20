@@ -59,7 +59,7 @@ grid on;
 r = sqrt(rho(1,:).^2 + rho(3,:).^2);
 
 % Equations of motion
-ac(1,:) = gamma(1,:) + mu.*rho(1,:)/r.^3 - rho(1,:).*v(2,:).^2;
+ac = gamma(1,:) + mu.*rho(1,:)/r.^3 - rho(1,:).*v(2,:).^2;
 ac(2,:) = rho(1,:).*gamma(2,:) + 2.*v(1,:).*v(2,:);
 ac(3,:)  = gamma(3,:) + mu.*rho(3,:)./r.^3;
 

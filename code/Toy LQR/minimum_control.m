@@ -11,14 +11,12 @@
 
 % Outputs: - scalar r, the final orbit radius to be maximized
 
-function [r] = minimum_time(x,B,n,tf)
-%     P = reshape(x(1:end-1), [2 max(n)+1]);
-%     C = evaluate_state(P,B,n);
-%     C(3:4,:) = C(3:4,:) / (tf*x(end));
-%     r = 0; 
-%     for i = 1:size(C,2)-1
-%         r = r +  norm(C(1:2,i+1)-C(1:2,i)) / norm(C(3:4,i));
-%     end
+function [J] = minimum_control(x,tau,B,n,m)
+    % Obtain the control points 
+    P = reshape(x(1:end-m), [1 max(n)+1]);
+    u = reshape(x(end-m+1:end), [1 m]); 
+    C = evaluate_state(P,B,n);
 
-    r = x(end);
+    % Cost function 
+    J = trapz(tau,(u-C(1,:)).^2);
 end
