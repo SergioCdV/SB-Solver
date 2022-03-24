@@ -16,12 +16,12 @@ fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
 m = 50;                                 % Number of discretization points
-time_distribution = 'Gauss-Lobatto';     % Distribution of time intervals
+time_distribution = 'Linear';     % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [4 4 4];
+n = [7 7 4];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -52,9 +52,9 @@ end
 
 %% Boundary conditions of the problem
 % Initial data
-g = 9.81;
+g = 10;
 initial = [0 0 0 0 0 0]; 
-final = [2 -2 sqrt(2*10*g) 0 0 0];
+final = [10 -10 sqrt(2*10*g) 0 0 0];
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp, tfapp] = initial_approximation(g, tau, initial, final, 'Bernstein');
@@ -66,11 +66,11 @@ final = [2 -2 sqrt(2*10*g) 0 0 0];
 % Initial guess 
 x0 = [reshape(P0, [size(P0,1)*size(P0,2) 1])];
 L = length(x0);
-x0 = [x0; deg2rad(30)*ones(m,1); 0.3];
+x0 = [x0; deg2rad(0)*ones(m,1); tfapp];
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(L,1); 0*ones(m,1); 0];
-P_ub = [Inf*ones(L,1); pi/2*ones(m,1); 1];
+P_lb = [-Inf*ones(L,1); -2*pi*ones(m,1); 0];
+P_ub = [Inf*ones(L,1); 2*pi*ones(m,1); Inf];
 
 % Objective function
 objective = @(x)minimum_time(x,B,n,tfapp);

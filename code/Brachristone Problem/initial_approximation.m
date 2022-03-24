@@ -22,7 +22,7 @@ function [Papp, Bapp, Capp, tfapp] = initial_approximation(g, tau, initial, fina
     % Approximation order in the Bernstein curve
     n_init = 1; 
 
-    tfapp = sqrt(2*norm(final(1:2)-initial(1:2))/g);
+    tfapp = 0.8*sqrt(2*norm(final(1:2)-initial(1:2))/g);
 
     switch (basis)
         case 'Bernstein'
