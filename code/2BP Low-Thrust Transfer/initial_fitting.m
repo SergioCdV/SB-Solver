@@ -17,21 +17,21 @@
 function [B, P, C] = initial_fitting(n, tau, C, basis)
     % The Bernstein-basis polinomials for the increasd order are calculated
     B = cell(length(n),1);      % Preallocation of the Bernstein basis
-    P = zeros(2,max(n)+1);      % Preallocation of the control points
+    P = zeros(3,max(n)+1);      % Preallocation of the control points
 
     for i = 1:length(n)
         switch (basis)
             case 'Bernstein'
-                B{i} = [bernstein_basis(n(i),tau) bernstein_derivative(n(i),tau,1) bernstein_derivative(n(i),tau,2)];
+                B{i} = [bernstein_basis(n(i),tau) bernstein_derivative(n(i),tau,1)];
             case 'Orthogonal Bernstein'
-                B{i} = [OB_basis(n(i),tau) OB_derivative(n(i),tau,1) OB_derivative(n(i),tau,2)];
+                B{i} = [OB_basis(n(i),tau) OB_derivative(n(i),tau,1)];
             otherwise
                 error('No valid collocation polynomial basis has been selected');
         end
     end
 
     % Compute the position control points leveraging the complete state vector
-    C = [C(1:2,:) C(3:4,:) C(5:6,:)];
+    C = [C(1:3,:) C(4:6,:)];
     for i = 1:length(n)
         P(i,1:n(i)+1) = C(i,:)*pinv(B{i});
     end
@@ -40,9 +40,9 @@ function [B, P, C] = initial_fitting(n, tau, C, basis)
     for i = 1:length(n)
         switch (basis)
             case 'Bernstein'
-                B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1); bernstein_derivative(n(i),tau,2)];
+                B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1)];
             case 'Orthogonal Bernstein'
-                B{i} = [OB_basis(n(i),tau); OB_derivative(n(i),tau,1); OB_derivative(n(i),tau,2)];
+                B{i} = [OB_basis(n(i),tau); OB_derivative(n(i),tau,1)];
             otherwise
                 error('No valid collocation polynomial basis has been selected');
         end

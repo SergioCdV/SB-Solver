@@ -11,13 +11,14 @@
 
 % Outputs: - scalar r, the final orbit radius to be maximized
 
-function [r] = minimum_time(x, B, m, n)
+function [r] = maximum_radius(x, B, m, n, time)
     % Maximize the orbital radius transfer
-    P = reshape(x(1:end-m-1), [2, max(n)+1]);
+    P = reshape(x(1:end-1-2*m), [3, max(n)+1]);
+    u = reshape(x(end-2*m:end-1), [2 m]);
 
     % Boundary conditions
     C = evaluate_state(P,B,n);
 
     % Maximize the radius 
-    r = x(end); 
+    r = trapz(time*x(end), u(1,:).^2+u(2,:).^2);
 end

@@ -13,11 +13,11 @@
 
 function [r] = maximum_radius(x, B, m, n)
     % Maximize the orbital radius transfer
-    P = reshape(x(1:end-m-1), [2, max(n)+1]);
+    P = reshape(x(1:end-2*m), [3, max(n)+1]);
 
     % Boundary conditions
     C = evaluate_state(P,B,n);
 
     % Maximize the radius 
-    r = x(end);
+    r = -C(1,end);
 end

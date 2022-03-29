@@ -20,7 +20,7 @@
 
 function [Papp, Bapp, Capp] = initial_approximation(mu, tf, tau, n, initial, final, basis)
     % Approximation order in the Bernstein curve
-    n_init = 3; 
+    n_init = 1; 
 
     switch (basis)
         case 'Bernstein'
@@ -28,18 +28,18 @@ function [Papp, Bapp, Capp] = initial_approximation(mu, tf, tau, n, initial, fin
                 Papp = boundary_conditions(mu, tf, n, initial, final, basis);
 
                 % Bernstein polynomial basis
-                Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1); bernstein_derivative(n_init,tau,2)];
+                Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1)];
 
         case 'Orthogonal Bernstein'
                 % Initial estimate of control points (using the non-orthonormal boundary conditions)
                 Papp = boundary_conditions(mu, tf, n, initial, basis);
 
                 % Bernstein polynomial basis
-                Bapp = [OB_basis(n_init,tau); OB_derivative(n_init,tau,1); OB_derivative(n_init,tau,2)];
+                Bapp = [OB_basis(n_init,tau); OB_derivative(n_init,tau,1)];
         otherwise
             error('No valid collocation polynomial basis has been selected')
     end
 
     % State vector approximations
-    Capp = kron(eye(3),Papp)*Bapp;
+    Capp = kron(eye(2),Papp)*Bapp;
 end

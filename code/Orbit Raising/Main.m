@@ -15,13 +15,13 @@ animations = 0;     % Set to 1 to generate the gif
 fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
-m = 100;                                 % Number of discretization points
-time_distribution = 'Gauss-Lobatto';     % Distribution of time intervals
+m = 50;                                 % Number of discretization points
+time_distribution = 'Linear';     % Distribution of time intervals
 sigma = 1;                               % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [5 5];
+n = [5 5 5];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -54,13 +54,13 @@ end
 % Initial data
 mu = 1; 
 r0 = 1; 
-rf = 1;
-tf = pi; 
-T = 0; 
-m0 = 1; 
-Isp = 0;
-initial = [r0 0 0 sqrt(mu/r0)]; 
-final = [rf pi 0 sqrt(mu/rf)];
+rf = 5;
+tf = 3.32;
+T = 0.1405; 
+m0 = 1/T; 
+Isp = 0.5328825;
+initial = [r0 0 sqrt(mu/r0)]; 
+final = [rf 0 sqrt(mu/rf)];
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp] = initial_approximation(mu, tf, tau, n, initial, final, 'Bernstein');
@@ -70,13 +70,13 @@ final = [rf pi 0 sqrt(mu/rf)];
 
 %% Optimisiation
 % Initial guess 
-x0 = [reshape(P0, [size(P0,1)*size(P0,2) 1])];
-L = length(x0)/2;
-x0 = [x0; pi/4*ones(m,1); 0.5/pi];
+x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
+x0 = [x0; 0*ones(m,1); -1*ones(m,1)];
+L = length(x0);
 
 % Upper and lower bounds (empty in this case)
-P_lb = [0*ones(L,1); 0*ones(L,1); zeros(m,1); 0];
-P_ub = [10*ones(L,1); 2*pi*ones(L,1); 2*pi*ones(m,1); 1];
+P_lb = [-Inf*ones(L,1)];
+P_ub = [Inf*ones(L,1)];
 
 % Objective function
 objective = @(x)maximum_radius(x,B,m,n);
@@ -99,26 +99,40 @@ options.MaxFunctionEvaluations = 1e6;
 
 % Solution 
 [c,ceq] = constraints(mu, m0, Isp, T, tf, tau, initial, final, n, m, sol, B);
-P = reshape(sol(1:end-m-1), [size(P0,1) size(P0,2)]);
+P = reshape(sol(1:end-2*m), [size(P0,1) size(P0,2)]);
 C = evaluate_state(P,B,n);
-theta = reshape(sol(end-m:end-1), [m 1]).';
+u = reshape(sol(end-2*m+1:end), [2 m]);
 time = tau*tf;
 
 % Dimensionalising
-C(3:4,:) = C(3:4,:)/tf;
-u = T*[cos(theta);sin(theta)];
+C(4:6,:) = C(4:6,:)/tf;
 
 %% Results
-% clc
-% display_results();
-% plots();
+figure 
+hold on
+plot(time, C(1:3,:)); 
+hold off 
+grid on;
+legend('$r$', '$u$', '$v$')
+xlabel('Time')
+ylabel('State')
+title('State evolution in time')
 
-x = Capp(1,:).*cos(Capp(2,:));
-y = Capp(1,:).*sin(Capp(2,:));
-figure
-plot(x,y)
+figure 
+hold on
+plot(time, u); 
+hold off 
+grid on;
+legend('$u_x$', '$u_y$')
+xlabel('Time')
+ylabel('$\mathbf{u}$')
+title('Acceleration vector')
 
-x = C(1,:).*cos(C(2,:));
-y = C(1,:).*sin(C(2,:));
-figure
-plot(x,y)
+figure 
+hold on
+plot(time, unwrap(atan2(u(2,:),u(1,:)))); 
+hold off 
+grid on;
+xlabel('Time')
+ylabel('$\theta$')
+title('Thrust angle')
