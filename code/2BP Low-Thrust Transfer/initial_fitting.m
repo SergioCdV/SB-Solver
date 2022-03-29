@@ -31,7 +31,7 @@ function [B, P, C] = initial_fitting(n, tau, C, basis)
     end
 
     % Compute the position control points leveraging the complete state vector
-    C = [C(1:3,:) C(4:6,:)];
+    C = [C(1:4,:) C(5:8,:)];
     for i = 1:length(n)
         P(i,1:n(i)+1) = C(i,:)*pinv(B{i});
     end

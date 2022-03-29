@@ -21,7 +21,7 @@ sigma = 1;                              % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [5 5 5];
+n = [5 5 5 5];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -55,12 +55,12 @@ end
 mu = 1; 
 r0 = 1; 
 rf = 2;
-tf = 5;
+tf = 30;
 T = 0.1405; 
 m0 = 1/T; 
 Isp = 0.5328825;
-initial = [r0 0 sqrt(mu/r0)]; 
-final = [rf 0 sqrt(mu/rf)];
+initial = [r0 0 0 sqrt(mu/r0)]; 
+final = [rf pi 0 sqrt(mu/rf)];
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp] = initial_approximation(mu, tf, tau, n, initial, final, 'Bernstein');
@@ -79,7 +79,7 @@ P_lb = [-Inf*ones(L,1); 0];
 P_ub = [Inf*ones(L,1); Inf];
 
 % Objective function
-objective = @(x)maximum_radius(x,B,m,n,tau);
+objective = @(x)cost_function(x,B,m,n,tau);
 
 % Linear constraints
 A = [];
@@ -111,7 +111,7 @@ C(4:6,:) = C(4:6,:)/tf;
 %% Results
 figure 
 hold on
-plot(time, C(1:3,:)); 
+plot(time, C(1:4,:)); 
 hold off 
 grid on;
 legend('$r$', '$u$', '$v$')
@@ -137,3 +137,20 @@ grid on;
 xlabel('Time')
 ylabel('$\theta$')
 title('Thrust angle')
+
+figure 
+R(1,:) = rf*cos(0:1e-2:2*pi);
+R(2,:) = rf*sin(0:1e-2:2*pi);
+R(3,:) = r0*cos(0:1e-2:2*pi);
+R(4,:) = r0*sin(0:1e-2:2*pi);
+r = C(1,:).*[cos(C(2,:)); sin(C(2,:))];
+hold on
+plot(R(1,:),R(2,:), 'b.-');
+plot(r(1,:),r(2,:))
+plot(R(3,:),R(4,:), 'r.-');
+hold off
+legend('Initial orbit', 'Final orbit')
+title('Low thrust transfer');
+xlabel('$x$ coordinate')
+ylabel('$y$ coordinate')
+grid on;
