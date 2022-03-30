@@ -21,7 +21,7 @@ sigma = 1;                              % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [5 5 5 5];
+n = [5 5 5 5 5 5];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -55,12 +55,12 @@ end
 mu = 1; 
 r0 = 1; 
 rf = 2;
-tf = 30;
+tf = 5;
 T = 0.1405; 
 m0 = 1/T; 
 Isp = 0.5328825;
-initial = [r0 0 0 sqrt(mu/r0)]; 
-final = [rf pi 0 sqrt(mu/rf)];
+initial = [r0 0 0 0 sqrt(mu/r0) 0]; 
+final = [rf pi 0*rf 0 sqrt(mu/rf) 0];
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp] = initial_approximation(mu, tf, tau, n, initial, final, 'Bernstein');
@@ -71,7 +71,7 @@ final = [rf pi 0 sqrt(mu/rf)];
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; zeros(2*m,1); tf];
+x0 = [x0; zeros(3*m,1); tf];
 L = length(x0)-1;
 
 % Upper and lower bounds (empty in this case)
@@ -99,10 +99,10 @@ options.MaxFunctionEvaluations = 1e6;
 
 % Solution 
 [c,ceq] = constraints(mu, m0, Isp, T, tau, initial, final, n, m, sol, B);
-P = reshape(sol(1:end-1-2*m), [size(P0,1) size(P0,2)]);
+P = reshape(sol(1:end-1-3*m), [size(P0,1) size(P0,2)]);
 tf = sol(end);
 C = evaluate_state(P,B,n);
-u = reshape(sol(end-2*m:end-1), [2 m]);
+u = reshape(sol(end-3*m:end-1), [3 m]);
 time = tau*tf;
 
 % Dimensionalising
@@ -111,7 +111,7 @@ C(4:6,:) = C(4:6,:)/tf;
 %% Results
 figure 
 hold on
-plot(time, C(1:4,:)); 
+plot(time, C(1:6,:)); 
 hold off 
 grid on;
 legend('$r$', '$u$', '$v$')
@@ -124,7 +124,7 @@ hold on
 plot(time, u); 
 hold off 
 grid on;
-legend('$u_x$', '$u_y$')
+legend('$u_{\rho}$', '$u_{\theta}$', '$u_z$')
 xlabel('Time')
 ylabel('$\mathbf{u}$')
 title('Acceleration vector')
@@ -139,17 +139,18 @@ ylabel('$\theta$')
 title('Thrust angle')
 
 figure 
+view(3)
 R(1,:) = rf*cos(0:1e-2:2*pi);
 R(2,:) = rf*sin(0:1e-2:2*pi);
 R(3,:) = r0*cos(0:1e-2:2*pi);
 R(4,:) = r0*sin(0:1e-2:2*pi);
-r = C(1,:).*[cos(C(2,:)); sin(C(2,:))];
+r = [C(1,:).*cos(C(2,:)); C(1,:).*sin(C(2,:)); C(3,:)];
 hold on
-plot(R(1,:),R(2,:), 'b.-');
-plot(r(1,:),r(2,:))
+plot3(R(1,:),R(2,:), zeros(1,size(R,2)), 'b.-');
+plot3(r(1,:), r(2,:), r(3,:), 'g')
 plot(R(3,:),R(4,:), 'r.-');
 hold off
-legend('Initial orbit', 'Final orbit')
+legend('Initial orbit', 'Transfer orbit', 'Final orbit')
 title('Low thrust transfer');
 xlabel('$x$ coordinate')
 ylabel('$y$ coordinate')
