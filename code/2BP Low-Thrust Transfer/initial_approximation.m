@@ -18,22 +18,25 @@
 %          - array Bapp, the Bernstein polynomials basis in use
 %          - array Capp, the initial estimation of the spacecraft state vector
 
-function [Papp, Bapp, Capp] = initial_approximation(mu, tf, tau, n, initial, final, basis)
+function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, initial, final, basis)
     % Approximation order in the Bernstein curve
     n_init = 1; 
 
+    % Approximation of the time of flight 
+    a = (norm(initial([1 3]))+norm(final([1 3])))/2;
+    dE = (1/2)*(norm(final([4 6]))^2 - norm(initial([4 6]))^2)-mu*(1/norm(final([1 3]))-1/norm(initial([1 3])));
+    tfapp = 2*abs(dE)/(a*sqrt(mu/a^3));
+
+    % Initial estimate of control points (using the non-orthonormal boundary conditions)
+    Papp = boundary_conditions(mu, tfapp, n, initial, final, basis);
+
+    % Generate the polynomial basis
     switch (basis)
         case 'Bernstein'
-                % Initial estimate of control points (using the boundary conditions)
-                Papp = boundary_conditions(mu, tf, n, initial, final, basis);
-
                 % Bernstein polynomial basis
                 Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1)];
 
         case 'Orthogonal Bernstein'
-                % Initial estimate of control points (using the non-orthonormal boundary conditions)
-                Papp = boundary_conditions(mu, tf, n, initial, basis);
-
                 % Bernstein polynomial basis
                 Bapp = [OB_basis(n_init,tau); OB_derivative(n_init,tau,1)];
         otherwise

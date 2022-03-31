@@ -16,8 +16,8 @@
 
 function [B, P, C] = initial_fitting(n, tau, C, basis)
     % The Bernstein-basis polinomials for the increasd order are calculated
-    B = cell(length(n),1);      % Preallocation of the Bernstein basis
-    P = zeros(6,max(n)+1);      % Preallocation of the control points
+    B = cell(length(n),1);                % Preallocation of the Bernstein basis
+    P = zeros(length(n),max(n)+1);        % Preallocation of the control points
 
     for i = 1:length(n)
         switch (basis)
@@ -31,7 +31,7 @@ function [B, P, C] = initial_fitting(n, tau, C, basis)
     end
 
     % Compute the position control points leveraging the complete state vector
-    C = [C(1:6,:) C(7:12,:)];
+    C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:)];
     for i = 1:length(n)
         P(i,1:n(i)+1) = C(i,:)*pinv(B{i});
     end
