@@ -26,7 +26,6 @@ function [c, ceq] = constraints(mu, m0, Isp, T, tau, initial, final, n, m, x, B)
 
     % Inequality (control authority)
     c = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-ones(1,size(u,2));
-    %c = [];
 
     % Dynamic constraints
     r = sqrt(C(1,:).^2+C(3,:).^2);

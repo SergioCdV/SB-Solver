@@ -5,27 +5,30 @@
 % Function to estimate the initial time of flight, control points and curve approximation
 
 % Inputs: - scalar mu, the gravitational parameter of the system 
-%         - scalar r0, the characteristic or dimensionalising distance of
-%         - scalar amax, the maximum acceleration allowed for the
+%         - scalar T, the maximum acceleration allowed for the
 %           spacecraft
 %         - array P, the set of control points to estimate the position vector 
 %         - array B, the polynomial basis in use in the approximation
 %         - string basis, specifying the polynomial collacation basis
 
-% Outputs: - scalar tfapp, the initial approximation of the time of flight
-%          - array Papp, the initial estimation of the boundary control
+% Outputs: - array Papp, the initial estimation of the boundary control
 %            points
 %          - array Bapp, the Bernstein polynomials basis in use
 %          - array Capp, the initial estimation of the spacecraft state vector
+%          - scalar tfapp, the initial approximation of the time of flight
 
-function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, initial, final, basis)
+function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, basis)
     % Approximation order in the Bernstein curve
     n_init = 1; 
 
     % Approximation of the time of flight 
-    a = (norm(initial([1 3]))+norm(final([1 3])))/2;
-    dE = (1/2)*(norm(final([4 6]))^2 - norm(initial([4 6]))^2)-mu*(1/norm(final([1 3]))-1/norm(initial([1 3])));
-    tfapp = 2*abs(dE)/(a*sqrt(mu/a^3));
+    r0 = norm(initial([1 3]));              % Initial radius
+    v0 = norm(initial(4:6));                % Initial velocity
+    rf = norm(final([1 3]));                % Final radius
+    vf = norm(final(4:6));                  % Final velocity
+    a = (r0+rf)/2;                          % Transfer semimajor axis
+    dE = (vf^2-v0^2)/2-mu*(1/rf-1/r0);      % Change of energy
+    tfapp = abs(dE)/(T*sqrt(mu/a));         % Time of flight
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
     Papp = boundary_conditions(mu, tfapp, n, initial, final, basis);
@@ -44,5 +47,5 @@ function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, initial, 
     end
 
     % State vector approximations
-    Capp = kron(eye(2),Papp)*Bapp;
+    Capp = kron(eye(size(Bapp,1)/size(Papp,2)),Papp)*Bapp;
 end

@@ -51,27 +51,34 @@ switch (time_distribution)
 end
 
 %% Boundary conditions of the problem
-% Initial data
+% Gravitational parameter of the body
 mu = 1; 
-r0 = 1; 
-rf = 1.5;
-T = 0.1405; 
+
+% Thruser/accleration and spacecraft mass data
+T = 1.405e-1; 
 m0 = 1/T; 
-Isp = 0.5328825;
-initial = [r0 0 0 0 sqrt(mu/r0) 0]; 
-final = [rf pi 1e-3*rf 0 sqrt(mu/rf) 0];
+Isp = 0.07/T;
+
+% Earth orbital element 
+coe_earth = [1 1e-4 0 0 0]; 
+s = coe2state(mu, [coe_earth deg2rad(270)]);
+initial = cylindrical2cartesian(s, false).';
+
+% Mars orbital elements 
+coe_mars = [2 1e-4 0 deg2rad(20) 0]; 
+s = coe2state(mu, [coe_mars deg2rad(90)]);
+final = cylindrical2cartesian(s, false).';
 
 % Initial guess for the boundary control points
-[Papp, ~, Capp, tf] = initial_approximation(mu, tau, n, initial, final, 'Bernstein');
-tf = 2*tf;
+[Papp, ~, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
 
 % Initial fitting for n+1 control points
-[B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
+[B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
 
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; zeros(3*m,1); tf];
+x0 = [x0; zeros(3*m,1); tfapp];
 L = length(x0)-1;
 
 % Upper and lower bounds (empty in this case)
@@ -100,12 +107,14 @@ options.MaxFunctionEvaluations = 1e6;
 % Solution 
 [c,ceq] = constraints(mu, m0, Isp, T, tau, initial, final, n, m, sol, B);
 P = reshape(sol(1:end-1-3*m), [size(P0,1) size(P0,2)]);
+u = reshape(sol(end-3*m:end-1), [3 m]);
 tf = sol(end);
 C = evaluate_state(P,B,n);
 time = tau*tf;
 
 % Dimensionalising
-% C(4:12,:) = C(7:12,:)/tf;
+C(7:12,:) = C(7:12,:)/tf;
 
 %% Results
+display_results(exitflag, output, tfapp, tf);
 plots(); 

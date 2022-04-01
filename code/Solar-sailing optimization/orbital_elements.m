@@ -9,9 +9,8 @@
 %         - vector s, the cylindrical state vector
 
 
-% Outputs: - array B, the Bernstein polynomials basis in use
-%          - array P, the estimation of the boundary control points
-%          - array C, the initial estimation of the spacecraft state vector
+% Outputs: - mu, the gravitational parameter of the central body 
+%          - s, the state vector defining the orbit
 
 function [a, i] = orbital_elements(mu, s)
     % Extract data and convert it to Cartesian coordinates
@@ -25,9 +24,12 @@ function [a, i] = orbital_elements(mu, s)
     % Calculate the eccentricity vector
     e = cross(v,h)./mu - r./norm(r);
     
-    % calculate inclination
+    % Calculate the inclination
     i = acos(h(3)/norm(h));
     
     % Calculate the semi-major axis
     a = norm(h)^2/mu/(1-norm(e)^2);
+
+    % Compute the Euler matrix 
+    Q = [e/norm(e); cross(h/norm(h), e/norm(e)); h/norm(h)];
 end
