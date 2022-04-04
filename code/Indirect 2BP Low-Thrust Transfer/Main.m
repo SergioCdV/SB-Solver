@@ -21,7 +21,7 @@ sigma = 1;                              % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [5 5 5 5 5 5];
+n = repmat([5 5 5 5 5 5],1,2);
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -61,13 +61,15 @@ Isp = 0.07/T;
 
 % Earth orbital element 
 coe_earth = [1 1e-4 0 0 0]; 
-s = coe2state(mu, [coe_earth deg2rad(270)]);
+s = coe2state(mu, [coe_earth deg2rad(0)]);
 initial = cylindrical2cartesian(s, false).';
+initial = [initial zeros(size(initial))];
 
 % Mars orbital elements 
-coe_mars = [2 1e-1 0 deg2rad(20) 0]; 
+coe_mars = [1 1e-4 0 deg2rad(0) 0]; 
 s = coe2state(mu, [coe_mars deg2rad(90)]);
 final = cylindrical2cartesian(s, false).';
+final = [final zeros(size(final))];
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
@@ -78,15 +80,12 @@ final = cylindrical2cartesian(s, false).';
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; zeros(3*m,1); tfapp];
+x0 = [x0; tfapp];
 L = length(x0)-1;
 
 % Upper and lower bounds (empty in this case)
 P_lb = [-Inf*ones(L,1); 0];
-P_ub = [Inf*ones(L,1); Inf];
-
-% Objective function
-objective = @(x)cost_function(T,x,B,m,n,tau);
+P_ub = [Inf*ones(L,1); 10];
 
 % Linear constraints
 A = [];
@@ -97,6 +96,9 @@ beq = [];
 % Non-linear constraints
 nonlcon = @(x)constraints(mu, m0, Isp, T, tau, initial, final, n, m, x, B);
 
+% Objective function
+objective = @(x)cost_function(T,x,B,m,n,tau);
+
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
 options.MaxFunctionEvaluations = 1e6;
@@ -106,14 +108,16 @@ options.MaxFunctionEvaluations = 1e6;
 
 % Solution 
 [c,ceq] = constraints(mu, m0, Isp, T, tau, initial, final, n, m, sol, B);
-P = reshape(sol(1:end-1-3*m), [size(P0,1) size(P0,2)]);
-u = reshape(sol(end-3*m:end-1), [3 m]);
+P = reshape(sol(1:end-1), [size(P0,1) size(P0,2)]);
 tf = sol(end);
 C = evaluate_state(P,B,n);
 time = tau*tf;
 
 % Dimensionalising
-C(7:12,:) = C(7:12,:)/tf;
+C(13:end,:) = C(13:end,:)/tf;
+
+% Compute the control vector 
+u = zeros(3,size(C,2));
 
 %% Results
 display_results(exitflag, output, tfapp, tf);

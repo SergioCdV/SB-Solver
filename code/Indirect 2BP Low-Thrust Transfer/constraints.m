@@ -13,29 +13,44 @@
 
 function [c, ceq] = constraints(mu, m0, Isp, T, tau, initial, final, n, m, x, B)
     % Extract the optimization variables
-    P = reshape(x(1:end-1-3*m), [length(n), max(n)+1]);
-    u = reshape(x(end-3*m:end-1), [3 m]);
+    P = reshape(x(1:end-1), [length(n), max(n)+1]);
     tf = x(end);
 
-    % Boundary conditions
     C = evaluate_state(P,B,n);
 
+    % Boundary conditions
     ceq = [];
     ceq = [C(1:length(initial),1)-initial.';  ...
            C(1:length(final),end)-final.'];
 
+    % Collocation equations do not apply to boundary conditions
+%     C = C(:,2:end-1);
+%     tau = tau(2:end-1);
+
     % Inequality (control authority)
+    u = zeros(6,size(C,2));
     c = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-ones(1,size(u,2));
 
-    % Dynamic constraints
+    % Relevant variables
     r = sqrt(C(1,:).^2+C(3,:).^2);
     m = m0-tf*Isp*tau;
-    D = [C(7,:)+tf*( -C(4,:) ); ...
-         C(8,:)+tf*( -C(5,:)/C(1,:) ); ...
-         C(9,:)+tf*( -C(6,:) ); ...
-         C(10,:)+tf*( -C(5,:).^2./C(1,:)+mu.*C(1,:)/r.^3-u(1,:)./m ); ...
-         C(11,:)+tf*(  C(4,:).*C(5,:)./C(1,:)-u(2,:)./m ); ... 
-         C(12,:)+tf*(  mu.*C(3,:)/r.^3-u(3,:)./m )];
 
-    ceq = [ceq; reshape(D, [size(D,1)*size(D,2) 1])];
+    % Collocation equations
+    f = [C(4,:); ...
+         C(5,:)./C(1,:); ...
+         C(6,:); ... 
+         C(5,:).^2./C(1,:)-mu.*C(1,:)/r.^3; ... 
+         -C(4,:).*C(5,:)./C(1,:); ...
+         -mu.*C(3,:)./r.^3];
+
+    A = zeros(size(f)).';
+
+    D = C(13:18,:)-tf*(f+u./m);      % State dynamics
+    L = C(19:24,:)+tf*A.';           % Co-state dynamics
+
+    % Transversality constraints 
+    T = [dot(C(7:12,1),f(:,1)); dot(C(7:12,end),f(:,end))];
+
+    % Final constraints
+    ceq = [ceq; reshape(D, [size(D,1)*size(D,2) 1]); reshape(L, [size(L,1)*size(L,2) 1]); reshape(T, [size(T,1)*size(T,2) 1])];
 end
