@@ -13,11 +13,12 @@
 
 function [r] = cost_function(T, x, B, m, n, time)
     % Maximize the orbital radius transfer
-    P = reshape(x(1:end-1), [length(n), max(n)+1]);
+    P = reshape(x(1:end-1-3*m), [length(n), max(n)+1]);
+    u = reshape(x(end-3*m:end-1), [3 m]);
 
     % Boundary conditions
     C = evaluate_state(P,B,n);
 
-    % Minimize the Hamiltonian free-time constraint
-    r = T*;
+    % Maximize the radius 
+    r = T*x(end)*trapz(time, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2));
 end
