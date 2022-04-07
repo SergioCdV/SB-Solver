@@ -10,18 +10,20 @@
 
 %% Graphics
 set_graphics(); 
+close all
 
 animations = 0;     % Set to 1 to generate the gif
 fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
-m = 50;                                 % Number of discretization points
+m = 60;                                 % Number of discretization points
 time_distribution = 'Linear';           % Distribution of time intervals
 sigma = 1;                              % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-n = [5 5 5 5 5 5];
+%n = [5 5 5 5 5 5];
+n = [6 6 6];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -55,30 +57,31 @@ end
 mu = 1; 
 
 % Thruser/accleration and spacecraft mass data
-T = 1.405e-1; 
+T = 1; 
 m0 = 1/T; 
 Isp = 0.07/T;
 
 % Earth orbital element 
 coe_earth = [1 0 0 0 0]; 
-s = coe2state(mu, [coe_earth deg2rad(0)]);
+s = coe2state(mu, [coe_earth deg2rad(90)]);
 initial = cylindrical2cartesian(s, false).';
 
 % Mars orbital elements 
-coe_mars = [2 0 deg2rad(0) deg2rad(40) 0]; 
-s = coe2state(mu, [coe_mars deg2rad(90)]);
+coe_mars = [1.5 0 deg2rad(0) deg2rad(2) 0]; 
+s = coe2state(mu, [coe_mars deg2rad(20)]);
 final = cylindrical2cartesian(s, false).';
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
+tfapp = 2*pi*(800/365); 
 
 % Initial fitting for n+1 control points
-[B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
+[B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
 
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; zeros(3*m,1); tfapp];
+x0 = [x0; tfapp];
 L = length(x0)-1;
 
 % Upper and lower bounds (empty in this case)
@@ -86,7 +89,7 @@ P_lb = [-Inf*ones(L,1); 0];
 P_ub = [Inf*ones(L,1); Inf];
 
 % Objective function
-objective = @(x)cost_function(T,x,B,m,n,tau);
+objective = @(x)cost_function(initial, final, mu, T,x,B,m,n,tau);
 
 % Linear constraints
 A = [];
@@ -95,7 +98,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, m0, Isp, T, tau, initial, final, n, m, x, B);
+nonlcon = @(x)constraints(mu, m0, 2*pi*(800/365), T, tau, initial, final, n, m, x, B);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -105,16 +108,20 @@ options.MaxFunctionEvaluations = 1e6;
 [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
 
 % Solution 
-[c,ceq] = constraints(mu, m0, Isp, T, tau, initial, final, n, m, sol, B);
-P = reshape(sol(1:end-1-3*m), [size(P0,1) size(P0,2)]);
-u = reshape(sol(end-3*m:end-1), [3 m]);
+P = reshape(sol(1:end-1), [size(P0,1) size(P0,2)]);
 tf = sol(end);
+P(:,1) = initial(1:3);
+P(:,2) = initial(1:3)+tf*initial(4:6)./n;
+P(:,end-1) = final(1:3)-tf*final(4:6)./n;
+P(:,end) = final(1:3);
+[c,ceq] = constraints(mu, m0, tf, T, tau, initial, final, n, m, sol, B);
 C = evaluate_state(P,B,n);
+r = sqrt(C(1,:).^2+C(3,:).^2);
 time = tau*tf;
-mass = m0-Isp*time;
+mass = m0-tf*Isp*tau;
 
-% Dimensionalising
-C(7:12,:) = C(7:12,:)/tf;
+% Control input
+u = acceleration_control(mu,C,tf);
 
 %% Results
 display_results(exitflag, output, tfapp, tf);

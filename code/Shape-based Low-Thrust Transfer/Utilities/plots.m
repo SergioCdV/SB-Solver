@@ -8,7 +8,7 @@ xpos=10; ypos=150;
 
 %% Final state vector
 % Final time
-time_days = tau.*(tf)*(365);
+time_days = tau.*tf*365/(2*pi);
 
 % Final spacecraft trajectory in Cartesian coordinates
 [S] = cylindrical2cartesian(C(1:3,:),true);
@@ -81,7 +81,7 @@ title('Spacecraft acceleration in time')
 hold on
 plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
 plot(time_days, u, 'LineWidth', 0.3)
-yline(1, '--k')
+yline(T*tf^2, '--k')
 xlabel('Flight time [days]')
 ylabel('$\vec{a}$ [m/$s^2$]')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')

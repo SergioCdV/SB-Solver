@@ -19,7 +19,7 @@
 
 function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, basis)
     % Approximation order in the Bernstein curve
-    n_init = 1; 
+    n_init = 3; 
 
     % Approximation of the time of flight 
     r0 = norm(initial([1 3]));              % Initial radius
@@ -37,11 +37,11 @@ function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, T, initia
     switch (basis)
         case 'Bernstein'
                 % Bernstein polynomial basis
-                Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1)];
+                Bapp = [bernstein_basis(n_init,tau); bernstein_derivative(n_init,tau,1); bernstein_derivative(n_init,tau,2)];
 
         case 'Orthogonal Bernstein'
                 % Bernstein polynomial basis
-                Bapp = [OB_basis(n_init,tau); OB_derivative(n_init,tau,1)];
+                Bapp = [OB_basis(n_init,tau); OB_derivative(n_init,tau,1); OB_derivative(n_init,tau,2)];
         otherwise
             error('No valid collocation polynomial basis has been selected')
     end
