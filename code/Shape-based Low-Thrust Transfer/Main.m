@@ -23,7 +23,7 @@ sigma = 1;                              % If normal distribution is selected
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
 %n = [5 5 5 5 5 5];
-n = [6 6 6];
+n = [12 12 12];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -57,7 +57,7 @@ end
 mu = 1; 
 
 % Thruser/accleration and spacecraft mass data
-T = 1; 
+T = 4e-2; 
 m0 = 1/T; 
 Isp = 0.07/T;
 
@@ -67,8 +67,8 @@ s = coe2state(mu, [coe_earth deg2rad(90)]);
 initial = cylindrical2cartesian(s, false).';
 
 % Mars orbital elements 
-coe_mars = [1.5 0 deg2rad(0) deg2rad(2) 0]; 
-s = coe2state(mu, [coe_mars deg2rad(20)]);
+coe_mars = [1.5 0.09 deg2rad(0) deg2rad(2) 0]; 
+s = coe2state(mu, [coe_mars deg2rad(260)]);
 final = cylindrical2cartesian(s, false).';
 
 % Initial guess for the boundary control points
@@ -122,6 +122,7 @@ mass = m0-tf*Isp*tau;
 
 % Control input
 u = acceleration_control(mu,C,tf);
+u = u/tf^2;
 
 %% Results
 display_results(exitflag, output, tfapp, tf);

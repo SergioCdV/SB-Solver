@@ -26,8 +26,7 @@ function [r] = cost_function(initial, final, mu, T, x, B, m, n, time)
 
     % Control input
     u = acceleration_control(mu,C,tf); 
-    u = u/tf^2;
 
     % Minimize the control input
-    r = trapz(time*tf, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2));
+    r = tf*T*trapz(time, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2));
 end
