@@ -4,22 +4,29 @@
 %% Flight time %%
 % Function to estimate the time of flight
 
-% Inputs: - vector x, the vector of decision variables 
-%         - cell array B, the basis of polynomials to be used 
-%         - vector n, containing the order of approximation of each phase
-%           space
+% Inputs: - vector initial, the initial boundary conditions of the
+%           trajectory 
+%         - vector final, the initial boundary conditions of the
+%           trajectory
+%         - scalar mu, the gravitational parameter of the central body 
+%         - vector x, the degree of freedom to be optimized 
+%         - cell array B, the polynomial basis to be used 
+%         - vector n, the vector of degrees of approximation of the state
+%           variables
+%         - vector tau, the vector of collocation points
 
-% Outputs: - scalar r, the final orbit radius to be maximized
+% Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(initial, final, mu, T, x, B, m, n, time)
+function [r] = cost_function(initial, final, mu, x, B, n, tau)
     % Minimize the control input
-    P = reshape(x(1:end-2), [length(n), max(n)+1]);
-    tf = x(end-1);
-    N = floor(x(end));
+    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % The Bézier control points
+    tf = x(end-1);                                      % The final time of flight
+    N = floor(x(end));                                  % The optimal number of revolutions
 
     % Boundary conditions
-    P(:,[1 2 end-1 end]) = boundary_conditions(mu, tf, n, initial, final, N, 'Orthogonal Bernstein');
+    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, 'Orthogonal Bernstein');
 
+    % State evolution
     C = evaluate_state(P,B,n);
 
     % Control input
@@ -27,5 +34,5 @@ function [r] = cost_function(initial, final, mu, T, x, B, m, n, time)
     a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);
 
     % Minimize the control input
-    r = trapz(time, a/tf);
+    r = trapz(tau, a/tf);
 end

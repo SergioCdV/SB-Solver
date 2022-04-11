@@ -72,7 +72,6 @@ final = cylindrical2cartesian(s, false).';
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp, tfapp, N] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
-tfapp = 2*pi*(800/365); 
 
 % Initial fitting for n+1 control points
 [B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
@@ -88,7 +87,7 @@ P_lb = [-Inf*ones(L,1); 0; 0];
 P_ub = [Inf*ones(L,1); Inf; Inf];
 
 % Objective function
-objective = @(x)cost_function(initial, final, mu, T,x,B,m,n,tau);
+objective = @(x)cost_function(initial, final, mu, x, B, n, tau);
 
 % Linear constraints
 A = [];
@@ -97,7 +96,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, m0, 2*pi*(800/365), T, tau, initial, final, n, m, x, B);
+nonlcon = @(x)constraints(mu, T, initial, final, n, x, B);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -107,13 +106,20 @@ options.MaxFunctionEvaluations = 1e6;
 [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
 
 % Solution 
-P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);
-tf = sol(end-1);
-N = floor(sol(end));
-P(:,[1 2 end-1 end]) = boundary_conditions(mu, tf, n, initial, final, N, 'Bernstein');
-[c,ceq] = constraints(mu, m0, tf, T, tau, initial, final, n, m, sol, B);
+P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
+tf = sol(end-1);                                        % Optimal time of flight
+N = floor(sol(end));                                    % Optimal number of revolutions 
+
+P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, 'Bernstein');
+
+% Final constraints
+[c,ceq] = constraints(mu, T, initial, final, n, sol, B);
+
+% Final state evolution
 C = evaluate_state(P,B,n);
 r = sqrt(C(1,:).^2+C(3,:).^2);
+
+% Mass evolution
 time = tau*tf;
 mass = m0-tf*Isp*tau;
 
