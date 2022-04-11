@@ -83,7 +83,7 @@ plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
 plot(time_days, u, 'LineWidth', 0.3)
 yline(T, '--k')
 xlabel('Flight time [days]')
-ylabel('$\vec{a}$ [m/$s^2$]')
+ylabel('$\mathbf{a}$ []')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
 grid on;
 

@@ -13,17 +13,15 @@
 
 function [c, ceq] = constraints(mu, m0, Isp, T, tau, initial, final, n, m, x, B)
     % Extract the optimization variables
-    P = reshape(x(1:end-1), [length(n), max(n)+1]);
-    tf = x(end);
+    P = reshape(x(1:end-2), [length(n), max(n)+1]);
+    tf = x(end-1);
+    N = floor(x(end));
 
     % Equalities 
     ceq = [];
 
     % Boundary conditions points
-    P(:,1) = initial(1:3);
-    P(:,2) = initial(1:3)+tf*initial(4:6)./n;
-    P(:,end-1) = final(1:3)-tf*final(4:6)./n;
-    P(:,end) = final(1:3);
+    P(:,[1 2 end-1 end]) = boundary_conditions(mu, tf, n, initial, final, N, 'Orthogonal Bernstein');
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);

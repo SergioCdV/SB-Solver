@@ -22,8 +22,7 @@ sigma = 1;                              % If normal distribution is selected
 
 %% Collocation method 
 % Order of Bezier curve functions for each coordinate
-%n = [5 5 5 5 5 5];
-n = [12 12 12];
+n = [8 8 8];
 
 %% Initial definitions
 % Generate the time interval discretization distribution
@@ -54,16 +53,16 @@ end
 
 %% Boundary conditions of the problem
 % Gravitational parameter of the body
-mu = 1; 
+mu = 1;
 
 % Thruser/accleration and spacecraft mass data
-T = 4e-2; 
+T = 1e-1; 
 m0 = 1/T; 
 Isp = 0.07/T;
 
 % Earth orbital element 
-coe_earth = [1 0 0 0 0]; 
-s = coe2state(mu, [coe_earth deg2rad(90)]);
+coe_earth = [1 1e-4 0 deg2rad(1) 0]; 
+s = coe2state(mu, [coe_earth deg2rad(110)]);
 initial = cylindrical2cartesian(s, false).';
 
 % Mars orbital elements 
@@ -72,7 +71,7 @@ s = coe2state(mu, [coe_mars deg2rad(260)]);
 final = cylindrical2cartesian(s, false).';
 
 % Initial guess for the boundary control points
-[Papp, ~, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
+[Papp, ~, Capp, tfapp, N] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
 tfapp = 2*pi*(800/365); 
 
 % Initial fitting for n+1 control points
@@ -81,12 +80,12 @@ tfapp = 2*pi*(800/365);
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; tfapp];
-L = length(x0)-1;
+x0 = [x0; tfapp; N];
+L = length(x0)-2;
 
 % Upper and lower bounds (empty in this case)
-P_lb = [-Inf*ones(L,1); 0];
-P_ub = [Inf*ones(L,1); Inf];
+P_lb = [-Inf*ones(L,1); 0; 0];
+P_ub = [Inf*ones(L,1); Inf; Inf];
 
 % Objective function
 objective = @(x)cost_function(initial, final, mu, T,x,B,m,n,tau);
@@ -108,12 +107,10 @@ options.MaxFunctionEvaluations = 1e6;
 [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
 
 % Solution 
-P = reshape(sol(1:end-1), [size(P0,1) size(P0,2)]);
-tf = sol(end);
-P(:,1) = initial(1:3);
-P(:,2) = initial(1:3)+tf*initial(4:6)./n;
-P(:,end-1) = final(1:3)-tf*final(4:6)./n;
-P(:,end) = final(1:3);
+P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);
+tf = sol(end-1);
+N = floor(sol(end));
+P(:,[1 2 end-1 end]) = boundary_conditions(mu, tf, n, initial, final, N, 'Bernstein');
 [c,ceq] = constraints(mu, m0, tf, T, tau, initial, final, n, m, sol, B);
 C = evaluate_state(P,B,n);
 r = sqrt(C(1,:).^2+C(3,:).^2);

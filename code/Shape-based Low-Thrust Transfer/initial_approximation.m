@@ -17,7 +17,7 @@
 %          - array Capp, the initial estimation of the spacecraft state vector
 %          - scalar tfapp, the initial approximation of the time of flight
 
-function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, basis)
+function [Papp, Bapp, Capp, tfapp, N] = initial_approximation(mu, tau, n, T, initial, final, basis)
     % Approximation order in the Bernstein curve
     n_init = 3; 
 
@@ -30,8 +30,17 @@ function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, T, initia
     dE = (vf^2-v0^2)/2-mu*(1/rf-1/r0);      % Change of energy
     tfapp = abs(dE)/(T*sqrt(mu/a));         % Time of flight
 
+    tfapp = 20*abs(sqrt(mu/rf)*(sqrt(2*r0/(r0+rf))*(1-rf/r0)+sqrt(rf/r0)-1))/T;
+
+    % Preliminary number of revolutions 
+    tfapp = 2*pi*(800/365);
+    N = floor(initial(2)-final(2)+tfapp*(initial(4)+final(4))/(2*pi))-1;
+    if (N < 0)
+        N = 0;
+    end
+
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = boundary_conditions(mu, tfapp, n, initial, final, basis);
+    Papp = boundary_conditions(mu, tfapp, n, initial, final, N, basis);
 
     % Generate the polynomial basis
     switch (basis)

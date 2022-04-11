@@ -13,20 +13,19 @@
 
 function [r] = cost_function(initial, final, mu, T, x, B, m, n, time)
     % Minimize the control input
-    P = reshape(x(1:end-1), [length(n), max(n)+1]);
-    tf = x(end);
+    P = reshape(x(1:end-2), [length(n), max(n)+1]);
+    tf = x(end-1);
+    N = floor(x(end));
 
     % Boundary conditions
-    P(:,1) = initial(1:3);
-    P(:,2) = initial(1:3)+tf*initial(4:6)./n;
-    P(:,end-1) = final(1:3)-tf*final(4:6)./n;
-    P(:,end) = final(1:3);
+    P(:,[1 2 end-1 end]) = boundary_conditions(mu, tf, n, initial, final, N, 'Orthogonal Bernstein');
 
     C = evaluate_state(P,B,n);
 
     % Control input
     u = acceleration_control(mu,C,tf); 
+    a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);
 
     % Minimize the control input
-    r = tf*T*trapz(time, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2));
+    r = trapz(time, a/tf);
 end

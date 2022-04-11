@@ -14,9 +14,12 @@
 
 % Outputs: - array P, the boundary conditions control points, of dimensions 3 x n+1 
 
-function [P] = boundary_conditions(mu, tfapp, n, x0, xf, basis)
+function [P] = boundary_conditions(mu, tfapp, n, x0, xf, N, basis)
     % Constants 
     P = zeros(length(x0)/2,4);            % Preallocation of the boundary control points
+
+    % Add the revolutions to the final angle
+    xf(2) = xf(2)+2*pi*N;
 
     % Switch the polynomial basis to be used
     switch (basis)
@@ -24,14 +27,14 @@ function [P] = boundary_conditions(mu, tfapp, n, x0, xf, basis)
             % Control points for a nonorthogonal Bézier curve
             P(:,1) = x0(1:3);
             P(:,2) = x0(1:3)+tfapp*x0(4:6)./n;
-            P(:,3) = xf(1:3)+tfapp*xf(4:6)./n;
+            P(:,3) = xf(1:3)-tfapp*xf(4:6)./n;
             P(:,4) = xf(1:3);
 
         case 'Orthogonal Bernstein'
             % Control points for an orthogonal Bézier curve
             P(:,1) = x0(1:3);
             P(:,2) = x0(1:3)+tfapp*x0(4:6)./n;
-            P(:,3) = xf(1:3)+tfapp*xf(4:6)./n;
+            P(:,3) = xf(1:3)-tfapp*xf(4:6)./n;
             P(:,4) = xf(1:3);
 
         otherwise 
