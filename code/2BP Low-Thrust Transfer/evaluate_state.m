@@ -9,7 +9,7 @@
 %         - vector n, with the degrees of approximation of each position
 %           coordinate
 
-% Outputs: - array C, the 9x1 state vector 
+% Outputs: - array C, the 9xm state vector 
 
 function [C] = evaluate_state(P, B, n)
     % Extract the spacecraft coodinates evaluating the Bézier curve approximation

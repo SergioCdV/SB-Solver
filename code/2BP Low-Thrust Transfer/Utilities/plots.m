@@ -105,16 +105,6 @@ xlabel('Time')
 ylabel('$\phi$')
 title('Thrust out-of-plane angle')
 
-%% Mass evolution
-figure 
-hold on
-plot(time, mass); 
-hold off 
-grid on;
-xlabel('Time')
-ylabel('$m$')
-title('Mass evolution')
-
 %% Position coordinates
 figure_coordinates = figure;
 set(figure_coordinates,'position',[xpos + 2*1.2*imsize,ypos,1.2*imsize,imsize])

@@ -7,14 +7,12 @@
 
 % Inputs: - vector x0, the initial 6 by 1 state vector (heliocentric position and velocity)
 %         - vector xf, the final 6 by 1 state vector (heliocentric position and velocity)
-%         - scalar tfapp, the approximated time of flight initial guess
-%         - scalar n, the order of the approximating Bézier curve
 %         - string basis, to select the polynomial basis to be used in the
 %           approximation
 
 % Outputs: - array P, the boundary conditions control points, of dimensions 3 x n+1 
 
-function [P] = boundary_conditions(mu, tfapp, n, x0, xf, basis)
+function [P] = boundary_conditions(x0, xf, basis)
     % Constants 
     P = zeros(length(x0),2);            % Preallocation of the boundary control points
 

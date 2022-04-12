@@ -31,7 +31,7 @@ function [Papp, Bapp, Capp, tfapp] = initial_approximation(mu, tau, n, T, initia
     tfapp = abs(dE)/(T*sqrt(mu/a));         % Time of flight
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = boundary_conditions(mu, tfapp, n, initial, final, basis);
+    Papp = boundary_conditions(initial, final, basis);
 
     % Generate the polynomial basis
     switch (basis)

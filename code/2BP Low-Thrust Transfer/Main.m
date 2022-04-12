@@ -15,7 +15,7 @@ animations = 0;     % Set to 1 to generate the gif
 fig = 1;            % Figure start number
 
 %% Variables to be defined for each run
-m = 50;                                 % Number of discretization points
+m = 60;                                 % Number of discretization points
 time_distribution = 'Linear';           % Distribution of time intervals
 sigma = 1;                              % If normal distribution is selected
 
@@ -56,21 +56,23 @@ mu = 1;
 
 % Thruser/accleration and spacecraft mass data
 T = 1.405e-1; 
-m0 = 1/T; 
-Isp = 0.07/T;
 
 % Earth orbital element 
-coe_earth = [1 1e-4 0 0 0]; 
-s = coe2state(mu, [coe_earth deg2rad(270)]);
+coe_earth = [1 1e-4 0 deg2rad(1) 0]; 
+s = coe2state(mu, [coe_earth deg2rad(110)]);
 initial = cylindrical2cartesian(s, false).';
 
 % Mars orbital elements 
-coe_mars = [2 1e-1 0 deg2rad(20) 0]; 
-s = coe2state(mu, [coe_mars deg2rad(90)]);
+coe_mars = [1.5 0.09 deg2rad(0) deg2rad(2) 0]; 
+s = coe2state(mu, [coe_mars deg2rad(260)]);
 final = cylindrical2cartesian(s, false).';
+
+N = 2;
+final(2) = final(2)+N*2*pi;
 
 % Initial guess for the boundary control points
 [Papp, ~, Capp, tfapp] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
+tfapp = 2*pi*(800/365);
 
 % Initial fitting for n+1 control points
 [B, P0, C0] = initial_fitting(n, tau, Capp, 'Orthogonal Bernstein');
@@ -86,7 +88,7 @@ P_lb = [-Inf*ones(L,1); 0];
 P_ub = [Inf*ones(L,1); Inf];
 
 % Objective function
-objective = @(x)cost_function(T,x,B,m,n,tau);
+objective = @(x)cost_function(x,B,m,n,tau);
 
 % Linear constraints
 A = [];
@@ -95,7 +97,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, m0, Isp, T, tau, initial, final, n, m, x, B);
+nonlcon = @(x)constraints(mu, T, initial, final, n, m, x, B);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
