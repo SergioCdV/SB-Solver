@@ -16,9 +16,9 @@ n = [9 9 9];                            % Order of Bezier curve functions for ea
 
 %% Boundary conditions 
 % System data 
-r0 = 149597870700;                      % 1 AU [m]
-mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2]
-t0 = sqrt(r0^3/mu);                     % Fundamental time unit
+r0 = 6378e3;                      % 1 Earth's radius [m]
+mu = 3.986e14;                    % Gavitational parameter of the Earth [m^3 s^−2]
+t0 = sqrt(r0^3/mu);               % Fundamental time unit
 
 % Earth's orbital elements
 coe_earth = [r0 1e-4 0 deg2rad(1) 0]; 
@@ -75,7 +75,7 @@ tau = collocation_grid(m, time_distribution);
 tfapp = tfapp*Napp;
 
 % Initial fitting for n+1 control points
-%basis = 'Orthogonal Bernstein';
+basis = 'Orthogonal Bernstein';
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis
