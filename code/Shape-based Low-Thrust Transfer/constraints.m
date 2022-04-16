@@ -16,12 +16,13 @@
 %         - vector n, the vector of degrees of approximation of the state
 %           variables
 %         - vector x, the degree of freedom to be optimized 
-%         - cell array B, the polynomial basis to be used 
+%         - cell array B, the polynomial basis to be used
+%         - string basis, the polynomial basis to be used
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, n, x, B)
+function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % Final time of flight 
@@ -31,7 +32,7 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B)
     ceq = [];
 
     % Boundary conditions points
-    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, 'Orthogonal Bernstein');
+    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, basis);
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);

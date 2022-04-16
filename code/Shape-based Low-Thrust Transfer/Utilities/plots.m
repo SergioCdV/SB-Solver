@@ -8,7 +8,7 @@ xpos=10; ypos=150;
 
 %% Final state vector
 % Final time
-time_days = tau.*tf*365/(2*pi);
+time_days = tau.*tf*t0;
 
 % Final spacecraft trajectory in Cartesian coordinates
 [S] = cylindrical2cartesian(C(1:3,:),true);
@@ -21,7 +21,7 @@ thetaE = linspace(0,2*pi,size(C,2));
 s = zeros(6,length(thetaE));
 
 for i = 1:length(thetaE)
-    s(:,i) = coe2state(mu, [coe_earth initial(2)+thetaE(i)]);
+    s(:,i) = coe2state(mu, [coe_earth(1:end-1) initial(2)+thetaE(i)]);
 end
 xE = s(1,:);
 yE = s(2,:);
@@ -29,7 +29,7 @@ zE = s(3,:);
 
 % Mars's orbit
 for i = 1:length(thetaE)
-    s(:,i) = coe2state(mu, [coe_mars final(2)+thetaE(i)]);
+    s(:,i) = coe2state(mu, [coe_mars(1:end-1) final(2)+thetaE(i)]);
 end
 xM = s(1,:);
 yM = s(2,:);
@@ -89,7 +89,7 @@ grid on;
 
 figure 
 hold on
-plot(time, rad2deg(unwrap(atan2(u(2,:),u(1,:))))); 
+plot(time, rad2deg(atan2(u(2,:),u(1,:)))); 
 hold off 
 grid on;
 xlabel('Time')
@@ -98,22 +98,12 @@ title('Thrust in-plane angle')
 
 figure 
 hold on
-plot(time, rad2deg(unwrap(atan2(u(3,:),sqrt(u(1,:).^2+u(2,:).^2))))); 
+plot(time, rad2deg(atan2(u(3,:),sqrt(u(1,:).^2+u(2,:).^2)))); 
 hold off 
 grid on;
 xlabel('Time')
 ylabel('$\phi$')
 title('Thrust out-of-plane angle')
-
-%% Mass evolution
-figure 
-hold on
-plot(time, mass); 
-hold off 
-grid on;
-xlabel('Time')
-ylabel('$m$')
-title('Mass evolution')
 
 %% Position coordinates
 figure_coordinates = figure;

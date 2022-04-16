@@ -9,15 +9,13 @@
 %         - C, the initial trajectory estimation
 %         - string basis, the Bernstein polynomial basis to be used
 
-% Outputs: - array B, the Bernstein polynomials basis in use as a cell
-%          - array P, the estimation of the boundary control points as a
+% Outputs: - array P, the estimation of the boundary control points as a
 %            cell
 %          - array C, the initial estimation of the spacecraft state vector
 
-function [B, P, C] = initial_fitting(n, tau, C, basis)
-    % The Bernstein-basis polinomials for the increasd order are calculated
-    B = cell(length(n),1);                % Preallocation of the Bernstein basis
-    P = zeros(length(n),max(n)+1);        % Preallocation of the control points
+function [P, C] = initial_fitting(n, tau, C, basis)
+    % Preallocation of the control points
+    P = zeros(length(n),max(n)+1);      
 
     for i = 1:length(n)
         switch (basis)
@@ -36,17 +34,8 @@ function [B, P, C] = initial_fitting(n, tau, C, basis)
         P(i,1:n(i)+1) = C(i,:)*pinv(B{i});
     end
 
-    % Reshape the Bernstein basis
-    for i = 1:length(n)
-        switch (basis)
-            case 'Bernstein'
-                B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1); bernstein_derivative(n(i),tau,2)];
-            case 'Orthogonal Bernstein'
-                B{i} = [OB_basis(n(i),tau); OB_derivative(n(i),tau,1); OB_derivative(n(i),tau,2)];
-            otherwise
-                error('No valid collocation polynomial basis has been selected');
-        end
-    end
+    % Computation of the Bernstein basis
+    B = state_basis(n,tau,basis);
     
     % Evaluate the state vector
     C = evaluate_state(P, B, n);

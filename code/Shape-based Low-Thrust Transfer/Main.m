@@ -1,85 +1,92 @@
 %% Project: 
 % Date: 01/02/22
 
-%% Main script
-% Version 5 
-% Following the paper "Initial design..." by Fan et. al
-
-% This script aims to perform trajectory design optimisation processes
-% based on Bernstein polynomials collocation methods
-
-%% Graphics
+%% Set up
 set_graphics(); 
 close all
 
-animations = 0;     % Set to 1 to generate the gif
-fig = 1;            % Figure start number
+animations = 0;                         % Set to 1 to generate the gif
+fig = 1;                                % Figure start number
 
-%% Variables to be defined for each run
-m = 60;                                 % Number of discretization points
+%% Setup of the collocation method
 time_distribution = 'Linear';           % Distribution of time intervals
+basis = 'Bernstein';                    % Polynomial basis to be use
 sigma = 1;                              % If normal distribution is selected
+n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
 
-%% Collocation method 
-% Order of Bezier curve functions for each coordinate
-n = [8 8 8];
+%% Boundary conditions 
+% System data 
+r0 = 149597870700;                      % 1 AU [m]
+mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2]
+t0 = sqrt(r0^3/mu);                     % Fundamental time unit
 
-%% Initial definitions
-% Generate the time interval discretization distribution
-switch (time_distribution)
-    case 'Linear'
-        tau = linspace(0,1,m);
-    case 'Normal'
-        pd = makedist('Normal');
-        pd.sigma = sigma;
-        xpd = linspace(-3,3,m);
-        tau = cdf(pd,xpd);
-    case 'Random'
-        tau = rand(1, m);
-        tau = sort(tau);
-    case 'Gauss-Lobatto'
-        i = 1:m;
-        tau = -cos((i-1)/(m-1)*pi);
-        tau = (tau-tau(1))/(tau(end)-tau(1));
-    case 'Legendre-Gauss'
-        tau = LG_nodes(0,1,m);
-    case 'Bezier'
-        tau = B_nodes(0,1,m);
-    case 'Orthonormal Bezier'
-        tau = OB_nodes(0,1,m);
-    otherwise
-        error('An appropriate time array distribution must be specified')
-end
+% Earth's orbital elements
+coe_earth = [r0 1e-4 0 deg2rad(1) 0]; 
+theta0 = deg2rad(110);
+coe_earth = [coe_earth theta0]; 
 
-%% Boundary conditions of the problem
+% Mars' orbital elements 
+coe_mars = [1.5*r0 0.09 deg2rad(0) deg2rad(2) 0]; 
+thetaf = deg2rad(260);
+coe_mars = [coe_mars thetaf]; 
+
+% Initial state vector 
+s = coe2state(mu, coe_earth);
+initial = cylindrical2cartesian(s, false).';
+
+% Final state vector 
+s = coe2state(mu, coe_mars);
+final = cylindrical2cartesian(s, false).';
+
+%% Initial time of flight
+% Spacecraft propulsion parameters 
+T = 0.5e-3;     % Maximum acceleration 
+
+% Initial TOF
+tfapp = initial_tof(mu, T, initial, final);
+
+%% Normalization
 % Gravitational parameter of the body
 mu = 1;
 
-% Thruser/accleration and spacecraft mass data
-T = 1e-1; 
-m0 = 1/T; 
-Isp = 0.07/T;
+% Boundary conditions
+coe_earth(1) = coe_earth(1)/r0;
+coe_mars(1) = coe_mars(1)/r0;
 
-% Earth orbital element 
-coe_earth = [1 1e-4 0 deg2rad(1) 0]; 
-s = coe2state(mu, [coe_earth deg2rad(110)]);
+s = coe2state(mu, coe_earth);
 initial = cylindrical2cartesian(s, false).';
 
-% Mars orbital elements 
-coe_mars = [1.5 0.09 deg2rad(0) deg2rad(2) 0]; 
-s = coe2state(mu, [coe_mars deg2rad(260)]);
+s = coe2state(mu, coe_mars);
 final = cylindrical2cartesian(s, false).';
 
+% Time of flight
+tfapp = tfapp/t0;
+
+% Spacecraft propulsion parameters 
+T = T*(t0^2/r0);
+
+%% Initial approximation to the problem
 % Initial guess for the boundary control points
-[Papp, ~, Capp, tfapp, N] = initial_approximation(mu, tau, n, T, initial, final, 'Bernstein');
+m = 300;    
+tau = collocation_grid(m, time_distribution);
+[Papp, Capp, Napp] = initial_approximation(tau, tfapp, initial, final, basis);
+
+% New initial TOF
+tfapp = tfapp*Napp;
 
 % Initial fitting for n+1 control points
-[B, P0, C0] = initial_fitting(n, tau, Capp, 'Bernstein');
+basis = 'Orthogonal Bernstein';
+[P0, C0] = initial_fitting(n, tau, Capp, basis);
+
+% Final collocation grid and basis
+m = 60;    
+tau = collocation_grid(m, time_distribution);
+B = state_basis(n, tau, basis);
 
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; tfapp; N];
+x0 = [x0; tfapp; Napp];
 L = length(x0)-2;
 
 % Upper and lower bounds (empty in this case)
@@ -87,7 +94,7 @@ P_lb = [-Inf*ones(L,1); 0; 0];
 P_ub = [Inf*ones(L,1); Inf; Inf];
 
 % Objective function
-objective = @(x)cost_function(initial, final, mu, x, B, n, tau);
+objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis);
 
 % Linear constraints
 A = [];
@@ -96,7 +103,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, T, initial, final, n, x, B);
+nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -110,10 +117,10 @@ P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
 tf = sol(end-1);                                        % Optimal time of flight
 N = floor(sol(end));                                    % Optimal number of revolutions 
 
-P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, 'Bernstein');
+P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, basis);
 
 % Final constraints
-[c,ceq] = constraints(mu, T, initial, final, n, sol, B);
+[c,ceq] = constraints(mu, T, initial, final, n, sol, B, basis);
 
 % Final state evolution
 C = evaluate_state(P,B,n);
@@ -121,7 +128,6 @@ r = sqrt(C(1,:).^2+C(3,:).^2);
 
 % Mass evolution
 time = tau*tf;
-mass = m0-tf*Isp*tau;
 
 % Control input
 u = acceleration_control(mu,C,tf);

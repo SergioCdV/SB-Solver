@@ -14,17 +14,18 @@
 %         - vector n, the vector of degrees of approximation of the state
 %           variables
 %         - vector tau, the vector of collocation points
+%         - string basis, the polynomial basis to be used
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(initial, final, mu, x, B, n, tau)
+function [r] = cost_function(mu, initial, final, n, tau,  x, B, basis)
     % Minimize the control input
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % The Bézier control points
     tf = x(end-1);                                      % The final time of flight
     N = floor(x(end));                                  % The optimal number of revolutions
 
     % Boundary conditions
-    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, 'Orthogonal Bernstein');
+    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, basis);
 
     % State evolution
     C = evaluate_state(P,B,n);
