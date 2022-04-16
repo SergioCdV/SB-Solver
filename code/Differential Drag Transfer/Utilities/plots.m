@@ -76,34 +76,32 @@ grid on;
 %% Propulsive acceleration plot
 % Plot
 figure_propulsion = figure;
+subfigure(3,1,1)
 set(figure_propulsion,'position',[xpos + 1.2*imsize,ypos,1.2*imsize,imsize])
-title('Spacecraft acceleration in time')
-hold on
-plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
-plot(time_days, u, 'LineWidth', 0.3)
+hold on;
+plot(time_days, u(1,:), 'LineWidth', 0.3)
 yline(T, '--k')
 xlabel('Flight time [days]')
-ylabel('$\mathbf{a}$')
-legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
+ylabel('$\B$')
+grid on;n;
+
+subfigure(3,1,2)
+hold on
+plot(time_days, u(2,:), 'LineWidth', 0.3)
+yline(dT, '--k')
+xlabel('Flight time [days]')
+ylabel('$\dot{B}$')
 grid on;
 
-figure 
+subfigure(3,1,3)
 hold on
-plot(time, rad2deg(atan2(u(2,:),u(1,:)))); 
-hold off 
+plot(time_days, u(3,:), 'LineWidth', 0.3)
+yline(ddT, '--k')
+xlabel('Flight time [days]')
+ylabel('$\ddot{B}$')
 grid on;
-xlabel('Time')
-ylabel('$\theta$')
-title('Thrust in-plane angle')
 
-figure 
-hold on
-plot(time, rad2deg(atan2(u(3,:),sqrt(u(1,:).^2+u(2,:).^2)))); 
-hold off 
-grid on;
-xlabel('Time')
-ylabel('$\phi$')
-title('Thrust out-of-plane angle')
+sgtitle('Spacecraft $B^*$ state in time')
 
 %% Position coordinates
 figure_coordinates = figure;
@@ -131,15 +129,4 @@ plot(time_days(1), y(1),'*k','DisplayName','')
 plot(time_days(end),y(end),'*k','DisplayName','')
 xlabel('Flight time [days]')
 ylabel('$y$ [AU]')
-grid on;
-
-subplot(3,1,3)
-hold on
-plot(time_days, zM, '-.','LineWidth',0.3)
-plot(time_days, zE, '--','LineWidth',0.3)
-plot(time_days, z, 'k','LineWidth',1)
-plot(time_days(1), z(1),'*k','DisplayName','')
-plot(time_days(end),z(end),'*k','DisplayName','')
-xlabel('Flight time [days]')
-ylabel('$z$ [AU]')
 grid on;

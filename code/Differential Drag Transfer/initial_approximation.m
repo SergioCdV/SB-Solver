@@ -14,20 +14,13 @@
 % Outputs: - array Papp, the initial estimation of the boundary control
 %            points
 %          - array Capp, the initial estimation of the spacecraft state vector
-%          - scalar Napp, the estimated number of revolutions needed
 
-function [Papp, Capp, Napp] = initial_approximation(tau, tfapp, initial, final, basis)
+function [Papp, Capp] = initial_approximation(tau, tfapp, initial, final, basis)
     % Approximation order in the Bernstein curve
     n_init = 3; 
 
-    % Preliminary number of revolutions 
-    Napp = floor(initial(2)-final(2)+tfapp*(initial(4)+final(4))/(2*pi))-1;
-    if (Napp < 0)
-        Napp = 0;
-    end
-
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, basis);
+    Papp = boundary_conditions(tfapp, n_init, initial, final, basis);
 
     % Generate the polynomial basis
     Bapp = state_basis(n_init,tau,basis);

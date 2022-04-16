@@ -9,18 +9,14 @@
 %         - scalar n, the order of the approximating Bézier curve
 %         - vector x0, the initial 6 by 1 state vector (heliocentric position and velocity)
 %         - vector xf, the final 6 by 1 state vector (heliocentric position and velocity)
-%         - scalar N, the number of revolutions 
 %         - string basis, to select the polynomial basis to be used in the
 %           approximation
 
 % Outputs: - array P, the boundary conditions control points, of dimensions 3 x n+1 
 
-function [P] = boundary_conditions(tfapp, n, x0, xf, N, basis)
+function [P] = boundary_conditions(tfapp, n, x0, xf, basis)
     % Constants 
     P = zeros(length(x0)/2,4);            % Preallocation of the boundary control points
-
-    % Add the revolutions to the final angle
-    xf(2) = xf(2)+2*pi*N;
 
     % Switch the polynomial basis to be used
     switch (basis)

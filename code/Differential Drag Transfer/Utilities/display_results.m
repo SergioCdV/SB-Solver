@@ -12,7 +12,7 @@
 
 function display_results(exitflag, output, t0, tfapp, tf)
     % Constants
-    days2sec = t0;
+    days2sec = t0/86400;
 
     % Print the results of the optimisation
     fprintf('Exit flag: %i\n', exitflag)

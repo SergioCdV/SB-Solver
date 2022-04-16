@@ -20,19 +20,18 @@
 
 function [r] = cost_function(mu, initial, final, n, tau,  x, B, basis)
     % Minimize the control input
-    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % The Bézier control points
-    tf = x(end-1);                                      % The final time of flight
-    N = floor(x(end));                                  % The optimal number of revolutions
+    P = reshape(x(1:end-1), [length(n), max(n)+1]);   % The Bézier control points
+    tf = x(end);                                      % The final time of flight
 
     % Boundary conditions
-    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, basis);
+    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, basis);
 
     % State evolution
     C = evaluate_state(P,B,n);
 
     % Control input
-    u = acceleration_control(mu,C,tf); 
-    a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)/tf^2;
+    u = acceleration_control(mu, C, tf); 
+    a = abs(u)/tf^2;
 
     % Minimize the control input
     r = trapz(tau, a/tf);
