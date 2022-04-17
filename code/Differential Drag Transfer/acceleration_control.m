@@ -11,7 +11,17 @@
 % Outputs: - vector u, the nondimensional 3xm control vector
 
 function [u] = acceleration_control(mu,C,tf)
-    % Compute the control vector
-    r = sqrt(C(1,:).^2+C(3,:).^2);
-    u = C(7,:)-C(1,:).*C(5,:).^2+tf^2*mu.*C(1,:)/r.^3;
+    % State variables 
+    a = C(1,:);             % Semimajor axis
+    e = C(2,:);             % Eccentricity
+    n = C(3,:);             % Mean motion
+    v = C(4,:);             % True anomaly
+
+    % Compute the atmospheric density
+    rho = ones(size(a));
+
+    % Compute the control vector (ballistic coefficient)
+    vrel = n.^2..*a.^2./(1-e.^2).*(ones(size(e))+e.^2+2*e.*cos(v));
+    E = sqrt(ones(size(e))+e.^2+2*e.*cos(v))./(n.*sqrt(ones(size(e))-e.^2));
+    u = -C(5,:)./(rho.*vrel.^2.*E);
 end

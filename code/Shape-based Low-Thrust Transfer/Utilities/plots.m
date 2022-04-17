@@ -8,7 +8,7 @@ xpos=10; ypos=150;
 
 %% Final state vector
 % Final time
-time_days = tau.*tf*t0;
+time_days = tau.*tf*t0/86400;
 
 % Final spacecraft trajectory in Cartesian coordinates
 [S] = cylindrical2cartesian(C(1:3,:),true);

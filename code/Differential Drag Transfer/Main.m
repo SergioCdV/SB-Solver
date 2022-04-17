@@ -12,7 +12,7 @@ fig = 1;                                % Figure start number
 time_distribution = 'Linear';           % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
 sigma = 1;                              % If normal distribution is selected
-n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
+n = [9 9 9 9];                          % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -23,16 +23,18 @@ t0 = sqrt(r0^3/mu);               % Fundamental time unit
 % Initial orbital elements
 coe_initial = [1.5*r0 1e-4]; 
 theta0 = deg2rad(110);
-coe_initial = [coe_initial theta0]; 
 
 % Final orbital elements
 coe_final = [1*r0 0.09]; 
 thetaf = deg2rad(260);
-coe_final = [coe_final thetaf]; 
+ 
+% Spacecraft propulsive characteristics 
+Bmin = 1e-3;        % Minimum ballistic coefficient
+Bmax = 1;           % Maximum ballistic coefficient
 
 %% Initial time of flight
 %tfapp = initial_tof(mu, T, initial, final);
-tfapp = 100*t0;
+tfapp = 100*t0*86400;
 
 %% Normalization
 % Gravitational parameter of the body
@@ -42,6 +44,8 @@ mu = 1;
 coe_initial(1) = coe_initial(1)/r0;
 coe_final(1) = coe_final(1)/r0;
 
+coe_initial = [coe_initial sqrt(mu/coe_initial(1)^3) theta0];
+coe_final = [coe_final sqrt(mu/coe_final(1)^3) thetaf];
 initial = [coe_initial zeros(size(coe_initial))];
 final = [coe_final zeros(size(coe_final))];
 
@@ -87,7 +91,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, initial, final, n, x, B, basis);
+nonlcon = @(x)constraints(mu, initial, final, Bmin, Bmax, n, x, B, basis);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -103,7 +107,7 @@ tf = sol(end);                                          % Optimal time of flight
 P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, basis);
 
 % Final constraints
-[c,ceq] = constraints(mu, initial, final, n, sol, B, basis);
+[c,ceq] = constraints(mu, initial, final, Bmin, Bmax, n, sol, B, basis);
 
 % Final state evolution
 C = evaluate_state(P,B,n);
@@ -114,7 +118,6 @@ time = tau*tf;
 
 % Control input
 u = acceleration_control(mu,C,tf);
-u = u/tf^2;
 
 %% Results
 display_results(exitflag, output, t0, tfapp, tf);

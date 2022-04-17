@@ -32,11 +32,15 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, basis)
             P(:,4) = xf(1:3);
 
         case 'Orthogonal Bernstein'
+            % Assemble the linear system 
+            b = [x0 xf].';
+            b = [b([1 7 4 10]); b([2 8 5 11]); b([3 9 6 12])];
+            A = [OB_basis(n(i), [0 1]).'; OB_derivative(n(i), [0 1], 1).']; 
+            A = kron(eye(3),A);
+
             % Control points for an orthogonal Bézier curve
-            P(:,1) = x0(1:3);
-            P(:,2) = x0(1:3)+tfapp*x0(4:6)./n;
-            P(:,3) = xf(1:3)-tfapp*xf(4:6)./n;
-            P(:,4) = xf(1:3);
+            P = A\b; 
+            P = reshape(P, [n 3]).';
 
         otherwise 
             error('No valid collocation polynomial basis has been selected');

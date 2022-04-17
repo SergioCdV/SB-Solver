@@ -21,12 +21,12 @@ mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3
 t0 = sqrt(r0^3/mu);                     % Fundamental time unit
 
 % Earth's orbital elements
-coe_earth = [r0 1e-4 0 deg2rad(1) 0]; 
+coe_earth = [r0 1e-4 0 deg2rad(0) 0]; 
 theta0 = deg2rad(110);
 coe_earth = [coe_earth theta0]; 
 
 % Mars' orbital elements 
-coe_mars = [1.5*r0 0.09 deg2rad(0) deg2rad(2) 0]; 
+coe_mars = [1.5*r0 0.09 deg2rad(0) deg2rad(0) 0]; 
 thetaf = deg2rad(260);
 coe_mars = [coe_mars thetaf]; 
 
@@ -134,5 +134,5 @@ u = acceleration_control(mu,C,tf);
 u = u/tf^2;
 
 %% Results
-display_results(exitflag, output, t0, tfapp, tf);
+display_results(exitflag, output, r0, t0, tfapp, tf, dV);
 plots(); 

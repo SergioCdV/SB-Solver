@@ -6,13 +6,15 @@
 
 % Inputs: - scalar exitflag, the optimisation exitflag
 %         - structure output, containing information about the optimisation process 
+%         - scalar r0, the fundamental length unit
 %         - scalar t0, the fundamental time unit
 %         - scalar tfapp, the initial estimated time of flight
 %         - scalar tf, the final computed time of flight 
+%         - scalar dV, the final optimal cost
 
-function display_results(exitflag, output, t0, tfapp, tf)
+function display_results(exitflag, output, r0, t0, tfapp, tf, dV)
     % Constants
-    days2sec = t0;
+    days2sec = t0/86400;
 
     % Print the results of the optimisation
     fprintf('Exit flag: %i\n', exitflag)
@@ -27,4 +29,7 @@ function display_results(exitflag, output, t0, tfapp, tf)
     % Time of flight results
     fprintf("Initial estimation of flight time: %0.2f days\n", tfapp*days2sec);
     fprintf("Final calculation of flight time: %0.2f days\n\n", tf*days2sec);
+
+    % Cost results
+    fprintf("Final cost %0.2f m/s\n\n", dV*r0/t0);
 end
