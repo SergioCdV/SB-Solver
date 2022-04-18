@@ -13,6 +13,8 @@ function [tau] = collocation_grid(m, method)
     switch (method)
         case 'Linear'
             tau = linspace(0,1,m);
+        case 'Sundman'
+            tau = linspace(0,1,m);
         case 'Normal'
             pd = makedist('Normal');
             pd.sigma = sigma;

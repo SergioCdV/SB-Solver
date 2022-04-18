@@ -21,12 +21,12 @@ mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3
 t0 = sqrt(r0^3/mu);                     % Fundamental time unit
 
 % Earth's orbital elements
-coe_earth = [r0 1e-4 0 deg2rad(0) 0]; 
+coe_earth = [r0 1e-4 0 deg2rad(1) 0]; 
 theta0 = deg2rad(110);
 coe_earth = [coe_earth theta0]; 
 
 % Mars' orbital elements 
-coe_mars = [1.5*r0 0.09 deg2rad(0) deg2rad(0) 0]; 
+coe_mars = [1.524*r0 0.01 deg2rad(0) deg2rad(2) 0]; 
 thetaf = deg2rad(260);
 coe_mars = [coe_mars thetaf]; 
 
@@ -94,7 +94,7 @@ P_lb = [-Inf*ones(L,1); 0; 0];
 P_ub = [Inf*ones(L,1); Inf; Inf];
 
 % Objective function
-objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis);
+objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis, time_distribution);
 
 % Linear constraints
 A = [];
@@ -103,7 +103,7 @@ Aeq = [];
 beq = [];
 
 % Non-linear constraints
-nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis);
+nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, time_distribution);
 
 % Modification of fmincon optimisation options and parameters (according to the details in the paper)
 options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -120,7 +120,7 @@ N = floor(sol(end));                                    % Optimal number of revo
 P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, basis);
 
 % Final constraints
-[c,ceq] = constraints(mu, T, initial, final, n, sol, B, basis);
+[c,ceq] = constraints(mu, T, initial, final, n, sol, B, basis, time_distribution);
 
 % Final state evolution
 C = evaluate_state(P,B,n);
@@ -130,7 +130,7 @@ r = sqrt(C(1,:).^2+C(3,:).^2);
 time = tau*tf;
 
 % Control input
-u = acceleration_control(mu,C,tf);
+u = acceleration_control(mu,C,tf,time_distribution);
 u = u/tf^2;
 
 %% Results
