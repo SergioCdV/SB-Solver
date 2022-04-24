@@ -19,32 +19,20 @@
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, method)
+function [r] = cost_function(mu, n, t, r, tau, x, B, basis, method)
     % Minimize the control input
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % The Bézier control points
-    tf = x(end-1);                                      % The final time of flight
-    N = floor(x(end));                                  % The optimal number of revolutions
 
     % Boundary conditions
-    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+    P(:,[1 end]) = boundary_conditions(n, t, r, basis);
 
     % State evolution
     C = evaluate_state(P,B,n);
 
     % Control input
-    u = acceleration_control(mu,C,tf,method);        
-
-    % Regularization
-    switch (method)
-        case 'Sundman'
-            c = sqrt(C(1,:).^2+C(3,:).^2).^2;
-            u = u./c;
-        otherwise 
-            c = 1; 
-            u = u./c;
-    end
+    u = acceleration_control(mu,C,tf,method); 
 
     % Control cost
-    a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);         % Dimensional acceleration
-    r = trapz(tau,a);                                % Cost function
+    a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);            % Dimensional acceleration
+    r = trapz(tau,a);                                   % Cost function
 end

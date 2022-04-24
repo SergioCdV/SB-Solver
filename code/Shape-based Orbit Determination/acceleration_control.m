@@ -13,29 +13,21 @@
 % Outputs: - vector u, the nondimensional 3xm control vector
 
 function [u] = acceleration_control(mu,C,tf,method)
-    % Compute the radius vector
+    % Compute the control vector
     r = sqrt(C(1,:).^2+C(3,:).^2);
 
-    % Compute the control vector as a residual of the dynamics
+    % Normalizing factor
     switch (method)
         case 'Sundman'
-            % Normalizing factor
             h = angular_momentum(C); 
             eta = r.^2./h;
-            c = tf*r;
-
-            % Compute the control vector as a dynamics residual
-            u = [C(7,:)-C(1,:).*C(5,:).^2+c.^2.*mu.*C(1,:)/r.^3; ...
-                 C(1,:).*C(8,:)+2*C(4,:).*C(5,:); ... 
-                 C(9,:)+c.^2.*mu.*C(3,:)/r.^3];
-
+            c = eta;
         otherwise
-            % Normalizing factor
             c = tf;
-
-            % Compute the control vector as a dynamics residual
-            u = [C(7,:)-C(1,:).*C(5,:).^2+c.^2.*mu.*C(1,:)/r.^3; ...
-                 C(1,:).*C(8,:)+2*C(4,:).*C(5,:); ... 
-                 C(9,:)+c.^2.*mu.*C(3,:)/r.^3];
     end
+
+    % Compute the control vector
+    u = [C(7,:)-C(1,:).*C(5,:).^2+c.^2.*mu.*C(1,:)/r.^3; ...
+         C(1,:).*C(8,:)+2*C(4,:).*C(5,:); ... 
+         C(9,:)+c.^2.*mu.*C(3,:)/r.^3];
 end

@@ -102,18 +102,10 @@ end
 % each point.
 
 % Call function
-B = OB_basis(9,tvec);
-figure 
-hold on 
-for i = 1:10
-    plot(tvec, B(i,:))
-end
-hold off
-
-Bclas = OB_classic(P,tvec);
+Bclas = B_classic(P,tvec);
 
 % Plot results
-Fclas = figure; x0=200+imsize; y0=200; width=imsize; height=0.93*imsize; hold on
+Fclas = figure(2); x0=200+imsize; y0=200; width=imsize; height=0.93*imsize; hold on
 set(Fclas,'position',[x0,y0,width,height])
 title(sprintf('Bezier curve of order %i with classic implementation', n));
 init(P,margin);

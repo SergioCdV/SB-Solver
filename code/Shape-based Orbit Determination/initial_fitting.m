@@ -14,21 +14,18 @@
 %          - array C, the initial estimation of the spacecraft state vector
 
 function [P, C] = initial_fitting(n, tau, C, basis)
-    % Preallocation of the control points and the polynomials
-    P = zeros(length(n),max(n)+1); 
-    B = cell(length(n),1);
+    % Preallocation of the control points
+    P = zeros(length(n),max(n)+1);      
 
-    switch (basis)
-        case 'Bernstein'
-            for i = 1:length(n)
+    for i = 1:length(n)
+        switch (basis)
+            case 'Bernstein'
                 B{i} = [bernstein_basis(n(i),tau) bernstein_derivative(n(i),tau,1) bernstein_derivative(n(i),tau,2)];
-            end
-        case 'Orthogonal Bernstein'
-            for i = 1:length(n)
+            case 'Orthogonal Bernstein'
                 B{i} = [OB_basis(n(i),tau) OB_derivative(n(i),tau,1) OB_derivative(n(i),tau,2)];
-            end
-        otherwise
-            error('No valid collocation polynomial basis has been selected');
+            otherwise
+                error('No valid collocation polynomial basis has been selected');
+        end
     end
 
     % Compute the position control points leveraging the complete state vector

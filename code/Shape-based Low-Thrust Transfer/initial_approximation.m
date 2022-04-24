@@ -22,15 +22,15 @@ function [Papp, Capp, Napp] = initial_approximation(tau, tfapp, initial, final, 
 
     % Preliminary number of revolutions 
     Napp = floor(initial(2)-final(2)+tfapp*(initial(4)+final(4))/(2*pi))-1;
-    if (Napp < 0)
-        Napp = 0;
+    if (Napp <= 0)
+        Napp = 1;
     end
-
-    % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, basis);
 
     % Generate the polynomial basis
     Bapp = state_basis(n_init,tau,basis);
+
+    % Initial estimate of control points (using the non-orthonormal boundary conditions)
+    Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, [], Bapp, basis);
 
     % State vector approximations
     Capp = kron(eye(size(Bapp{1},1)/size(Papp,2)),Papp)*Bapp{1};

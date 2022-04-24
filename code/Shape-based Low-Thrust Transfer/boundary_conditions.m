@@ -10,12 +10,14 @@
 %         - vector x0, the initial 6 by 1 state vector (heliocentric position and velocity)
 %         - vector xf, the final 6 by 1 state vector (heliocentric position and velocity)
 %         - scalar N, the number of revolutions 
+%         - array P0, the initial array of control points 
+%         - cell array B, the polynomial basis to be used
 %         - string basis, to select the polynomial basis to be used in the
 %           approximation
 
 % Outputs: - array P, the boundary conditions control points, of dimensions 3 x n+1 
 
-function [P] = boundary_conditions(tfapp, n, x0, xf, N, basis)
+function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
     % Constants 
     P = zeros(length(x0)/2,4);            % Preallocation of the boundary control points
 
@@ -32,15 +34,23 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, basis)
             P(:,4) = xf(1:3);
 
         case 'Orthogonal Bernstein'
-            % Assemble the linear system 
-            b = [x0 xf].';
-            b = [b([1 7 4 10]); b([2 8 5 11]); b([3 9 6 12])];
-            A = [OB_basis(n(i), [0 1]).'; OB_derivative(n(i), [0 1], 1).']; 
-            A = kron(eye(3),A);
-
-            % Control points for an orthogonal Bézier curve
-            P = A\b; 
-            P = reshape(P, [n 3]).';
+%             % Compute the partial state evolution 
+%             N = size(P,1);                   % Number of state variables
+%             C = zeros(2*N,2);                % Preallocation for speed
+%             for i = 1:size(P,1)
+%                 C(i,:) = P0(i,3:end-2)*B{i}(3:n(i)-1,[1 end]);
+%                 C(length(n)+i,:) = P0(i,3:end-2)*B{i}(3+n(i)+1:2*n(i),[1 end]);
+%             end
+% 
+%             % Assemble the linear system 
+%             C = [x0.'-C(:,1) xf.'-C(:,end)];
+%             C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:)];
+%             
+%             % Control points for an orthogonal Bézier curve
+%             for i = 1:length(n)
+%                 B = [OB_basis(n(i),[0 1]) OB_basis(n(i),[0 1])];
+%                 P(i,:) = C(i,:)*pinv(B([1 2 end-1 end],:));
+%             end
 
         otherwise 
             error('No valid collocation polynomial basis has been selected');
