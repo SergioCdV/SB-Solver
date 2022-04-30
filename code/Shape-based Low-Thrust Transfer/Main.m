@@ -12,7 +12,7 @@ fig = 1;                                % Figure start number
 time_distribution = 'Linear';           % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
 sigma = 1;                              % If normal distribution is selected
-n = [7 7 7];                            % Order of Bezier curve functions for each coordinate
+n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -27,7 +27,7 @@ coe_earth = [coe_earth theta0];
 
 % Mars' orbital elements 
 coe_mars = [1.524*r0 0.09 deg2rad(0) deg2rad(1) 0]; 
-thetaf = deg2rad(30);
+thetaf = deg2rad(70);
 coe_mars = [coe_mars thetaf]; 
 
 % Initial state vector 
@@ -69,13 +69,10 @@ T = T*(t0^2/r0);
 % Initial guess for the boundary control points
 m = 300;    
 tau = collocation_grid(m, time_distribution);
-[Papp, Capp, Napp] = initial_approximation(tau, tfapp, initial, final, basis); 
-
-% New initial TOF
-tfapp = tfapp*Napp;
+[Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
 
 % Initial fitting for n+1 control points
-%basis = 'Orthogonal Bernstein';
+basis = 'Orthogonal Bernstein';
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis

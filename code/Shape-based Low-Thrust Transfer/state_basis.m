@@ -15,14 +15,23 @@ function [B] = state_basis(n, tau, basis)
     B = cell(length(n),1);              
 
     % Reshape the Bernstein basis
-    for i = 1:length(n)
-        switch (basis)
-            case 'Bernstein'
+    switch (basis)
+        case 'Bernstein'
+           for i = 1:length(n)
                 B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1); bernstein_derivative(n(i),tau,2)];
-            case 'Orthogonal Bernstein'
+           end
+        case 'Orthogonal Bernstein'
+            for i = 1:length(n)
                 B{i} = [OB_basis(n(i),tau); OB_derivative(n(i),tau,1); OB_derivative(n(i),tau,2)];
-            otherwise
-                error('No valid collocation polynomial basis has been selected');
-        end
+            end
+
+        case 'Chebyshev'
+            for i = 1:length(n)
+                for j = 1:length(tau)
+                    B{i}(:,j) = [CH_basis('first', n(i), tau(j)); CH_derivative('first', n(i), tau(j), 1); CH_derivative('first', n(i), tau(j), 2)];
+                end
+            end
+        otherwise
+            error('No valid collocation polynomial basis has been selected');
     end
 end

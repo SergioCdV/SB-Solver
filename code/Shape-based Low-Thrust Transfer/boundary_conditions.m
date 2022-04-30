@@ -19,7 +19,7 @@
 
 function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
     % Constants 
-    P = zeros(length(x0)/2,4);            % Preallocation of the boundary control points
+    P = zeros(length(x0)/2,4);               % Preallocation of the boundary control points
 
     % Add the revolutions to the final angle
     xf(2) = xf(2)+2*pi*N;
@@ -34,23 +34,46 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
             P(:,4) = xf(1:3);
 
         case 'Orthogonal Bernstein'
-%             % Compute the partial state evolution 
-%             N = size(P,1);                   % Number of state variables
-%             C = zeros(2*N,2);                % Preallocation for speed
-%             for i = 1:size(P,1)
-%                 C(i,:) = P0(i,3:end-2)*B{i}(3:n(i)-1,[1 end]);
-%                 C(length(n)+i,:) = P0(i,3:end-2)*B{i}(3+n(i)+1:2*n(i),[1 end]);
-%             end
-% 
-%             % Assemble the linear system 
-%             C = [x0.'-C(:,1) xf.'-C(:,end)];
-%             C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:)];
-%             
-%             % Control points for an orthogonal Bézier curve
-%             for i = 1:length(n)
-%                 B = [OB_basis(n(i),[0 1]) OB_basis(n(i),[0 1])];
-%                 P(i,:) = C(i,:)*pinv(B([1 2 end-1 end],:));
-%             end
+            % Compute the partial state evolution 
+            N = size(P,1);                   % Number of state variables
+            C = zeros(2*N,2);                % Preallocation for speed
+            for i = 1:length(n)
+                C(i,:) = P0(i,3:end-2)*B{i}(3:n(i)-1,[1 end]);
+                C(length(n)+i,:) = P0(i,3:end-2)*B{i}(n(i)+4:2*n(i),[1 end]);
+            end
+
+            % Assemble the linear system 
+            C = [x0.'-C(:,1) xf.'-C(:,end)];
+            C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:)];
+            
+            % Control points for an orthogonal Bézier curve
+            for i = 1:length(n)
+                index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
+                A = B{i}(index,[1,end]);
+                A = [A(1:4,:) A(5:8,:)];
+                P(i,:) = C(i,:)*A^(-1);
+            end
+
+        case 'Chebyshev'
+            % Compute the partial state evolution 
+            N = size(P,1);                   % Number of state variables
+            C = zeros(2*N,2);                % Preallocation for speed
+            for i = 1:length(n)
+                C(i,:) = P0(i,3:end-2)*B{i}(3:n(i)-1,[1 end]);
+                C(length(n)+i,:) = P0(i,3:end-2)*B{i}(n(i)+4:2*n(i),[1 end]);
+            end
+
+            % Assemble the linear system 
+            C = [x0.'-C(:,1) xf.'-C(:,end)];
+            C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:)];
+            
+            % Control points for an orthogonal Bézier curve
+            for i = 1:length(n)
+                index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
+                A = B{i}(index,[1,end]);
+                A = [A(1:4,:) A(5:8,:)];
+                P(i,:) = C(i,:)*A^(-1);
+            end
 
         otherwise 
             error('No valid collocation polynomial basis has been selected');
