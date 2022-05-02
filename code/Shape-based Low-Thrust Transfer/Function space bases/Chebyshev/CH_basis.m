@@ -23,9 +23,10 @@ function [Pn] = CH_basis(kind, order, u)
             Pn(1) = 1;                    % Initialization of the Chebyshev polynomials of the first kind
             Pn(2) = u;                    % Initialization of the Chebyshev polynomials of the first kind
 
-        case 'second '
+        case 'second'
             Pn(1) = 1;                    % Initialization of the Chebyshev polynomials of the second kind
             Pn(2) = 2*u;                  % Initialization of the Chebyshev polynomials of the second kind
+            
         otherwise
             error('No valid kind of polynomials was selected'); 
     end

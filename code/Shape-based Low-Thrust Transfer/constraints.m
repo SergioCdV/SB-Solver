@@ -30,10 +30,15 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method, t
     N = floor(x(end));                                  % Optimal number of revolutions
 
     % Boundary conditions points
-    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+    P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);
+
+    % Radius constraints
+    r = sqrt(C(1,:).^2+C(3,:).^2);
+    r0 = sqrt(initial(1)^2+initial(3)^2);
+    rf = sqrt(final(1)^2+final(3)^2);
 
     % Control input 
     u = acceleration_control(mu,C,tf,method);
@@ -42,5 +47,5 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method, t
     ceq = [];
 
     % Inequality (control authority)
-    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2))];
+    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])];
 end

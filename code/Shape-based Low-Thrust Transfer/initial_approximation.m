@@ -26,7 +26,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, 
     if (Napp <= 0)
         Napp = 1;
     end
-
+    
     % New initial TOF
     tfapp = tfapp*Napp;
 
@@ -35,7 +35,8 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, 
     Bapp = state_basis(n,tau,basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, [], Bapp, basis);
+    Papp = zeros(length(initial)/2,4);            
+    Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, Papp, Bapp, basis);
 
     % State vector approximations
     Capp = evaluate_state(Papp, Bapp, n);

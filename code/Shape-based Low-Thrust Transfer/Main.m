@@ -12,7 +12,7 @@ fig = 1;                                % Figure start number
 time_distribution = 'Linear';           % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
 sigma = 1;                              % If normal distribution is selected
-n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
+n = [5 5 5];                            % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -27,7 +27,7 @@ coe_earth = [coe_earth theta0];
 
 % Mars' orbital elements 
 coe_mars = [1.524*r0 0.09 deg2rad(0) deg2rad(1) 0]; 
-thetaf = deg2rad(70);
+thetaf = deg2rad(270);
 coe_mars = [coe_mars thetaf]; 
 
 % Initial state vector 
@@ -72,7 +72,7 @@ tau = collocation_grid(m, time_distribution);
 [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
 
 % Initial fitting for n+1 control points
-basis = 'Orthogonal Bernstein';
+basis = 'Chebyshev';
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis
@@ -114,7 +114,7 @@ P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
 tf = sol(end-1);                                        % Optimal time of flight
 N = floor(sol(end));                                    % Optimal number of revolutions 
 
-P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
 
 % Final constraints
 [c,ceq] = constraints(mu, T, initial, final, n, sol, B, basis, time_distribution, tau);

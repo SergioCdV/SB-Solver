@@ -15,11 +15,15 @@
 %         - string basis, to select the polynomial basis to be used in the
 %           approximation
 
-% Outputs: - array P, the boundary conditions control points, of dimensions 3 x n+1 
+% Outputs: - array P, the updated boundary conditions control points, of dimensions 3 x n+1 
 
 function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
-    % Constants 
-    P = zeros(length(x0)/2,4);               % Preallocation of the boundary control points
+    % Sanity check 
+    if (size(P0,2) < 4)
+        error('Rendezvous boundary conditions cannot be imposed');
+    else
+        P = P0;         % Initialization
+    end
 
     % Add the revolutions to the final angle
     xf(2) = xf(2)+2*pi*N;
@@ -28,10 +32,12 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
     switch (basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
-            P(:,1) = x0(1:3);
-            P(:,2) = x0(1:3)+tfapp*x0(4:6)./n;
-            P(:,3) = xf(1:3)-tfapp*xf(4:6)./n;
-            P(:,4) = xf(1:3);
+            for i = 1:length(n)
+                P(:,1) = x0(1:3);
+                P(:,2) = x0(1:3)+tfapp*x0(4:6)./n;
+                P(:,n(i)) = xf(1:3)-tfapp*xf(4:6)./n;
+                P(:,n(i)+1) = xf(1:3);
+            end
 
         case 'Orthogonal Bernstein'
             % Compute the partial state evolution 
@@ -51,7 +57,7 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
                 index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
                 A = B{i}(index,[1,end]);
                 A = [A(1:4,:) A(5:8,:)];
-                P(i,:) = C(i,:)*A^(-1);
+                P(i,[1 2 n(i) n(i)+1]) = C(i,:)*A^(-1);
             end
 
         case 'Chebyshev'
@@ -72,7 +78,7 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
                 index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
                 A = B{i}(index,[1,end]);
                 A = [A(1:4,:) A(5:8,:)];
-                P(i,:) = C(i,:)*A^(-1);
+                P(i,[1 2 n(i) n(i)+1]) = C(i,:)*A^(-1);
             end
 
         otherwise 

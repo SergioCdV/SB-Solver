@@ -27,6 +27,7 @@ function [B] = state_basis(n, tau, basis)
 
         case 'Chebyshev'
             for i = 1:length(n)
+                tau = 2*tau-1;
                 for j = 1:length(tau)
                     B{i}(:,j) = [CH_basis('first', n(i), tau(j)); CH_derivative('first', n(i), tau(j), 1); CH_derivative('first', n(i), tau(j), 2)];
                 end

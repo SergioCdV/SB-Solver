@@ -26,7 +26,7 @@ function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, method)
     N = floor(x(end));                                  % The optimal number of revolutions
 
     % Boundary conditions
-    P(:,[1 2 end-1 end]) = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+    P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
 
     % State evolution
     C = evaluate_state(P,B,n);
