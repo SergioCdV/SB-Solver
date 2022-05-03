@@ -10,7 +10,7 @@
 
 % Outputs: - cell array B, the state vector shape base basis
 
-function [B] = state_basis(n, tau, basis)
+function [B, tau] = state_basis(n, tau, basis)
     % Preallocation of the Bernstein basis
     B = cell(length(n),1);              
 
@@ -26,10 +26,18 @@ function [B] = state_basis(n, tau, basis)
             end
 
         case 'Chebyshev'
+            tau = 2*tau-1;
             for i = 1:length(n)
-                tau = 2*tau-1;
                 for j = 1:length(tau)
                     B{i}(:,j) = [CH_basis('first', n(i), tau(j)); CH_derivative('first', n(i), tau(j), 1); CH_derivative('first', n(i), tau(j), 2)];
+                end
+            end
+
+        case 'Legendre'
+             tau = 2*tau-1;
+             for i = 1:length(n)
+                for j = 1:length(tau)
+                    B{i}(:,j) = [LG_basis(n(i), tau(j)); LG_derivative(n(i), tau(j), 1); LG_derivative(n(i), tau(j), 2)];
                 end
             end
         otherwise

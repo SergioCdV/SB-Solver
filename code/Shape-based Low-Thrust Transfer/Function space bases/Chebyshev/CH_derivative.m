@@ -1,7 +1,7 @@
 %% Project: 
 % Date: 30/04/22
 
-%% Chebysev basis %%
+%% Chebysev derivative %%
 % This function allows to compute all Chebyshev polynomials derivatives of order n of both kinds,
 % evaluated at the argument u. 
 
@@ -22,7 +22,7 @@ function [B] = CH_derivative(kind, order, u, degree)
         case 2
             B = ddchebyshev(kind, order, u);
         otherwise
-            error('A higher-order Bernstein polynomial derivative is required, but has not been implemented')
+            error('A higher-order Chebyshev polynomial derivative is required, but has not been implemented')
     end
 end
 
