@@ -17,6 +17,7 @@
 
 function [x] = LG_nodes(a, b, N)
     % Polynomial orders
+    N = N-1;
     N(2) = N(1)+1; 
     N(3) = N(2)+1;
     
@@ -25,6 +26,9 @@ function [x] = LG_nodes(a, b, N)
     
     % Legendre-Gauss Vandermonde Matrix
     L = zeros(N(2),N(3));
+
+    % Derivative of the Legendre-Gauss matrix 
+    dL = zeros(N(2),N(3));
     
     % Compute the zeros of the N+1 Legendre Polynomial using the recursion relation and the Newton-Raphson method
     y0 = 2;         % Convergence value
@@ -32,16 +36,19 @@ function [x] = LG_nodes(a, b, N)
     % Index 
     index = 2:N(2); 
     while (max(abs(y-y0)) > eps)   
-        y0 = y;
-        L(1,:)=(-1).^(0:N(2));       
-        L(index,1) = 1;    
-        L(index,2) = y(index);
+        L(:,1) = 1; 
+        dL(:,1) = 0;
+
+        L(:,2) = y;    
+        dL(:,2) = 1;
        
         for k = 2:N(2)
-            L(index,k+1) = ( (2*k-1)*y(index).*L(index,k)-(k-1)*L(index,k-1) )/k;
+            L(:,k+1) = ( (2*k-1)*y*L(index,k)-(k-1)*L(index,k-1) )/k;
         end
      
         dy = ((1-y0(index))/N(2)) .* (L(index,N(2))+L(index,N(3))) ./ (L(index,N(2))-L(index,N(3)) );
+
+        y0 = y;
         y(index) = y0(index)-dy;
     end
     

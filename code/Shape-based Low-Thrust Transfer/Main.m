@@ -11,15 +11,7 @@ fig = 1;                                % Figure start number
 %% Setup of the collocation method
 time_distribution = 'Linear';           % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
-n = [30 30 30];                            % Order of Bezier curve functions for each coordinate
-
-tau = -1:1e-3:1; 
-
-for i = 1:length(tau)
-    Pn(:,i) = LG_basis(5,tau(i));
-    dPn(:,i) = LG_derivative(5,tau(i),1);
-    ddPn(:,i) = LG_derivative(5,tau(i),2);
-end
+n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -47,7 +39,7 @@ final = cylindrical2cartesian(s, false).';
 
 %% Initial time of flight
 % Spacecraft propulsion parameters 
-T = 0.5e-3;     % Maximum acceleration 
+T = 2e-3;     % Maximum acceleration 
 
 % Initial TOF
 tfapp = initial_tof(mu, T, initial, final);
@@ -83,7 +75,7 @@ basis = 'Legendre';
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis
-m = 60;    
+m = 100;    
 tau = collocation_grid(m, time_distribution);
 [B, tau] = state_basis(n, tau, basis);
 
@@ -159,6 +151,7 @@ switch (time_distribution)
         % Trajectory cost
         dV = dV/tf;
 end
+
 
 tau = collocation_grid(m, time_distribution);
 

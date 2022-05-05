@@ -22,16 +22,17 @@ function [tau] = collocation_grid(m, method)
             xpd = linspace(-3,3,m);
             tau = cdf(pd,xpd);
         case 'Random'
-            tau = rand(1, m);
+            tau = rand(1,m);
             tau = sort(tau);
         case 'Gauss-Lobatto'
             i = 1:m;
             tau = -cos((i-1)/(m-1)*pi);
             tau = (tau-tau(1))/(tau(end)-tau(1));
         case 'Legendre-Gauss'
-            tau = LG_nodes(0,1,m);
-        case 'Bezier'
-            tau = B_nodes(0,1,m);
+            tau = LG_nodes(-1,1,m);
+        case 'Chebyshev'
+            i = m:-1:1;
+            tau = cos((2*i-1)/(2*m)*pi);
         case 'Orthonormal Bezier'
             tau = OB_nodes(0,1,m);
         otherwise

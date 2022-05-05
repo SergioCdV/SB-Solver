@@ -12,7 +12,8 @@
 %           are to be evaluated
 %         - scalar degree, the degree of the derivative to be computed
 
-% Outpus: - vector Pn, containing the evaluated Chebyshev polynomials 
+% Outpus: - vector Pn, containing the evaluated Chebyshev polynomials
+%           derivatives
 
 function [B] = CH_derivative(kind, order, u, degree)
     % Switch the derivative order

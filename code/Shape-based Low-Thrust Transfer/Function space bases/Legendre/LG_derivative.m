@@ -2,7 +2,7 @@
 % Date: 30/04/22
 
 %% Legendre derivative %%
-% This function allows to compute all Legendre polynomials derivatives of order n of both kinds,
+% This function allows to compute all Legendre polynomials derivatives of order n,
 % evaluated at the argument u. 
 
 % Inputs: - scalar order, determining the order of the approximation 
@@ -10,7 +10,8 @@
 %           are to be evaluated
 %         - scalar degree, the degree of the derivative to be computed
 
-% Outpus: - vector Pn, containing the evaluated Chebyshev polynomials 
+% Outpus: - vector Pn, containing the evaluated Legendre polynomials
+%           derivatives
 
 function [B] = LG_derivative(order, u, degree)
     % Switch the derivative order
@@ -25,26 +26,37 @@ function [B] = LG_derivative(order, u, degree)
 end
 
 %% Auxiliary functions 
-% First order basis of the Chebyshev tangent space
+% First order basis of the Legendre tangent space
 function [dPn] = dlegendre(order, u)
     % Preallocation of the polynomials and its derivatives
     Pn = LG_basis(order,u);
     dPn = zeros(order+1,1); 
 
-    % Main computation
-    for i = 1:order
-        dPn(i+1) = (i+1)*Pn(i)+u*dPn(i);  % Legendre polynomials derivatives 
+    % Initialization of the polynomials 
+    dPn(1) = 0; 
+    dPn(2) = 1; 
+
+    % Bonnet's formula 
+    for i = 3:order+1
+        n = i-1;
+        dPn(i) = ((2*n-1)*(Pn(i-1)+u*dPn(i-1))-(n-1)*dPn(i-2))/n; 
     end
 end
 
-% Second order basis of the Chebyshev tangent space
+% Second order basis of the Legendre tangent space
 function [ddPn] = ddlegendre(order, u)
     % Preallocation of the polynomials and its derivatives
+    Pn = LG_basis(order,u);
     dPn = LG_derivative(order,u,1); 
     ddPn = zeros(order+1,1);
 
-    % Main computation
-    for i = 1:order
-        ddPn(i+1) = (i+2)*dPn(i)+u*ddPn(i);  % Legendre polynomials derivatives 
+    % Initialization of the polynomials 
+    ddPn(1) = 0; 
+    ddPn(2) = 0; 
+
+    % Bonnet's formula 
+    for i = 3:order+1
+        n = i-1;
+        ddPn(i) = ((2*n-1)*(2*dPn(i-1)+u*ddPn(i-1))-(n-1)*ddPn(i-2))/n; 
     end
 end

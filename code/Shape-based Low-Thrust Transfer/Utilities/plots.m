@@ -40,9 +40,9 @@ figure_orbits = figure;
 view(3)
 set(figure_orbits,'position',[xpos,ypos,1.2*imsize,imsize])
 hold on
-xlabel('$X$ coordinate')
-ylabel('$Y$ coordinate')
-zlabel('$Z$ coordinate')
+xlabel('$X$ coordinate [AU]')
+ylabel('$Y$ coordinate [AU]')
+zlabel('$Z$ coordinate [AU]')
 plot3(0,0,0,'*k');
 plot3(x(1),y(1),z(1),'*k');
 plot3(xE,yE,zE,'LineStyle','--','Color','r','LineWidth',0.3);   % Earth's orbit
@@ -67,8 +67,8 @@ if (animations == 1)
     writegif('orbit.gif',im,m,2/m);
 end
 
-legend('off')
-title('Transfer orbit')
+%legend('off')
+%title('Transfer orbit')
 plot3(x,y,z,'k','LineWidth',1);
 plot3(x(m),y(m),z(m),'*k');
 grid on;
