@@ -11,12 +11,22 @@ fig = 1;                                % Figure start number
 %% Setup of the collocation method
 time_distribution = 'Linear';           % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
-n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
+n = [20 20 20];                            % Order of Bezier curve functions for each coordinate
+
+tau = -1:1e-3:1; 
+
+for i = 1:length(tau)
+    Pn(:,i) = LR_basis(5,tau(i));
+    dPn(:,i) = LR_derivative(5,tau(i),1);
+    ddPn(:,i) = LR_derivative(5,tau(i),2);
+end
+
+plot(tau,Pn);
 
 %% Boundary conditions 
 % System data 
 r0 = 149597870700;                      % 1 AU [m]
-mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2]
+mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2] 
 t0 = sqrt(r0^3/mu);                     % Fundamental time unit
 
 % Earth's orbital elements
@@ -25,8 +35,8 @@ theta0 = deg2rad(95);
 coe_earth = [coe_earth theta0]; 
 
 % Mars' orbital elements 
-coe_mars = [1.524*r0 0.09 deg2rad(0) deg2rad(1) 0]; 
-thetaf = deg2rad(270);
+coe_mars = [1.05*r0 0.09 deg2rad(0) deg2rad(1) 0]; 
+thetaf = deg2rad(50);
 coe_mars = [coe_mars thetaf]; 
 
 % Initial state vector 
@@ -39,7 +49,7 @@ final = cylindrical2cartesian(s, false).';
 
 %% Initial time of flight
 % Spacecraft propulsion parameters 
-T = 2e-3;     % Maximum acceleration 
+T = 0.05e-3;     % Maximum acceleration 
 
 % Initial TOF
 tfapp = initial_tof(mu, T, initial, final);
@@ -66,12 +76,12 @@ T = T*(t0^2/r0);
 
 %% Initial approximation to the problem
 % Initial guess for the boundary control points
-m = 300;    
+m = 600;    
 tau = collocation_grid(m, time_distribution);
 [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
 
 % Initial fitting for n+1 control points
-basis = 'Legendre';
+%basis = 'Laguerre';
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis
@@ -82,7 +92,7 @@ tau = collocation_grid(m, time_distribution);
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; tfapp; Napp];
+x0 = [x0; tfapp; 2];
 L = length(x0)-2;
 
 % Upper and lower bounds (empty in this case)

@@ -37,7 +37,21 @@ function [B, tau] = state_basis(n, tau, basis)
                 for j = 1:length(tau)
                     B{i}(:,j) = [LG_basis(n(i), tau(j)); LG_derivative(n(i), tau(j), 1); LG_derivative(n(i), tau(j), 2)];
                 end
-            end
+             end
+
+        case 'Hermite'
+             for i = 1:length(n)
+                for j = 1:length(tau)
+                    B{i}(:,j) = [HT_basis(n(i), tau(j)); HT_derivative(n(i), tau(j), 1); HT_derivative(n(i), tau(j), 2)];
+                end
+             end
+        case 'Laguerre'
+             for i = 1:length(n)
+                for j = 1:length(tau)
+                    B{i}(:,j) = [LR_basis(n(i), tau(j)); LR_derivative(n(i), tau(j), 1); LR_derivative(n(i), tau(j), 2)];
+                end
+             end
+
         otherwise
             error('No valid collocation polynomial basis has been selected');
     end

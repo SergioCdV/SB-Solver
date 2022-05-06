@@ -28,7 +28,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, 
     end
     
     % New initial TOF
-    tfapp = tfapp*Napp;
+    tfapp = tfapp*Napp*10;
 
     % Generate the polynomial basis
     n = [n_init n_init n_init];

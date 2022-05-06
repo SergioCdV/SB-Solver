@@ -34,22 +34,21 @@ function [dPn] = dhermite(order, u)
 
     % Bonnet's formula 
     for i = 2:order+1
-        dPn(i) = 2*i*Pn(i-1); 
+        n = i-1;
+        dPn(i) = 2*n*Pn(i-1); 
     end
 end
 
 % Second order basis of the Hermite tangent space
 function [ddPn] = ddhermite(order, u)
     % Preallocation of the polynomials and its derivatives
+    Pn = HT_basis(order,u);
     dPn = HT_derivative(order,u,1); 
-
-    % Initialization of the polynomials 
-    ddPn(1) = 0; 
-    ddPn(2) = 0; 
+    ddPn = zeros(order+1,1); 
 
     % Bonnet's formula 
-    for i = 2:order
+    for i = 1:order+1
         n = i-1;
-        dPn(i+1) = 2*u*ddPn(i)+4*dPn(i)-2*n*ddPn(i-1); 
+        ddPn(i) = 2*u*dPn(i)-2*n*Pn(i); 
     end
 end

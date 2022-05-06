@@ -40,9 +40,9 @@ figure_orbits = figure;
 view(3)
 set(figure_orbits,'position',[xpos,ypos,1.2*imsize,imsize])
 hold on
-xlabel('$X$ coordinate [AU]')
-ylabel('$Y$ coordinate [AU]')
-zlabel('$Z$ coordinate [AU]')
+xlabel('$X$ coordinate')
+ylabel('$Y$ coordinate')
+zlabel('$Z$ coordinate')
 plot3(0,0,0,'*k');
 plot3(x(1),y(1),z(1),'*k');
 plot3(xE,yE,zE,'LineStyle','--','Color','r','LineWidth',0.3);   % Earth's orbit
