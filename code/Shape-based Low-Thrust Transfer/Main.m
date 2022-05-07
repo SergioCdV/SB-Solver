@@ -11,17 +11,7 @@ fig = 1;                                % Figure start number
 %% Setup of the collocation method
 time_distribution = 'Linear';           % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
-n = [20 20 20];                            % Order of Bezier curve functions for each coordinate
-
-tau = -1:1e-3:1; 
-
-for i = 1:length(tau)
-    Pn(:,i) = LR_basis(5,tau(i));
-    dPn(:,i) = LR_derivative(5,tau(i),1);
-    ddPn(:,i) = LR_derivative(5,tau(i),2);
-end
-
-plot(tau,Pn);
+n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -76,7 +66,7 @@ T = T*(t0^2/r0);
 
 %% Initial approximation to the problem
 % Initial guess for the boundary control points
-m = 600;    
+m = 1000;    
 tau = collocation_grid(m, time_distribution);
 [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
 

@@ -18,25 +18,24 @@
 %          - scalar tfapp, the initial initial time of flight
 
 function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis)
-    % Approximation order in the Bernstein curve
-    n_init = 3; 
-
     % Preliminary number of revolutions 
     Napp = floor(initial(2)-final(2)+tfapp*(initial(4)+final(4))/(2*pi))-1;
     if (Napp <= 0)
         Napp = 1;
     end
+    Napp = 2; 
     
     % New initial TOF
-    tfapp = tfapp*Napp*10;
+    tfapp = tfapp*Napp;
 
     % Generate the polynomial basis
+    n_init = 3; 
     n = [n_init n_init n_init];
     Bapp = state_basis(n,tau,basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(length(initial)/2,4);            
-    Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, Papp, Bapp, basis);
+    Papp = zeros(length(initial)/2,n_init+1);  
+    Papp = boundary_conditions(tfapp, n, initial, final, Napp, Papp, Bapp, basis);
 
     % State vector approximations
     Capp = evaluate_state(Papp, Bapp, n);

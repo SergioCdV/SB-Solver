@@ -67,10 +67,10 @@ if (animations == 1)
     writegif('orbit.gif',im,m,2/m);
 end
 
-%legend('off')
-%title('Transfer orbit')
+legend('off')
+title('Transfer orbit')
 plot3(x,y,z,'k','LineWidth',1);
-plot3(x(m),y(m),z(m),'*k');
+plot3(x(end),y(end),z(end),'*k');
 grid on;
 
 %% Propulsive acceleration plot
