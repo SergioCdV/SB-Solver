@@ -23,13 +23,13 @@ function [tau] = collocation_grid(m, method)
             tau = rand(1,m);
             tau = sort(tau);
         case 'Legendre'
-            tau = LG_nodes(-1,1,m);
+            tau = LG_nodes(m);
         case 'Chebyshev'
-            tau = CH_nodes(-1,1,m);
+            tau = CH_nodes(m);
         case 'Laguerre'
             tau = LR_nodes(0,1,m);
-        case 'Orthonormal Bezier'
-            tau = OB_nodes(0,1,m);
+        case 'Orthogonal Bernstein'
+            tau = OB_nodes(m);
         case 'Sundman'
             tau = linspace(0,1,m);
         otherwise

@@ -1,58 +1,43 @@
 %% Project:  
 % Sergio Cuevas del Valle
-% Date: 20/01/20
+% Date: 09/05/22
 % File: OB_nodes
 % Issue: 0 
 % Validated: 
 
-%% Orthogonoal Bézier nodes %%
-% This scripts provides the function to compute the orthogonal Bézier nodes
+%% Orthogonal Bernstein nodes %%
+% This scripts provides the function to compute the Legendre-Gauss nodes
 % for a given domain interval and polynomial degree 
 
 % Inputs: - scalar N, the degree of the Legendre polynomial of interest
-%         - scalar a, the initial domain boundary 
-%         - scalar b, the final domain boundary 
 
-% Output: - vector y, the Bézier nodes of interest
+% Output: - vector y, the orthogonal Bernstein nodes of interest
 
-function [y] = OB_nodes(a,b,N)
-    % Polynomial order 
-    n = N+1; 
+function [y] = OB_nodes(N)
+    % Polynomial orders
+    N = N-1;
+    N(2) = N(1)+1; 
+    N(3) = N(1)+2;
+    
+    % Initial guess using Gauss-Radau nodes
+    y = linspace(0, 1, N(2)).';
+        
+    % Compute the zeros of the N+1 Legendre Polynomial using the recursion relation and the Newton-Raphson method
+    y0 = 2;         % Convergence value
+    tol = 1e-10;    % Tolerance
 
-    % Initial guess for the nodes
-    y = LG_nodes(a,b,N);
-    y = linspace(0,1,N);
+    iter = 1;       % Initial iteration 
+    maxIter = 1e4;  % Maximum number of iterations
 
-    % Main loop
-    for i = 1:N
-        % Newton method setup 
-        GoOn = true; 
-        iter = 0; 
-        maxIter = 100; 
-        tol = 1e-3; 
+    % Newton-Rhapson method
+    while (max(abs(y-y0)) > tol && iter < maxIter)   
+        L = OB_basis(N(2),y).';
+        dL = OB_derivative(N(2),y,1).';
 
-        % Initial guess 
-        roots = y(i);
+        dy = -L(:,N(3))./dL(:,N(3));
+        y0 = y; 
+        y = y0+dy;
 
-        % Newton method 
-        while (GoOn && iter < maxIter)
-            % Compute the Bézier polynomial and its derivative 
-            f = OB_basis(i, roots);   
-            df = OB_derivative(i, roots, 1);
-
-            % Newton step 
-            ds = -f(end)/df(end);
-            roots = roots + ds;
-
-            % Convergence analysis 
-            if (abs(ds) < tol)
-                GoOn = false;
-            else
-                iter = iter+1; 
-            end
-        end
-
-        % Save the results 
-        y(i) = roots;
+        iter = iter+1;
     end
 end

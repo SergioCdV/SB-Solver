@@ -46,7 +46,6 @@ end
 % Second order basis of the Legendre tangent space
 function [ddPn] = ddlegendre(order, u)
     % Preallocation of the polynomials and its derivatives
-    Pn = LG_basis(order,u);
     dPn = LG_derivative(order,u,1); 
     ddPn = zeros(order+1,1);
 
