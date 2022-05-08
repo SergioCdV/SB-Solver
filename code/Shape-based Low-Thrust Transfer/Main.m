@@ -10,8 +10,8 @@ fig = 1;                                % Figure start number
 
 %% Setup of the collocation method
 time_distribution = 'Linear';           % Distribution of time intervals
-basis = 'Bernstein';                    % Polynomial basis to be use
-n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
+basis = 'Orthogonal Bernstein';                    % Polynomial basis to be use
+n = [11 11 11];                            % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -25,8 +25,8 @@ theta0 = deg2rad(95);
 coe_earth = [coe_earth theta0]; 
 
 % Mars' orbital elements 
-coe_mars = [1.05*r0 0.09 deg2rad(0) deg2rad(1) 0]; 
-thetaf = deg2rad(50);
+coe_mars = [1.05*r0 4e-2 deg2rad(0) deg2rad(1) 0]; 
+thetaf = deg2rad(410);
 coe_mars = [coe_mars thetaf]; 
 
 % Initial state vector 
@@ -66,23 +66,22 @@ T = T*(t0^2/r0);
 
 %% Initial approximation to the problem
 % Initial guess for the boundary control points
-m = 1000;    
+m = 300;    
 tau = collocation_grid(m, time_distribution);
 [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
 
 % Initial fitting for n+1 control points
-%basis = 'Laguerre';
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis
-m = 100;    
+m = 60;  
 tau = collocation_grid(m, time_distribution);
 [B, tau] = state_basis(n, tau, basis);
 
 %% Optimisiation
 % Initial guess 
 x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-x0 = [x0; tfapp; 2];
+x0 = [x0; tfapp; Napp];
 L = length(x0)-2;
 
 % Upper and lower bounds (empty in this case)
@@ -152,8 +151,13 @@ switch (time_distribution)
         dV = dV/tf;
 end
 
-
-tau = collocation_grid(m, time_distribution);
+% Time domain normalization 
+switch (time_distribution)
+    case 'Chebyshev'
+        tau = (1/2)*(1+tau);
+    case 'Legendre'
+        tau = (1/2)*(1+tau);
+end
 
 %% Results
 display_results(exitflag, output, r0, t0, tfapp, tf, dV);

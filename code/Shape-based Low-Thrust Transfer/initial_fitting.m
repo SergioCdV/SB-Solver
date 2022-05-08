@@ -24,9 +24,6 @@ function [P, C] = initial_fitting(n, tau, C, basis)
         A = [B{i}(1:n(i)+1,:) B{i}(n(i)+2:2*(n(i)+1),:) B{i}(2*n(i)+3:end,:)];
         P(i,:) = C(i,:)*pinv(A);
     end
-
-    % Computation of the Bernstein basis
-    B = state_basis(n,tau,basis);
     
     % Evaluate the state vector
     C = evaluate_state(P, B, n);

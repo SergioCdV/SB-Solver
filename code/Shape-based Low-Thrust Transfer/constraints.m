@@ -29,6 +29,9 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method, t
     tf = x(end-1);                                      % Final time of flight 
     N = floor(x(end));                                  % Optimal number of revolutions
 
+    % Trajectory evolution
+    C2 = evaluate_state(P,B,n);
+
     % Boundary conditions points
     P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
 

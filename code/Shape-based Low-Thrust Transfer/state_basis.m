@@ -45,6 +45,7 @@ function [B, tau] = state_basis(n, tau, basis)
                     B{i}(:,j) = [HT_basis(n(i), tau(j)); HT_derivative(n(i), tau(j), 1); HT_derivative(n(i), tau(j), 2)];
                 end
              end
+             
         case 'Laguerre'
              for i = 1:length(n)
                 for j = 1:length(tau)

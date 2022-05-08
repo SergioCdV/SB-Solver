@@ -28,14 +28,18 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
     % Add the revolutions to the final angle
     xf(2) = xf(2)+2*pi*N;
 
+    % Dimensionalizing of the velocity 
+    x0(4:6) = tfapp*x0(4:6);
+    xf(4:6) = tfapp*xf(4:6);
+
     % Switch the polynomial basis to be used
     switch (basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
             for i = 1:length(n)
                 P(:,1) = x0(1:3);
-                P(:,2) = x0(1:3)+tfapp*x0(4:6)./n;
-                P(:,n(i)) = xf(1:3)-tfapp*xf(4:6)./n;
+                P(:,2) = x0(1:3)+x0(4:6)./n;
+                P(:,n(i)) = xf(1:3)-xf(4:6)./n;
                 P(:,n(i)+1) = xf(1:3);
             end
 

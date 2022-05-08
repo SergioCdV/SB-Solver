@@ -19,11 +19,10 @@
 
 function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis)
     % Preliminary number of revolutions 
-    Napp = floor(initial(2)-final(2)+tfapp*(initial(4)+final(4))/(2*pi))-1;
-    if (Napp <= 0)
+    Napp = ceil( (initial(2)-final(2)+tfapp*(initial(4)+final(4)) ) / (2*pi) );
+    if (Napp < 0)
         Napp = 1;
-    end
-    Napp = 2; 
+    end 
     
     % New initial TOF
     tfapp = tfapp*Napp;
