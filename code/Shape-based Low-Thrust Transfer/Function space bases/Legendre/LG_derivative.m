@@ -30,16 +30,16 @@ end
 function [dPn] = dlegendre(order, u)
     % Preallocation of the polynomials and its derivatives
     Pn = LG_basis(order,u);
-    dPn = zeros(order+1,1); 
+    dPn = zeros(order+1,length(u)); 
 
     % Initialization of the polynomials 
-    dPn(1) = 0; 
-    dPn(2) = 1; 
+    dPn(1,:) = zeros(1,length(u)); 
+    dPn(2,:) = ones(1,length(u)); 
 
     % Bonnet's formula 
     for i = 3:order+1
         n = i-1;
-        dPn(i) = ((2*n-1)*(Pn(i-1)+u*dPn(i-1))-(n-1)*dPn(i-2))/n; 
+        dPn(i,:) = ((2*n-1)*(Pn(i-1,:)+u.*dPn(i-1,:))-(n-1)*dPn(i-2,:))/n; 
     end
 end
 
@@ -47,15 +47,15 @@ end
 function [ddPn] = ddlegendre(order, u)
     % Preallocation of the polynomials and its derivatives
     dPn = LG_derivative(order,u,1); 
-    ddPn = zeros(order+1,1);
+    ddPn = zeros(order+1,length(u));
 
     % Initialization of the polynomials 
-    ddPn(1) = 0; 
-    ddPn(2) = 0; 
+    ddPn(1,:) = zeros(1,length(u)); 
+    ddPn(2,:) = zeros(1,length(u));  
 
     % Bonnet's formula 
     for i = 3:order+1
         n = i-1;
-        ddPn(i) = ((2*n-1)*(2*dPn(i-1)+u*ddPn(i-1))-(n-1)*ddPn(i-2))/n; 
+        ddPn(i,:) = ((2*n-1)*(2*dPn(i-1,:)+u.*ddPn(i-1,:))-(n-1)*ddPn(i-2,:))/n; 
     end
 end

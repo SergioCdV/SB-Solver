@@ -30,12 +30,12 @@ end
 function [dPn] = dhermite(order, u)
     % Preallocation of the polynomials and its derivatives
     Pn = HT_basis(order,u);
-    dPn = zeros(order+1,1); 
+    dPn = zeros(order+1,length(u)); 
 
     % Bonnet's formula 
     for i = 2:order+1
         n = i-1;
-        dPn(i) = 2*n*Pn(i-1); 
+        dPn(i,:) = 2*n*Pn(i-1,:); 
     end
 end
 
@@ -44,11 +44,11 @@ function [ddPn] = ddhermite(order, u)
     % Preallocation of the polynomials and its derivatives
     Pn = HT_basis(order,u);
     dPn = HT_derivative(order,u,1); 
-    ddPn = zeros(order+1,1); 
+    ddPn = zeros(order+1,length(u)); 
 
     % Bonnet's formula 
     for i = 1:order+1
         n = i-1;
-        ddPn(i) = 2*u*dPn(i)-2*n*Pn(i); 
+        ddPn(i,:) = 2*u.*dPn(i,:)-2*n*Pn(i,:); 
     end
 end

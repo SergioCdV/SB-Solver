@@ -15,23 +15,23 @@
 
 function [Pn] = CH_basis(kind, order, u)
     % Preallocation of the polynomials 
-    Pn = zeros(order+1,1); 
+    Pn = zeros(order+1,length(u)); 
 
     % Main computation 
     switch (kind)
         case 'first'
-            Pn(1) = 1;                    % Initialization of the Chebyshev polynomials of the first kind
-            Pn(2) = u;                    % Initialization of the Chebyshev polynomials of the first kind
+            Pn(1,:) = ones(1,length(u));    % Initialization of the Chebyshev polynomials of the first kind
+            Pn(2,:) = u;                    % Initialization of the Chebyshev polynomials of the first kind
 
         case 'second'
-            Pn(1) = 1;                    % Initialization of the Chebyshev polynomials of the second kind
-            Pn(2) = 2*u;                  % Initialization of the Chebyshev polynomials of the second kind
+            Pn(1,:) = 1;                    % Initialization of the Chebyshev polynomials of the second kind
+            Pn(2,:) = 2*u;                  % Initialization of the Chebyshev polynomials of the second kind
             
         otherwise
             error('No valid kind of polynomials was selected'); 
     end
   
     for i = 2:order
-        Pn(i+1) = 2*u*Pn(i)-Pn(i-1);      % Chebyshev polynomials
+        Pn(i+1,:) = 2*u.*Pn(i,:)-Pn(i-1,:); % Chebyshev polynomials
     end
 end

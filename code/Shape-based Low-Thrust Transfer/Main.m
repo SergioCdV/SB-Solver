@@ -10,8 +10,8 @@ fig = 1;                                % Figure start number
 
 %% Setup of the collocation method
 time_distribution = 'Linear';           % Distribution of time intervals
-basis = 'Chebyshev';                    % Polynomial basis to be use
-n = [9 9 9];                            % Order of Bezier curve functions for each coordinate
+basis = 'Bernstein';                    % Polynomial basis to be use
+n = [12 12 12];                            % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -25,7 +25,7 @@ theta0 = deg2rad(95);
 coe_earth = [coe_earth theta0]; 
 
 % Mars' orbital elements 
-coe_mars = [1.05*r0 4e-2 deg2rad(0) deg2rad(1) 0]; 
+coe_mars = [1.5*r0 1e-4 deg2rad(0) deg2rad(1) 0]; 
 thetaf = deg2rad(410);
 coe_mars = [coe_mars thetaf]; 
 
@@ -39,7 +39,7 @@ final = cylindrical2cartesian(s, false).';
 
 %% Initial time of flight
 % Spacecraft propulsion parameters 
-T = 0.05e-3;     % Maximum acceleration 
+T = 0.5e-3;     % Maximum acceleration 
 
 % Initial TOF
 tfapp = initial_tof(mu, T, initial, final);
@@ -74,7 +74,7 @@ tau = collocation_grid(m, time_distribution);
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis
-m = 150;  
+m = 60;  
 tau = collocation_grid(m, time_distribution);
 [B, tau] = state_basis(n, tau, basis);
 

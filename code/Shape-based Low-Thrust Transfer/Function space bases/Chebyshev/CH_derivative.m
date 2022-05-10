@@ -32,24 +32,25 @@ end
 function [dPn] = dchebyshev(kind, order, u)
     % Preallocation of the polynomials and its derivatives
     Pn = CH_basis(kind,order,u);
-    dPn = zeros(order+1,1); 
+    dPn = zeros(order+1,length(u)); 
 
     % Main computation 
     switch (kind)
         case 'first'
-            dPn(1) = 0;       % Initialization of the Chebyshev polynomials of the first kind
-            dPn(2) = 1;       % Initialization of the Chebyshev polynomials of the first kind
+            dPn(1,:) = zeros(1,length(u));      % Initialization of the Chebyshev polynomials of the first kind
+            dPn(2,:) = ones(1,length(u));       % Initialization of the Chebyshev polynomials of the first kind
 
         case 'second'
-            dPn(1) = 0;       % Initialization of the Chebyshev polynomials of the second kind
-            dPn(2) = 2;       % Initialization of the Chebyshev polynomials of the second kind
+            dPn(1,:) = zeros(1,length(u));      % Initialization of the Chebyshev polynomials of the second kind
+            dPn(2,:) = 2*ones(1,length(u));     % Initialization of the Chebyshev polynomials of the second kind
 
         otherwise
             error('No valid kind of polynomials was selected'); 
     end
   
+    % Chebyshev polynomials derivatives 
     for i = 2:order
-        dPn(i+1) = 2*Pn(i)+2*u*dPn(i)-dPn(i-1);  % Chebyshev polynomials derivatives 
+        dPn(i+1,:) = 2*Pn(i,:)+2*u.*dPn(i,:)-dPn(i-1,:);  
     end
 end
 
@@ -57,24 +58,25 @@ end
 function [ddPn] = ddchebyshev(kind, order, u)
     % Preallocation of the polynomials
     dPn = dchebyshev(kind, order, u);
-    ddPn = zeros(order+1,1);  
+    ddPn = zeros(order+1,length(u));  
 
     % Main computation 
     switch (kind)
         case 'first'
-            ddPn(1) = 0;                    % Initialization of the Chebyshev polynomials of the first kind
-            ddPn(2) = 0;                    % Initialization of the Chebyshev polynomials of the first kind
+            ddPn(1,:) = zeros(1,length(u));                    % Initialization of the Chebyshev polynomials of the first kind
+            ddPn(2,:) = zeros(1,length(u));                    % Initialization of the Chebyshev polynomials of the first kind
 
         case 'second'
-            ddPn(1) = 0;                    % Initialization of the Chebyshev polynomials of the second kind
-            ddPn(2) = 0;                    % Initialization of the Chebyshev polynomials of the second kind
+            ddPn(1,:) = zeros(1,length(u));                    % Initialization of the Chebyshev polynomials of the second kind
+            ddPn(2,:) = zeros(1,length(u));                    % Initialization of the Chebyshev polynomials of the second kind
 
         otherwise
             error('No valid kind of polynomials was selected'); 
     end
   
+    % Chebyshev polynomials derivatives 
     for i = 2:order
-        ddPn(i+1) = 2*u*ddPn(i)+4*dPn(i)-ddPn(i-1);  % Chebyshev polynomials derivatives 
+        ddPn(i+1,:) = 2*u.*ddPn(i,:)+4*dPn(i,:)-ddPn(i-1,:);  
     end
     
 end

@@ -27,7 +27,10 @@ function [tau] = collocation_grid(m, method)
         case 'Chebyshev'
             tau = CH_nodes(m);
         case 'Laguerre'
-            tau = LR_nodes(0,1,m);
+            tau = LR_nodes(m,0);
+        case 'Hermite'
+            % Depricated
+            tau = HT_nodes(m);
         case 'Orthogonal Bernstein'
             tau = OB_nodes(m);
         case 'Sundman'

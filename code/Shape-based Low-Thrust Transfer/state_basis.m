@@ -27,30 +27,22 @@ function [B, tau] = state_basis(n, tau, basis)
 
         case 'Chebyshev'
             for i = 1:length(n)
-                for j = 1:length(tau)
-                    B{i}(:,j) = [CH_basis('first', n(i), tau(j)); CH_derivative('first', n(i), tau(j), 1); CH_derivative('first', n(i), tau(j), 2)];
-                end
+                B{i} = [CH_basis('first', n(i), tau); CH_derivative('first', n(i), tau, 1); CH_derivative('first', n(i), tau, 2)];
             end
 
         case 'Legendre'
              for i = 1:length(n)
-                for j = 1:length(tau)
-                    B{i}(:,j) = [LG_basis(n(i), tau(j)); LG_derivative(n(i), tau(j), 1); LG_derivative(n(i), tau(j), 2)];
-                end
+                B{i} = [LG_basis(n(i), tau); LG_derivative(n(i), tau, 1); LG_derivative(n(i), tau, 2)];
              end
 
         case 'Hermite'
              for i = 1:length(n)
-                for j = 1:length(tau)
-                    B{i}(:,j) = [HT_basis(n(i), tau(j)); HT_derivative(n(i), tau(j), 1); HT_derivative(n(i), tau(j), 2)];
-                end
+                B{i} = [HT_basis(n(i), tau); HT_derivative(n(i), tau, 1); HT_derivative(n(i), tau, 2)];
              end
              
         case 'Laguerre'
              for i = 1:length(n)
-                for j = 1:length(tau)
-                    B{i}(:,j) = [LR_basis(n(i), tau(j)); LR_derivative(n(i), tau(j), 1); LR_derivative(n(i), tau(j), 2)];
-                end
+                B{i} = [LR_basis(n(i), tau); LR_derivative(n(i), tau, 1); LR_derivative(n(i), tau, 2)];
              end
 
         otherwise

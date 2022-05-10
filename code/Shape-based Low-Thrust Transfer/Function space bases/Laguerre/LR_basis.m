@@ -13,15 +13,15 @@
 
 function [Pn] = LR_basis(order, u)
     % Preallocation of the polynomials 
-    Pn = zeros(order+1,1); 
+    Pn = zeros(order+1,length(u)); 
 
     % Initialization of the polynomials 
-    Pn(1) = 1; 
-    Pn(2) = 1-u; 
+    Pn(1,:) = ones(1,length(u)); 
+    Pn(2,:) = 1-u; 
 
     % Bonnet's formula 
     for i = 2:order
         n = i-1;
-        Pn(i+1) = ((2*n-1-u)*Pn(i)-n*Pn(i-1))/(n+1); 
+        Pn(i+1,:) = ((2*n-1-u).*Pn(i,:)-n*Pn(i-1,:))/(n+1); 
     end
 end

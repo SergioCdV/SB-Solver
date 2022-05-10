@@ -13,15 +13,15 @@
 
 function [Pn] = HT_basis(order, u)
     % Preallocation of the polynomials 
-    Pn = zeros(order+1,1); 
+    Pn = zeros(order+1,length(u)); 
 
     % Initialization of the polynomials 
-    Pn(1) = 1;
-    Pn(2) = 2*u;
+    Pn(1,:) = ones(1,length(u));
+    Pn(2,:) = 2*u;
 
     % Bonnet's formula 
     for i = 2:order
         n = i-1;
-        Pn(i+1) = 2*u*Pn(i)-2*n*Pn(i-1); 
+        Pn(i+1,:) = 2*u.*Pn(i,:)-2*n*Pn(i-1,:); 
     end
 end
