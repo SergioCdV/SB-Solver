@@ -18,9 +18,14 @@
 %          - scalar tfapp, the initial initial time of flight
 
 function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis)
-    % Preliminary number of revolutions 
-    Napp = ceil( (initial(2)-final(2)+tfapp*(initial(4)+final(4)) ) / (2*pi) );
-    if (Napp < 0)
+    % Preliminary number of revolutions
+    dtheta = final(2)-initial(2);
+    if (dtheta < 0)
+        dtheta = dtheta + 2*pi; 
+    end
+    
+    Napp = ceil( (dtheta+tfapp*(initial(4)+final(4)) ) / (2*pi) );
+    if (Napp <= 0)
         Napp = 1;
     end 
     

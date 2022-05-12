@@ -11,7 +11,7 @@ fig = 1;                                % Figure start number
 %% Setup of the collocation method
 time_distribution = 'Linear';           % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
-n = [12 12 12];                            % Order of Bezier curve functions for each coordinate
+n = [14 14 14];                            % Order of Bezier curve functions for each coordinate
 
 %% Boundary conditions 
 % System data 
@@ -25,9 +25,12 @@ theta0 = deg2rad(95);
 coe_earth = [coe_earth theta0]; 
 
 % Mars' orbital elements 
-coe_mars = [1.5*r0 1e-4 deg2rad(0) deg2rad(1) 0]; 
-thetaf = deg2rad(410);
+coe_mars = [1*r0 1e-2 deg2rad(80) deg2rad(5) 0]; 
+thetaf = deg2rad(95);
 coe_mars = [coe_mars thetaf]; 
+
+% Initial input revolutions 
+K = 1;
 
 % Initial state vector 
 s = coe2state(mu, coe_earth);
@@ -39,7 +42,7 @@ final = cylindrical2cartesian(s, false).';
 
 %% Initial time of flight
 % Spacecraft propulsion parameters 
-T = 0.5e-3;     % Maximum acceleration 
+T = 0.05e-3;     % Maximum acceleration 
 
 % Initial TOF
 tfapp = initial_tof(mu, T, initial, final);
@@ -58,6 +61,9 @@ initial = cylindrical2cartesian(s, false).';
 s = coe2state(mu, coe_mars);
 final = cylindrical2cartesian(s, false).';
 
+% Add additional revolutions 
+final(2) = final(2)+2*pi*K;
+
 % Time of flight
 tfapp = tfapp/t0;
 
@@ -66,16 +72,16 @@ T = T*(t0^2/r0);
 
 %% Initial approximation to the problem
 % Initial guess for the boundary control points
-m = 300;    
-tau = collocation_grid(m, time_distribution);
+m = 300;   
+tau = collocation_grid(m, time_distribution, '');
 [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
 
 % Initial fitting for n+1 control points
 [P0, C0] = initial_fitting(n, tau, Capp, basis);
 
 % Final collocation grid and basis
-m = 60;  
-tau = collocation_grid(m, time_distribution);
+m = 100;  
+tau = collocation_grid(m, time_distribution, '');
 [B, tau] = state_basis(n, tau, basis);
 
 %% Optimisiation
