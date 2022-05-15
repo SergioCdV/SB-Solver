@@ -50,5 +50,10 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method, t
     ceq = [];
 
     % Inequality (control authority)
-    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])];
+    switch (method)
+        case 'Sundman'
+            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-r.^2.*tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])]; 
+        otherwise
+            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])];
+    end
 end

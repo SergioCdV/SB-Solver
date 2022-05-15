@@ -52,7 +52,7 @@ function [tau] = sampling_grid(m,method)
             tau = HT_nodes(m);
         case 'Orthogonal Bernstein'
             tau = OB_nodes(m);
-        case 'Sundman'
+        case 'Regularized'
             tau = linspace(0,1,m);
         otherwise
             error('An appropriate time array distribution must be specified')
