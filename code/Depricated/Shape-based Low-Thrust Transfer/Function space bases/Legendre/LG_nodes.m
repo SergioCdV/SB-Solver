@@ -31,7 +31,7 @@ function [y] = LG_nodes(N)
     maxIter = 1e4;  % Maximum number of iterations
 
     % Newton-Rhapson method
-    while (max(abs(y-y0)) > eps & iter < maxIter)   
+    while (max(abs(y-y0)) > eps && iter < maxIter)   
         for i = 1:length(y)
             L(i,:) = LG_derivative(N,y(i),1).';
             dL(i,:) = LG_derivative(N,y(i),2).';

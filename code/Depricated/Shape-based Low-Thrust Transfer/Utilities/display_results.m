@@ -28,7 +28,7 @@ function display_results(exitflag, output, r0, t0, tfapp, tf, dV)
 
     % Time of flight results
     fprintf("Initial estimation of flight time: %0.2f days\n", tfapp*days2sec);
-    fprintf("Final calculation of flight time: %0.2f days\n", tf*days2sec);
+    fprintf("Final calculation of flight time: %0.2f days\n\n", tf*days2sec);
 
     % Cost results
     fprintf("Final cost %0.2f m/s\n\n", dV*r0/t0);
