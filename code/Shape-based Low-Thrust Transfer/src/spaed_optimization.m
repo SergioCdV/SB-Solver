@@ -1,6 +1,10 @@
 %% Project: 
 % Date: 19/05/22
 
+%% Shapse-based optimization %%
+% Function to compute the low-thrust orbital transfer using a polynomial
+% shape-based approach
+
 % Inputs: - structure system, containing the physical information of the
 %           2BP of interest
 %         - vector initial_coe, the initial orbital elements 
@@ -8,7 +12,7 @@
 %         - scalar K, an initial desired revolutions value 
 %         - scalar T, the maximum allowed acceleration
 %         - scalar m, the number of sampling nodes to use 
-%         - string time_distribution, to select the sampling distribution
+%         - string sampling_distribution, to select the sampling distribution
 %           to use 
 %         - string basis, the polynomial basis to be used in the
 %           optimization
@@ -25,7 +29,7 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup)
+function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, sampling_distribution, basis, n, setup)
     % Characteristics of the system 
     mu = system.mu;             % Characteristic gravitational parameter
     r0 = system.distance;       % Characteristic distance
@@ -72,14 +76,14 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Core optimization
     % Initial guess for the boundary control points
     mapp = 300;   
-    tau = collocation_grid(mapp, time_distribution, '');
+    tau = collocation_grid(mapp, sampling_distribution, '');
     [~, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tau, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = collocation_grid(m, time_distribution, '');
+    tau = collocation_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess 
@@ -92,7 +96,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     P_ub = [Inf*ones(L,1); Inf; Inf];
     
     % Objective function
-    objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis, time_distribution);
+    objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis, sampling_distribution);
     
     % Linear constraints
     A = [];
@@ -101,7 +105,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, time_distribution, tau);
+    nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, sampling_distribution, tau);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
@@ -122,7 +126,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     r = sqrt(C(1,:).^2+C(3,:).^2);
     
     % Solution normalization
-    switch (time_distribution)
+    switch (sampling_distribution)
         case 'Sundman'
             % Normalised time grid
             options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
@@ -130,7 +134,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
             s = tf*s; 
     
             % Control input
-            u = acceleration_control(mu,C,tf,time_distribution);
+            u = acceleration_control(mu,C,tf,sampling_distribution);
             u = u/tf^2;
     
             % Trajectory cost
@@ -138,7 +142,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     
         otherwise
             % Time domain normalization 
-            switch (time_distribution)
+            switch (sampling_distribution)
                 case 'Chebyshev'
                     tau = (1/2)*(1+tau);
                 case 'Legendre'
@@ -149,7 +153,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
             end
 
             % Control input
-            u = acceleration_control(mu,C,tf,time_distribution);
+            u = acceleration_control(mu,C,tf,sampling_distribution);
             u = u/tf^2;
     
             % Trajectory cost

@@ -51,6 +51,7 @@ function [tau] = sampling_grid(m,method)
             % Depricated
             tau = HT_nodes(m);
         case 'Orthogonal Bernstein'
+            % Depricated
             tau = OB_nodes(m);
         case 'Regularized'
             tau = linspace(0,1,m);

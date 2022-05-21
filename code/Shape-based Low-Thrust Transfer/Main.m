@@ -23,14 +23,14 @@ system.distance = r0;
 system.time = t0; 
 
 % Earth's orbital elements
-coe_earth = [r0 1e-4 0 deg2rad(0) 0]; 
+initial_coe = [r0 1e-4 0 deg2rad(0) 0]; 
 theta0 = deg2rad(95);
-coe_earth = [coe_earth theta0]; 
+initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-coe_mars = [1.05*r0 1e-4 deg2rad(0) deg2rad(1) deg2rad(0)]; 
+final_coe = [1.05*r0 1e-4 deg2rad(0) deg2rad(1) deg2rad(0)]; 
 thetaf = deg2rad(95);
-coe_mars = [coe_mars thetaf]; 
+final_coe = [final_coe thetaf]; 
 
 % Spacecraft propulsion parameters 
 T = 0.05e-3;     % Maximum acceleration 
@@ -43,4 +43,4 @@ setup.resultsFlag = true;
 setup.animations = false; 
 
 %% Optimization 
-[C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, coe_earth, coe_mars, K, T, m, time_distribution, basis, n, setup);
+[C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
