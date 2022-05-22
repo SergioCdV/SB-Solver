@@ -145,25 +145,28 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
             % Final TOF 
             tf = tau(end)*tf;
-    
-        otherwise
-            % Time domain normalization 
-            switch (sampling_distribution)
-                case 'Chebyshev'
-                    tau = (1/2)*(1+tau);
-                case 'Legendre'
-                    tau = (1/2)*(1+tau);
-                case 'Laguerre'
-                    tau = collocation_grid(m, 'Legendre', '');
-                    tau = (1/2)*(1+tau);
-            end
 
+        otherwise
             % Control input
             u = acceleration_control(mu,C,tf,sampling_distribution);
             u = u/tf^2;
     
             % Trajectory cost
             dV = dV/tf;
+
+            % Time domain normalization 
+            switch (sampling_distribution)
+                case 'Chebyshev'
+                    tau = (1/2)*(1+tau);
+                    tf = tf*2;
+                case 'Legendre'
+                    tau = (1/2)*(1+tau);
+                    tf = tf*2;
+                case 'Laguerre'
+                    tau = collocation_grid(m, 'Legendre', '');
+                    tau = (1/2)*(1+tau);
+                    tf = tf*2;
+            end
     end
 
     % Results 
