@@ -36,10 +36,10 @@ function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, method)
 
     % Control cost
     switch (method)
-        case 'Sundman'
+        case 'Regularized'
             r = sqrt(C(1,:).^2+C(3,:).^2);                   % Radial evolution
             a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);         % Non-dimensional acceleration
-            a = a./r.^2;                                     % Dimensional acceleration
+            a = a./r;                                        % Dimensional acceleration
         otherwise
             a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);         % Dimensional acceleration
     end

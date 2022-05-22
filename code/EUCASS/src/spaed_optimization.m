@@ -76,11 +76,11 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Core optimization
     % Initial guess for the boundary control points
     mapp = 300;   
-    tau = collocation_grid(mapp, sampling_distribution, '');
-    [~, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis); 
+    tapp = collocation_grid(mapp, sampling_distribution, '');
+    [~, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
-    [P0, ~] = initial_fitting(n, tau, Capp, basis);
+    [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
     tau = collocation_grid(m, sampling_distribution, '');
@@ -108,7 +108,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, sampling_distribution, tau);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
-    options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
+    options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
     options.MaxFunctionEvaluations = 1e6;
     
     % Optimisation
@@ -127,18 +127,24 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     
     % Solution normalization
     switch (sampling_distribution)
-        case 'Sundman'
+        case 'Regularized'
+            % Initial TOF 
+            rapp = sqrt(Capp(1,:).^2+Capp(3,:).^2);
+            tfapp = tfapp*trapz(tapp, rapp);
+
             % Normalised time grid
             options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
-            [s,time] = ode45(r,tau,0,options);
-            s = tf*s; 
+            [~, tau] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), tau, 0, options);
     
             % Control input
             u = acceleration_control(mu,C,tf,sampling_distribution);
-            u = u/tf^2;
+            u = u./(r.^2*tf^2);
     
             % Trajectory cost
             dV = dV/tf;
+
+            % Final TOF 
+            tf = tau(end)*tf;
     
         otherwise
             % Time domain normalization 
@@ -167,3 +173,11 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     end
 end
  
+
+%% Auxiliary functions 
+% Compute the derivative of time with respect to the generalized anomaly 
+function [dt] = Sundman_transformation(basis, n, P, t, s)
+    B = state_basis(n,s,basis);
+    C = evaluate_state(P,B,n);
+    dt = sqrt(C(1,:).^2+C(3,:).^2);
+end

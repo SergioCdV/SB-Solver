@@ -4,7 +4,9 @@
 %% Initial approximation %%
 % Function to estimate the initial time of flight, control points and curve approximation
 
-% Inputs: - vector tau, the collocation points to be used 
+% Inputs: - sampling_distribution, string specifying the sampling grid
+%           distribution
+%         - vector tau, the collocation points to be used 
 %         - vector initial, the initial boundary conditions of the
 %           trajectory
 %         - vector final, the final boundary conditions of the
@@ -17,7 +19,7 @@
 %          - scalar Napp, the estimated number of revolutions needed
 %          - scalar tfapp, the initial initial time of flight
 
-function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis)
+function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tau, tfapp, initial, final, basis)
     % Preliminary number of revolutions
     dtheta = final(2)-initial(2);
     if (dtheta < 0)
@@ -43,4 +45,17 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(tau, tfapp, initial, 
 
     % State vector approximations
     Capp = evaluate_state(Papp, Bapp, n);
+
+    % Time-regularized solution 
+    switch (sampling_distribution)
+        case 'Regularized'
+            % Arc-length regularization
+            r = sqrt(Capp(1,:).^2+Capp(3,:).^2);
+            tfapp = tfapp*trapz(tau, r.^(-1));  
+            Papp = boundary_conditions(tfapp, n, initial, final, Napp, Papp, Bapp, basis);
+        
+            % State vector approximations
+            Capp = evaluate_state(Papp, Bapp, n);
+        otherwise
+    end
 end
