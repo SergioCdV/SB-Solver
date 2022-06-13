@@ -7,9 +7,8 @@
 
 % Inputs: - structure system, containing the physical information of the
 %           2BP of interest
-%         - vector initial_coe, the initial orbital elements 
-%         - vector final_coe, the final orbital elements 
-%         - scalar K, an initial desired revolutions value 
+%         - vector initial, the initial Cartesian state vector
+%         - vector final, the final Cartesian state vector
 %         - scalar T, the maximum allowed acceleration
 %         - scalar m, the number of sampling nodes to use 
 %         - string sampling_distribution, to select the sampling distribution
@@ -29,44 +28,28 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, sampling_distribution, basis, n, setup)
+function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial, final, T, m, sampling_distribution, basis, n, setup)
     % Characteristics of the system 
     mu = system.mu;             % Characteristic gravitational parameter
     r0 = system.distance;       % Characteristic distance
     t0 = system.time;           % Characteristic time
+    a = system.ellipsoid;       % Semimajor axes of the ellipsoid
 
     % Approximation order 
     n = repmat(n, [1 3]); 
 
-    % Boundary conditions 
-    % Initial state vector 
-    s = coe2state(mu, initial_coe);
-    initial = cylindrical2cartesian(s, false).';
-    
-    % Final state vector 
-    s = coe2state(mu, final_coe);
-    final = cylindrical2cartesian(s, false).';
-    
     % Initial TOF
     tfapp = initial_tof(mu, T, initial, final);
 
     % Normalization
     % Gravitational parameter of the body
     mu = mu*(t0^2/r0^3);
+    a = a/r0;
     
     % Boundary conditions
-    initial_coe(1) = initial_coe(1)/r0;
-    final_coe(1) = final_coe(1)/r0;
-    
-    s = coe2state(mu, initial_coe);
-    initial = cylindrical2cartesian(s, false).';
-    
-    s = coe2state(mu, final_coe);
-    final = cylindrical2cartesian(s, false).';
-    
-    % Add additional revolutions 
-    final(2) = final(2)+2*pi*K;
-    
+    initial = initial/r0;
+    final = final/r0;
+        
     % Time of flight
     tfapp = tfapp/t0;
     
@@ -77,7 +60,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = collocation_grid(mapp, sampling_distribution, '');
-    [~, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tapp, tfapp, initial, final, basis); 
+    [~, Capp] = initial_approximation(tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
@@ -88,15 +71,15 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
     % Initial guess 
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-    x0 = [x0; tfapp; Napp];
-    L = length(x0)-2;
+    L = length(x0);
+    x0 = [x0; tfapp];
     
     % Upper and lower bounds (empty in this case)
-    P_lb = [-Inf*ones(L,1); 0; 0];
-    P_ub = [Inf*ones(L,1); Inf; Inf];
+    P_lb = [-Inf*ones(L,1); 0];
+    P_ub = [Inf*ones(L,1); Inf];
     
     % Objective function
-    objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis, sampling_distribution);
+    objective = @(x)cost_function(a, mu, initial, final, n, tau, x, B, basis, sampling_distribution);
     
     % Linear constraints
     A = [];
@@ -105,74 +88,46 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, sampling_distribution);
+    nonlcon = @(x)constraints(mu, a, T, initial, final, n, x, B, basis);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
-    options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
+    options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
     options.MaxFunctionEvaluations = 1e6;
     
     % Optimisation
     [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
     
     % Solution 
-    P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
-    tf = sol(end-1);                                        % Optimal time of flight
-    N = floor(sol(end));                                    % Optimal number of revolutions 
+    P = reshape(sol(1:end-1), [size(P0,1) size(P0,2)]);     % Optimal control points
+    tf = sol(end);                                          % Optimal time of flight
     
-    P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+    P = boundary_conditions(tf, n, initial, final, P, B, basis);
     
     % Final state evolution
     C = evaluate_state(P,B,n);
-    r = sqrt(C(1,:).^2+C(3,:).^2);
     
-    % Solution normalization
+    % Control input
+    u = acceleration_control(mu,C,tf,a);
+    u = u/tf^2;
+
+    % Time domain normalization 
     switch (sampling_distribution)
-        case 'Regularized'
-            % Initial TOF 
-            rapp = sqrt(Capp(1,:).^2+Capp(3,:).^2);
-            tfapp = tfapp*trapz(tapp, rapp);
-
-            % Normalised time grid
-            options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
-            [~, tau] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), tau, 0, options);
-    
-            % Control input
-            u = acceleration_control(mu,C,tf,sampling_distribution);
-            u = u./(r.^2*tf^2);
-    
-            % Trajectory cost
-            dV = dV/tf;
-
-            % Final TOF 
-            tf = tau(end)*tf;
-
-        otherwise
-            % Control input
-            u = acceleration_control(mu,C,tf,sampling_distribution);
-            u = u/tf^2;
-    
-            % Trajectory cost
-            dV = dV/tf;
-
-            % Time domain normalization 
-            switch (sampling_distribution)
-                case 'Chebyshev'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Legendre'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Laguerre'
-                    tau = collocation_grid(m, 'Legendre', '');
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-            end
+        case 'Chebyshev'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Legendre'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Laguerre'
+            tau = collocation_grid(m, 'Legendre', '');
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
     end
 
     % Results 
     if (setup.resultsFlag)
         display_results(exitflag, output, r0, t0, tfapp, tf, dV);
-        plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup);
+        plots(system, tf, tau, C, u, T, initial, final, setup);
     end
 end
  

@@ -36,9 +36,8 @@ function [tau] = sampling_grid(m,method)
             sigma = 1;                          
             pd = makedist('Normal');
             pd.sigma = sigma;
-            xpd = linspace(-sigma,sigma,m-2);
+            xpd = linspace(-sigma,sigma,m);
             tau = cdf(pd,xpd);
-            tau = [0 tau 1];  
         case 'Random'
             tau = rand(1,m);
             tau = sort(tau);

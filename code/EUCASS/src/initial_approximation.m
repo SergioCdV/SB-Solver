@@ -26,7 +26,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution
         dtheta = dtheta + 2*pi; 
     end
     
-    Napp = ceil( (dtheta+tfapp*(initial(4)+final(4)) ) / (2*pi) );
+    Napp = ceil( (dtheta+tfapp*0.5*(initial(4)+final(4)) ) / (2*pi) );
     if (Napp <= 0)
         Napp = 1;
     end 

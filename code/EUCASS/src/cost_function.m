@@ -21,7 +21,7 @@
 
 function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, method)
     % Minimize the control input
-    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % The Bézier control points
+    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % The final time of flight
     N = floor(x(end));                                  % The optimal number of revolutions
 

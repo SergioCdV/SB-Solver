@@ -8,11 +8,6 @@ close all
 animations = 0;                         % Set to 1 to generate the gif
 
 %% Setup of the solution method
-time_distribution = 'Regularized';      % Distribution of time intervals
-basis = 'Bernstein';                    % Polynomial basis to be use
-n = 10;                                 % Order of Bezier curve functions for each coordinate
-m = 60;                                 % Number of sampling points
-
 % System data 
 r0 = 149597870700;                      % 1 AU [m]
 mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2] 
@@ -39,23 +34,38 @@ T = 0.05e-3;     % Maximum acceleration
 K = 1;
 
 % Setup 
-setup.resultsFlag = true; 
+setup.resultsFlag = false; 
 setup.animations = false; 
 
-%% Results
-% Simple solution    
-tic
-[C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
-toc 
+%% Optimization 
+[sol] = ga_wrapper(system, initial_coe, final_coe, K, T, setup);
 
-% Average results 
-iter = 25; 
-time = zeros(1,iter);
-setup.resultsFlag = false; 
-for i = 1:iter
-    tic 
-    [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
-    time(i) = toc;
+%% Results
+dV = zeros(1,size(sol.NumPoints,1));
+tf  = dV;
+time_av = tf;
+
+for i = 1:size(sol.NumPoints,2)
+    m = sol.NumPoints(i); 
+    n = sol.Order(i); 
+    basis = sol.Basis{i}; 
+    time_distribution = sol.Points{i}; 
+    
+    setup.resultsFlag = false; 
+    tic
+    [C, dV(i), u, tf(i), tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
+    toc 
+
+    % Average results 
+    iter = 0; 
+    time = zeros(1,iter);
+    setup.resultsFlag = false; 
+    for j = 1:iter
+        tic 
+        [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
+        time(j) = toc;
+    end
+    
+    time_av(i) = mean(time);
 end
 
-time = mean(time);

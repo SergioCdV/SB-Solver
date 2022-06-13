@@ -11,18 +11,19 @@
 %         - array C, the final state evolution matrix
 %         - array u, a 3xm matrix with the control input evolution
 %         - scalar T, the maximum allowed acceleration
-%         - vector initial_coe, the initial orbital elements 
-%         - vector final_coe, the final orbital elements 
+%         - vector initial, the initial landing Cartesian state vector
+%         - vector final, the final landing Cartesian state vector
 %         - structure setup, containing the setup of the figures
 
-function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
+function plots(system, tf, tau, C, u, T, initial, final, setup)
     % Set up 
     animations = setup.animations;
 
     % Constants 
-    mu = system.mu;         % Gravitational parameter of the system 
     t0 = system.time;       % Fundamental time unit of the system
     time = tf*tau; 
+
+    a = system.ellipsoid/system.distance; 
 
     % Setting up for gif image
     imsize = 350;
@@ -33,36 +34,10 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     time_days = tau.*tf*t0/86400;
     
     % Final spacecraft trajectory in Cartesian coordinates
-    [S] = cylindrical2cartesian(C(1:3,:),true);
-    x = S(1,:);
-    y = S(2,:); 
-    z = S(3,:);
+    x = C(1,:);
+    y = C(2,:); 
+    z = C(3,:);
     
-    % Earth's orbit
-    thetaE = linspace(0, 2*pi, size(C,2));
-    
-    s = coe2state(mu, initial_coe);
-    initial = cylindrical2cartesian(s, false).';
-    
-    s = coe2state(mu, final_coe);
-    final = cylindrical2cartesian(s, false).';
-    
-    s = zeros(6,length(thetaE));
-    for i = 1:length(thetaE)
-        s(:,i) = coe2state(mu, [initial_coe(1:end-1) initial(2)+thetaE(i)]);
-    end
-    xE = s(1,:);
-    yE = s(2,:);
-    zE = s(3,:);
-    
-    % Mars's orbit
-    for i = 1:length(thetaE)
-        s(:,i) = coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
-    end
-    xM = s(1,:);
-    yM = s(2,:);
-    zM = s(3,:);
-
     % Orbit representation
     figure_orbits = figure;
     view(3)
@@ -73,8 +48,7 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     zlabel('$Z$ coordinate')
     plot3(0,0,0,'*k');
     plot3(x(1),y(1),z(1),'*k');
-    plot3(xE,yE,zE,'LineStyle','--','Color','r','LineWidth',0.3);   % Earth's orbit
-    plot3(xM,yM,zM,'LineStyle','-.','Color','b','LineWidth',0.3);   % Mars' orbit
+    ellipsoid(0,0,0,a(1),a(2),a(3));   % Earth's orbit
     hold on
     grid on; 
 
@@ -96,7 +70,7 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     end
     
     legend('off')
-    %title('Optimal transfer orbit')
+    title('Landing trajectory')
     plot3(x,y,z,'k','LineWidth',1);
     plot3(x(end),y(end),z(end),'*k');
     grid on;
@@ -104,7 +78,7 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     % Propulsive acceleration plot
     figure_propulsion = figure;
     set(figure_propulsion,'position',[xpos + 1.2*imsize,ypos,1.2*imsize,imsize])
-    %title('Spacecraft acceleration in time')
+    title('Spacecraft acceleration in time')
     hold on
     plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
     plot(time_days, u, 'LineWidth', 0.3)
@@ -131,43 +105,4 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     xlabel('Time')
     ylabel('$\phi$')
     title('Thrust out-of-plane angle')
-
-    % Position coordinates
-    figure_coordinates = figure;
-    set(figure_coordinates,'position',[xpos + 2*1.2*imsize,ypos,1.2*imsize,imsize])
-    title('Spacecraft position coordinates in time')
-    hold on
-
-    subplot(3,1,1)
-    hold on
-    plot(time_days, xM, 'LineStyle','-.','Color','b','LineWidth',0.3)
-    plot(time_days, xE, 'LineStyle','--','Color','r','LineWidth',0.3)
-    plot(time_days, x, 'k','LineWidth',1)
-    plot(time_days(1), x(1),'*k','DisplayName','')
-    plot(time_days(end),x(end),'*k','DisplayName','')
-    xlabel('Flight time [days]')
-    ylabel('$x$ [AU]')
-    grid on;
-
-    subplot(3,1,2)
-    hold on
-    plot(time_days, yM, '-.','LineWidth',0.3)
-    plot(time_days, yE, '--','LineWidth',0.3)
-    plot(time_days, y, 'k','LineWidth',1)
-    plot(time_days(1), y(1),'*k','DisplayName','')
-    plot(time_days(end),y(end),'*k','DisplayName','')
-    xlabel('Flight time [days]')
-    ylabel('$y$ [AU]')
-    grid on;
-
-    subplot(3,1,3)
-    hold on
-    plot(time_days, zM, '-.','LineWidth',0.3)
-    plot(time_days, zE, '--','LineWidth',0.3)
-    plot(time_days, z, 'k','LineWidth',1)
-    plot(time_days(1), z(1),'*k','DisplayName','')
-    plot(time_days(end),z(end),'*k','DisplayName','')
-    xlabel('Flight time [days]')
-    ylabel('$z$ [AU]')
-    grid on;
 end
