@@ -38,7 +38,7 @@ setup.resultsFlag = false;
 setup.animations = false; 
 
 %% Optimization 
-[sol] = ga_wrapper(system, initial_coe, final_coe, K, T, setup);
+[sol, fval] = ga_wrapper(system, initial_coe, final_coe, K, T, setup);
 
 %% Results
 dV = zeros(1,size(sol.NumPoints,1));
@@ -50,8 +50,8 @@ for i = 1:size(sol.NumPoints,2)
     n = sol.Order(i); 
     basis = sol.Basis{i}; 
     time_distribution = sol.Points{i}; 
-    
-    setup.resultsFlag = false; 
+
+    setup.resultsFlag = true; 
     tic
     [C, dV(i), u, tf(i), tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
     toc 
@@ -69,3 +69,15 @@ for i = 1:size(sol.NumPoints,2)
     time_av(i) = mean(time);
 end
 
+%% Plots 
+figure 
+plot(fval(:,1), fval(:,2), 'o')
+xlabel('Normalized transfer cost $\Delta V$')
+ylabel('Normalized time of flight $t_f$')
+grid on;
+
+figure 
+plot(sol.NumPoints, sol.Order, 'o')
+xlabel('Number of sampling nodes $m$')
+ylabel('Degree of expansion $n$')
+grid on;

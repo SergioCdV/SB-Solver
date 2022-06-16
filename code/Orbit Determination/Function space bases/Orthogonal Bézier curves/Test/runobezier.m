@@ -102,10 +102,10 @@ end
 % each point.
 
 % Call function
-B = OB_basis(20,tvec);
+B = OB_basis(9,tvec);
 figure 
 hold on 
-for i = 7:7
+for i = 1:10
     plot(tvec, B(i,:))
 end
 hold off

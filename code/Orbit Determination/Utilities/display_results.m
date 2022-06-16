@@ -10,9 +10,10 @@
 %         - scalar t0, the fundamental time unit
 %         - scalar tfapp, the initial estimated time of flight
 %         - scalar tf, the final computed time of flight 
-%         - scalar dV, the final optimal cost
+%         - string cost_function, the policy to be minimized
+%         - scalar e, the final optimal cost
 
-function display_results(exitflag, output, r0, t0, tfapp, tf, dV)
+function display_results(exitflag, output, r0, t0, tfapp, tf, cost_function, e)
     % Constants
     days2sec = t0/86400;
 
@@ -28,8 +29,15 @@ function display_results(exitflag, output, r0, t0, tfapp, tf, dV)
 
     % Time of flight results
     fprintf("Initial estimation of flight time: %0.2f days\n", tfapp*days2sec);
-    fprintf("Final calculation of flight time: %0.2f days\n\n", tf*days2sec);
+    fprintf("Final calculation of flight time: %0.2f days\n", tf*days2sec);
 
     % Cost results
-    fprintf("Final cost %0.2f m/s\n\n", dV*r0/t0);
+    switch (cost_function)
+        case 'Least Squares'
+            fprintf("Final cost least squares error: %0.4f\n\n", e);
+        case 'Dynamics residual'
+            fprintf("Final dynamic residual: %0.2f m/s\n\n", e*(r0/t0));
+        otherwise
+            error('No valid cost policy was selected');
+    end
 end

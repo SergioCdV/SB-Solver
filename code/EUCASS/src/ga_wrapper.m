@@ -13,21 +13,15 @@
 %         - scalar T, the maximum allowed acceleration
 %         - structure setup, containing the setup of the figures
 
-% Outputs: - array C, the final state evolution matrix
-%          - scalar dV, the final dV cost of the transfer 
-%          - array u, a 3xm matrix with the control input evolution  
-%          - scalar tf, the final time of flight 
-%          - scalar tfapp, the initial estimated time of flight 
-%          - vector tau, the time sampling points final distribution
-%          - exitflag, the output state of the optimization process 
-%          - structure output, containing information on the final state of
+% Outputs: - structure sol, containing information on the final state of
 %            the optimization process
+%          - array fval, the functional evaluation of the Pareto front
 
-function [Sol] = ga_wrapper(system, initial_coe, final_coe, K, T, setup)
+function [Sol, fval] = ga_wrapper(system, initial_coe, final_coe, K, T, setup)
     % Genetic algorithm setup
     dof = 4;               % Number of DOF of the optimization process
-    PopSize = 15;          % Population size for each generation
-    MaxGenerations = 10;   % Maximum number of generations for the evolutionary algorithm
+    PopSize = 20;          % Population size for each generation
+    MaxGenerations = 20;   % Maximum number of generations for the evolutionary algorithm
             
     options = optimoptions(@ga,'PopulationSize', PopSize, 'MaxGenerations', MaxGenerations);
 
@@ -44,12 +38,30 @@ function [Sol] = ga_wrapper(system, initial_coe, final_coe, K, T, setup)
     ub = [60 4 4 10];
 
     % Metaheuristic selection 
-    [sol] = gamultiobj(@(x)gasp_opti(system, initial_coe, final_coe, K, T, x, setup), dof, A, b, Aeq, beq, lb, ub, nonlcon, intcon, options);
+    [sol, fval] = gamultiobj(@(x)gasp_opti(system, initial_coe, final_coe, K, T, x, setup), dof, A, b, Aeq, beq, lb, ub, nonlcon, intcon, options);
 
     % Final results 
     for i = 1:size(sol,1)
         m = sol(i,1);                         % Number of sampling points 
-        sampling_distribution = sol(i,2);     % Final sampling distribution 
+        sampling_distribution = sol(i,2);     % Final sampling distribution
+        basis = sol(i,3);                     % Final sampling 
+        n = sol(i,4);                         % Final approximation order
+
+        % Write to csv 
+        file = 'Results\metaheuristic.csv'; 
+        if (isempty(dir(file)))
+            cHeader = {'m' 'n' 'basis' 'time_distribution'};
+            commaHeader = [cHeader; repmat({','}, 1, numel(cHeader))]; 
+            commaHeader = commaHeader(:)';
+            textHeader = cell2mat(commaHeader);
+            
+            fid = fopen(file, 'w'); 
+            fprintf(fid, '%s\n', textHeader);
+            fclose(fid);
+        end
+
+        dlmwrite(file, [m n basis sampling_distribution], '-append');
+        
         switch (sampling_distribution)
             case 1
                 sampling_distribution = 'Linear';
@@ -61,7 +73,6 @@ function [Sol] = ga_wrapper(system, initial_coe, final_coe, K, T, setup)
                 sampling_distribution = 'Regularized';
         end
     
-        basis = sol(i,3);                     % Final sampling 
         switch (basis)
             case 1
                 basis = 'Bernstein';
@@ -72,9 +83,7 @@ function [Sol] = ga_wrapper(system, initial_coe, final_coe, K, T, setup)
             case 4
                 basis = 'Chebyshev';
         end
-    
-        n = sol(i,4);                         % Final approximation order
-    
+        
         Sol.Basis{i} = basis; 
         Sol.Order(i) = n; 
         Sol.Points{i} = sampling_distribution; 

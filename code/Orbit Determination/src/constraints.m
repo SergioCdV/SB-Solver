@@ -13,17 +13,20 @@
 %           trajectory 
 %         - vector final, the initial boundary conditions of the
 %           trajectory
+%         - array measurements, an mx4 matrix of measurements in the form
+%           of epoch | 3D vector measurement
 %         - vector n, the vector of degrees of approximation of the state
 %           variables
 %         - vector x, the degree of freedom to be optimized 
 %         - cell array B, the polynomial basis to be used
+%         - string cost_function, the minimization policy to follow
 %         - string basis, the polynomial basis to be used
 %         - string method, the parameter distribution to be used
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method)
+function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, cost_function, basis, method)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % Final time of flight 
@@ -40,17 +43,46 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method)
     r0 = sqrt(initial(1)^2+initial(3)^2);
     rf = sqrt(final(1)^2+final(3)^2);
 
-    % Control input 
-    u = acceleration_control(mu,C,tf,method);
-
     % Equalities 
     ceq = [];
 
     % Inequality (control authority)
-    switch (method)
-        case 'Regularized'
-            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*r.^2.*ones(1,size(u,2)) r-2*max([r0 rf])]; 
+    switch (cost_function)
+        case 'Dynamics residual'
+            epochs = measurements(1,:)/tf; 
+            switch (method)
+                case 'Regularized'
+                    options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
+                    [~, epochs] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), epochs, 0, options);
+                    epochs = epochs.';
+                case 'Chebyshev'
+                    epochs = 2*epochs-1;
+                case 'Legendre'
+                    epochs = 2*epochs-1;
+                case 'Laguerre'
+                    epochs = 2*epochs-1;
+            end
+    
+            % State evolution
+            B = state_basis(n, epochs, basis);
+            C = evaluate_state(P,B,n);
+        
+            % Compute the residuals 
+            M = cylindrical2cartesian(C(1:3,:),true);
+            M(1:3,:) = M(1:3,:)./sqrt(M(1,:).^2+M(2,:).^2+M(3,:).^2);
+            e = measurements(2:4,:)-M(1:3,:);
+            r = sum(dot(e,e,1)); 
+
+            c = r-2*max([r0 rf]);
         otherwise
-            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])];
+            % Control input 
+            u = acceleration_control(mu,C,tf,method);
+
+            switch (method)
+                case 'Regularized'
+                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-r.^2.*tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])]; 
+                otherwise
+                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])];
+            end
     end
 end
