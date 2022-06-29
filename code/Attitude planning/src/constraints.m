@@ -18,39 +18,45 @@
 %         - vector x, the degree of freedom to be optimized 
 %         - cell array B, the polynomial basis to be used
 %         - string basis, the polynomial basis to be used
-%         - string method, the parameter distribution to be used
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method)
+function [c, ceq] = constraints(system, T, initial, final, n, x, B, basis)
     % Extract the optimization variables
-    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
-    tf = x(end-1);                                      % Final time of flight 
-    N = floor(x(end));                                  % Optimal number of revolutions
+    P = reshape(x(1:end-1), [length(n), max(n)+1]);     % Control points
+    tf = x(end);                                        % Final maneuver time
+
+    % Constants 
+    I = system.Inertia;         % Inertia dyadic of the system 
+    V = system.V;               % Preference direction 
+    N = system.Prohibited;      % Prohibited attitude directions
+    tol = system.Tol;           % Tolerance to the protected areas
 
     % Boundary conditions points
-    P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+    P = boundary_conditions(tf, n, initial, final, P, B, basis);
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);
 
-    % Radius constraints
-    r = sqrt(C(1,:).^2+C(3,:).^2);
-    r0 = sqrt(initial(1)^2+initial(3)^2);
-    rf = sqrt(final(1)^2+final(3)^2);
+    % Protection areas computation
+    if (size(N,2) == 1)
+        N = repmat(N, 1, size(C,2));
+    end
+
+    angle = zeros(1,size(C,2));         % Angle to the prohibited directions
+    for i = 1:size(C,2)
+        aux = quaternion_product([0; V], quaternion_inverse(C(1:4,i)));
+        aux = quaternion_product(C(1:4,i), aux);
+        angle(i) = tol-acos(dot(aux(2:4), N(:,i)));
+    end
 
     % Control input 
-    u = acceleration_control(mu,C,tf,method);
+    u = acceleration_control(I,C,tf);
 
     % Equalities 
     ceq = [];
 
     % Inequality (control authority)
-    switch (method)
-        case 'Regularized'
-            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*r.^2.*ones(1,size(u,2))) r-2*max([r0 rf])]; 
-        otherwise
-            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*ones(1,size(u,2))) r-2*max([r0 rf])];
-    end
+    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*ones(1,size(u,2))) angle];
 end

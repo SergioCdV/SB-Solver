@@ -49,17 +49,8 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     % Normalization
     % Gravitational parameter of the body
     mu = mu*(t0^2/r0^3);
-    
-    % Boundary conditions
-    initial_coe(1) = initial_coe(1)/r0;
-    final_coe(1) = final_coe(1)/r0;
-    
-    s = coe2state(mu, initial_coe);
-    initial = cylindrical2cartesian(s, false).';
-    
-    s = coe2state(mu, final_coe);
-    final = cylindrical2cartesian(s, false).';
 
+    % Measurements epochs
     measurements(1,:) = measurements(1,:) / t0;
         
     % Time of flight
@@ -67,8 +58,23 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     
     % Spacecraft propulsion parameters 
     T = T*(t0^2/r0);
+    
+    % Boundary conditions
+    initial_coe(1) = initial_coe(1)/r0;    
+    s = coe2state(mu, initial_coe);
+    initial = cylindrical2cartesian(s, false).';
+    
+    if (~isempty(final_coe))
+        % Final boundary conditions
+        final_coe(1) = final_coe(1)/r0;
+        s = coe2state(mu, final_coe);
+        final = cylindrical2cartesian(s, false).';
+    else
+        final = [];
+        basis = 'Bernstein'; 
+        warning('No final boundary conditions have been specified')
+    end
 
-    % Core optimization
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = collocation_grid(mapp, sampling_distribution, '');
@@ -173,7 +179,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     % Results 
     if (setup.resultsFlag)
         display_results(exitflag, output, r0, t0, tfapp, tf, cost_policy, e);
-        plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup);
+        plots(Capp, system, tf, tau, C, u, T, initial_coe, final_coe, setup);
     end
 end
  

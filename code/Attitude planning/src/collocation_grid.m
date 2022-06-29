@@ -33,10 +33,12 @@ function [tau] = sampling_grid(m,method)
         case 'Linear'
             tau = linspace(0,1,m);
         case 'Normal'
-            tau = normrnd(0,1,1,m-2);
-            tau = sort(tau);
-            tau = (tau-min(tau))/(max(tau)-min(tau));
-            tau = [0 tau 1];
+            sigma = 1;                          
+            pd = makedist('Normal');
+            pd.sigma = sigma;
+            xpd = linspace(-sigma,sigma,m-2);
+            tau = cdf(pd,xpd);
+            tau = [0 tau 1];  
         case 'Random'
             tau = rand(1,m);
             tau = sort(tau);

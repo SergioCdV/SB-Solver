@@ -25,10 +25,9 @@ function [ds] = dynamics(mu, J2, Re, t, s, u)
     ap = mu*J2*(Re^2/norm(r)^7)*[r(1)*(6*r(3)^2-(3/2)*(r(1)^2+r(2)^2)); ...
                                  r(2)*(6*r(3)^2-(3/2)*(r(1)^2+r(2)^2)); ...
                                  r(3)*(3*r(3)^2-(9/2)*(r(1)^2+r(2)^2))];
-    ap = zeros(3,1);
 
     % Total acceleration applied to the body
-    a = an+ap+u; 
+    a = an+u; 
 
     % Assemble the state vector derivative 
     ds = [v; a];

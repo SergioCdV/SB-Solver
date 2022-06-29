@@ -32,6 +32,8 @@ function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, co
     tf = x(end-1);                                      % Final time of flight 
     N = floor(x(end));                                  % Optimal number of revolutions
 
+    tol = 1;                                            % Measurements error tolerance
+
     % Boundary conditions points
     P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
 
@@ -39,9 +41,14 @@ function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, co
     C = evaluate_state(P,B,n);
 
     % Radius constraints
-    r = sqrt(C(1,:).^2+C(3,:).^2);
+    R = sqrt(C(1,:).^2+C(3,:).^2);
     r0 = sqrt(initial(1)^2+initial(3)^2);
-    rf = sqrt(final(1)^2+final(3)^2);
+
+    if (~isempty(final))
+        rf = sqrt(final(1)^2+final(3)^2);
+    else
+        rf = r0;
+    end
 
     % Equalities 
     ceq = [];
@@ -71,18 +78,27 @@ function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, co
             M = cylindrical2cartesian(C(1:3,:),true);
             M(1:3,:) = M(1:3,:)./sqrt(M(1,:).^2+M(2,:).^2+M(3,:).^2);
             e = measurements(2:4,:)-M(1:3,:);
-            r = sum(dot(e,e,1)); 
+            r = dot(e,e,1);
+            r = mean(r)+3*std(r);
 
-            c = r-2*max([r0 rf]);
+            c = [R-2*max([r0 rf]) r-tol];
         otherwise
             % Control input 
             u = acceleration_control(mu,C,tf,method);
 
             switch (method)
                 case 'Regularized'
-                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-r.^2.*tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])]; 
+                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-r.^2.*tf^2*T*ones(1,size(u,2)) R-2*max([r0 rf])]; 
                 otherwise
-                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) r-2*max([r0 rf])];
+                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) R-2*max([r0 rf])];
             end
     end
+end
+
+%% Auxiliary function
+% Compute the Sundman transformation 
+function [ds] = Sundman_transformation(basis, n, P, t, s)
+    B = state_basis(n, s, basis);
+    C = evaluate_state(P,B,n);
+    ds = (C(1,:).^2+C(3,:).^2).^(-1/2);
 end

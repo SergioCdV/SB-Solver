@@ -9,7 +9,6 @@
 %         - scalar n, the order of the approximating Bézier curve
 %         - vector x0, the initial 6 by 1 state vector (heliocentric position and velocity)
 %         - vector xf, the final 6 by 1 state vector (heliocentric position and velocity)
-%         - scalar N, the number of revolutions 
 %         - array P0, the initial array of control points 
 %         - cell array B, the polynomial basis to be used
 %         - string basis, to select the polynomial basis to be used in the
@@ -17,7 +16,7 @@
 
 % Outputs: - array P, the updated boundary conditions control points, of dimensions 3 x n+1 
 
-function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
+function [P] = boundary_conditions(tfapp, n, x0, xf, P0, B, basis)
     % Sanity check 
     if (size(P0,2) < 4)
         error('Rendezvous boundary conditions cannot be imposed');
@@ -25,32 +24,19 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
         P = P0;         % Initialization
     end
 
-    if (isempty(xf))
-        xf = zeros(size(x0));
-        final = false;
-    else
-        final = true;
-    end
-    
-    % Add the revolutions to the final angle
-    xf(2) = xf(2)+2*pi*N;
-
     % Dimensionalizing of the velocity 
-    x0(4:6) = tfapp*x0(4:6);
-    xf(4:6) = tfapp*xf(4:6);
+    x0(5:8) = tfapp*x0(5:8);
+    xf(5:8) = tfapp*xf(5:8);
 
     % Switch the polynomial basis to be used
     switch (basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
             for i = 1:length(n)
-                P(:,1) = x0(1:3);
-                P(:,2) = x0(1:3)+x0(4:6)./n;
-
-                if (final)
-                    P(:,n(i)) = xf(1:3)-xf(4:6)./n;
-                    P(:,n(i)+1) = xf(1:3);
-                end
+                P(:,1) = x0(1:4);
+                P(:,2) = x0(1:4)+x0(5:8)./n;
+                P(:,n(i)) = xf(1:4)-xf(5:8)./n;
+                P(:,n(i)+1) = xf(1:4);
             end
 
         case 'Orthogonal Bernstein'

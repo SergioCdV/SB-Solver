@@ -15,12 +15,13 @@
 %         - vector final_coe, the final orbital elements 
 %         - structure setup, containing the setup of the figures
 
-function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
+function plots(Capp, system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     % Set up 
     animations = setup.animations;
 
     % Constants 
     mu = system.mu;         % Gravitational parameter of the system 
+    r0 = system.distance;   % Fundamental distance unit of the system
     t0 = system.time;       % Fundamental time unit of the system
     time = tf*tau; 
 
@@ -37,16 +38,17 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     x = S(1,:);
     y = S(2,:); 
     z = S(3,:);
+
+    [S] = cylindrical2cartesian(Capp(1:3,:),true);
+    X = S(1,:);
+    Y = S(2,:); 
+    Z = S(3,:);
     
-    % Earth's orbit
+    % Initial orbit
     thetaE = linspace(0, 2*pi, size(C,2));
-    
     s = coe2state(mu, initial_coe);
     initial = cylindrical2cartesian(s, false).';
-    
-    s = coe2state(mu, final_coe);
-    final = cylindrical2cartesian(s, false).';
-    
+        
     s = zeros(6,length(thetaE));
     for i = 1:length(thetaE)
         s(:,i) = coe2state(mu, [initial_coe(1:end-1) initial(2)+thetaE(i)]);
@@ -55,13 +57,18 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     yE = s(2,:);
     zE = s(3,:);
     
-    % Mars's orbit
-    for i = 1:length(thetaE)
-        s(:,i) = coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
+    % Final orbit
+    if (~isempty(final_coe))
+        s = coe2state(mu, final_coe);
+        final = cylindrical2cartesian(s, false).';
+
+        for i = 1:length(thetaE)
+            s(:,i) = coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
+        end
+        xM = s(1,:);
+        yM = s(2,:);
+        zM = s(3,:);
     end
-    xM = s(1,:);
-    yM = s(2,:);
-    zM = s(3,:);
 
     % Orbit representation
     figure_orbits = figure;
@@ -74,7 +81,10 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     plot3(0,0,0,'*k');
     plot3(x(1),y(1),z(1),'*k');
     plot3(xE,yE,zE,'LineStyle','--','Color','r','LineWidth',0.3);   % Initial orbit
-    plot3(xM,yM,zM,'LineStyle','-.','Color','b','LineWidth',0.3);   % Final orbit
+
+    if (~isempty(final_coe))
+        plot3(xM,yM,zM,'LineStyle','-.','Color','b','LineWidth',0.3);   % Final orbit
+    end
     hold on
     grid on; 
 
@@ -98,6 +108,7 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     legend('off')
     %title('Optimal transfer orbit')
     plot3(x,y,z,'k','LineWidth',1);
+    plot3(X,Y,Z,'LineWidth',1)
     plot3(x(end),y(end),z(end),'*k');
     grid on;
 
@@ -106,9 +117,9 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     set(figure_propulsion,'position',[xpos + 1.2*imsize,ypos,1.2*imsize,imsize])
     %title('Spacecraft acceleration in time')
     hold on
-    plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
-    plot(time_days, u, 'LineWidth', 0.3)
-    yline(T, '--k')
+    plot(time_days, r0/t0^2*sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
+    plot(time_days, u*r0/t0^2, 'LineWidth', 0.3)
+    yline(T*r0/t0^2, '--k')
     xlabel('Flight time [days]')
     ylabel('$\mathbf{a}$')
     legend('$a$','$a_\rho$','$a_\theta$','$a_z$')

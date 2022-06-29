@@ -21,6 +21,7 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
 
     % Constants 
     mu = system.mu;         % Gravitational parameter of the system 
+    r0 = system.distance;   % Fundamental distance unit of the system
     t0 = system.time;       % Fundamental time unit of the system
     time = tf*tau; 
 
@@ -106,9 +107,9 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     set(figure_propulsion,'position',[xpos + 1.2*imsize,ypos,1.2*imsize,imsize])
     %title('Spacecraft acceleration in time')
     hold on
-    plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
-    plot(time_days, u, 'LineWidth', 0.3)
-    yline(T, '--k')
+    plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)*r0/t0^2, 'k','LineWidth',1)
+    plot(time_days, u*r0/t0^2, 'LineWidth', 0.3)
+    yline(T*r0/t0^2, '--k')
     xlabel('Flight time [days]')
     ylabel('$\mathbf{a}$')
     legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
