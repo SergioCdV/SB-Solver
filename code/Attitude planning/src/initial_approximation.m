@@ -20,7 +20,7 @@
 function [Papp, Capp] = initial_approximation(tau, tfapp, initial, final, basis)
     % Generate the polynomial basis
     n_init = 3; 
-    n = [n_init n_init n_init n_init].';
+    n = [n_init n_init n_init n_init];
     Bapp = state_basis(n,tau,basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)

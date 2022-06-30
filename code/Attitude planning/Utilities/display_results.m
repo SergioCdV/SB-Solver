@@ -12,7 +12,7 @@
 
 function display_results(exitflag, output, tfapp, tf, dV)
     % Constants
-    days2sec = 1/86400;
+    days2sec = 1/3600;
 
     % Print the results of the optimisation
     fprintf('Exit flag: %i\n', exitflag)
@@ -25,8 +25,8 @@ function display_results(exitflag, output, tfapp, tf, dV)
     fprintf("Constraint violation: %f \n", output.constrviolation);
 
     % Time of flight results
-    fprintf("Initial estimation of flight time: %0.2f days\n", tfapp*days2sec);
-    fprintf("Final calculation of flight time: %0.2f days\n", tf*days2sec);
+    fprintf("Initial estimation of flight time: %0.2f hours\n", tfapp*days2sec);
+    fprintf("Final calculation of flight time: %0.2f hours\n", tf*days2sec);
 
     % Cost results
     fprintf("Final cost %0.2f rad/s\n\n", dV);

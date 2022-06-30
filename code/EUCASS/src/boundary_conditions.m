@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 30/01/2022
 
 %% Boundary conditions %% 

@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 01/04/22
 
 %% Classical orbital elements to state vector %%
@@ -10,11 +10,11 @@
 % Ouputs: - vector s, containing the state vector in the inertial frame (position and velocity vectors).
 
 function [s] = coe2state(mu, elements)
-    %Constants 
-    e = elements(2);                                            %Eccentricity of the orbit
+    % Constants 
+    e = elements(2);                                            % Eccentricity of the orbit
     
-    %Singularity warnings 
-    tol = 1e-10;                                                %Circular orbit tolerance    
+    % Singularity warnings 
+    tol = 1e-10;                                                % Circular orbit tolerance    
     if (abs(norm(e)) < tol)
         elements(5) = 0;
     end
@@ -23,28 +23,28 @@ function [s] = coe2state(mu, elements)
         elements(3) = 0;
     end
     
-    %Compute the semilatus rectum
+    % Compute the semilatus rectum
     if (elements(1) == Inf) 
-        p = elements(end);                                      %Semilatus rectum of the orbit
+        p = elements(end);                                      % Semilatus rectum of the orbit
     else
-        p = elements(1)*(1-elements(2)^2);                      %Semilatus rectum of the orbit
+        p = elements(1)*(1-elements(2)^2);                      % Semilatus rectum of the orbit
     end
     
-    %Compute the angular momentum norm
-    h = sqrt(mu*p);                                             %Angular momentum of the orbit
+    % Compute the angular momentum norm
+    h = sqrt(mu*p);                                             % Angular momentum of the orbit
     
-    %Compute the mean anomaly
-    theta = kepler(elements);                                   %True anomaly in the orbit
+    % Compute the mean anomaly
+    theta = kepler(elements);                                   % True anomaly in the orbit
     
-    %Compute the perifocal state vector
-    r = (p/(1+e*cos(theta)))*[cos(theta); sin(theta); 0];       %Position vector in the perifocal frame
-    v = mu/h*[-sin(theta); e+cos(theta); 0];                    %Velocity vector in the perifocal frame
+    % Compute the perifocal state vector
+    r = (p/(1+e*cos(theta)))*[cos(theta); sin(theta); 0];       % Position vector in the perifocal frame
+    v = mu/h*[-sin(theta); e+cos(theta); 0];                    % Velocity vector in the perifocal frame
     
-    %Rotation matrix from the inertial to the perifocal frame
+    % Rotation matrix from the inertial to the perifocal frame
     Q = euler_matrix(elements);
        
-    %Output
-    r = Q.'*r;      %Position vector in the inertial frame
-    v = Q.'*v;      %Velocity vector in the inertial frame
-    s = [r; v];     %State vector
+    % Output
+    r = Q.'*r;      % Position vector in the inertial frame
+    v = Q.'*v;      % Velocity vector in the inertial frame
+    s = [r; v];     % State vector
 end

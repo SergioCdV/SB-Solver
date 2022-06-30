@@ -1,8 +1,8 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 31/01/22
 
 %% Cost function %%
-% Function to estimate the time of flight
+% Function to compute the cost function to be minimized
 
 % Inputs: - vector initial, the initial boundary conditions of the
 %           trajectory 

@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 07/04/22
 
 %% Acceleration control %%
@@ -12,7 +12,7 @@
 
 % Outputs: - vector u, the nondimensional 3xm control vector
 
-function [u] = acceleration_control(mu,C,tf,method)
+function [u] = acceleration_control(mu, C, tf, method)
     % Compute the radius vector
     r = sqrt(C(1,:).^2+C(3,:).^2);
 

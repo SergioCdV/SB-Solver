@@ -36,47 +36,39 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     t0 = system.time;           % Characteristic time
 
     % Approximation order 
-    n = repmat(n, [1 3]); 
+    if (length(n) == 1)
+        n = repmat(n, [1 3]);
+    end
 
     % Boundary conditions 
-    % Initial state vector 
-    s = coe2state(mu, initial_coe);
-    initial = cylindrical2cartesian(s, false).';
-    
-    % Final state vector 
-    s = coe2state(mu, final_coe);
-    final = cylindrical2cartesian(s, false).';
+    s = coe2state(mu, initial_coe);                     % Initial state vector 
+    initial = cylindrical2cartesian(s, false).';        % Initial state vector in cylindrical coordinates
+    s = coe2state(mu, final_coe);                       % Final state vector                   
+    final = cylindrical2cartesian(s, false).';          % Final state vector in cylindrical coordinates 
     
     % Initial TOF
     tfapp = initial_tof(mu, T, initial, final);
 
     % Normalization
-    % Gravitational parameter of the body
-    mu = mu*(t0^2/r0^3);
-    
-    % Boundary conditions
-    initial_coe(1) = initial_coe(1)/r0;
-    final_coe(1) = final_coe(1)/r0;
-    
-    s = coe2state(mu, initial_coe);
-    initial = cylindrical2cartesian(s, false).';
-    
-    s = coe2state(mu, final_coe);
-    final = cylindrical2cartesian(s, false).';
-    
+    mu = mu*(t0^2/r0^3);                                % Gravitational parameter of the body
+
+    initial_coe(1) = initial_coe(1)/r0;                 % Boundary conditions normalization
+    final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
+
+    s = coe2state(mu, initial_coe);                     % Initial state vector 
+    initial = cylindrical2cartesian(s, false).';        % Initial state vector in cylindrical coordinates
+    s = coe2state(mu, final_coe);                       % Final state vector                   
+    final = cylindrical2cartesian(s, false).';          % Final state vector in cylindrical coordinates 
+
+    tfapp = tfapp/t0;                                   % Time of flight
+    T = T*(t0^2/r0);                                    % Spacecraft propulsion parameters 
+
     % Add additional revolutions 
     final(2) = final(2)+2*pi*K;
-    
-    % Time of flight
-    tfapp = tfapp/t0;
-    
-    % Spacecraft propulsion parameters 
-    T = T*(t0^2/r0);
 
-    % Core optimization
     % Initial guess for the boundary control points
     mapp = 300;   
-    tapp = collocation_grid(mapp, sampling_distribution, '');
+    tapp = collocation_grid(mapp, sampling_distribution, 'Intersection');
     [~, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
@@ -86,19 +78,19 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     tau = collocation_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
-    % Initial guess 
+    % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
+    L = length(x0);
     x0 = [x0; tfapp; Napp];
-    L = length(x0)-2;
     
-    % Upper and lower bounds (empty in this case)
+    % Upper and lower bounds 
     P_lb = [-Inf*ones(L,1); 0; 0];
     P_ub = [Inf*ones(L,1); Inf; Inf];
     
     % Objective function
     objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis, sampling_distribution);
     
-    % Linear constraints
+    % Linear constraints and inequalities
     A = [];
     b = [];
     Aeq = [];
@@ -119,11 +111,18 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     tf = sol(end-1);                                        % Optimal time of flight
     N = floor(sol(end));                                    % Optimal number of revolutions 
     
+    % Final control points imposing boundary conditions
     P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
     
     % Final state evolution
     C = evaluate_state(P,B,n);
-    r = sqrt(C(1,:).^2+C(3,:).^2);
+
+    % Control input
+    u = acceleration_control(mu, C, tf, sampling_distribution);
+    u = u/tf^2;
+
+    % Trajectory cost
+    dV = dV/tf;
     
     % Solution normalization
     switch (sampling_distribution)
@@ -134,26 +133,16 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
             % Normalised time grid
             options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
-            [~, tau] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), tau, 0, options);
+            [~, tau] = ode45(@(t,s)Sundman_transformation(basis, n, P, t, s), tau, 0, options);
     
             % Control input
-            u = acceleration_control(mu,C,tf,sampling_distribution);
-            u = u./(r.^2*tf^2);
+            r = sqrt(C(1,:).^2+C(3,:).^2);
+            u = u./(r.^2);
     
-            % Trajectory cost
-            dV = dV/tf;
-
             % Final TOF 
             tf = tau(end)*tf;
 
-        otherwise
-            % Control input
-            u = acceleration_control(mu,C,tf,sampling_distribution);
-            u = u/tf^2;
-    
-            % Trajectory cost
-            dV = dV/tf;
-
+        otherwise    
             % Time domain normalization 
             switch (sampling_distribution)
                 case 'Chebyshev'

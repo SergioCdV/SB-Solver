@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Sergio Cuevas del Valle
 % Date: 08/02/2022 
 

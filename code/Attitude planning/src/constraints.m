@@ -4,7 +4,9 @@
 %% Constraints %% 
 % Function to compute the residual vector of the constraints of the problem
 
-% Inputs: - scalar mu, the gravitational parameter of the central body 
+% Inputs: - structure system, containing the definition of the maneuver to
+%           be performed
+%         - scalar tf, the maneuver time
 %         - scalar T, the maximum acceleration allowed for the spacecraft
 %         - vector n, the approximation degree to each position coordinate
 %         - array P, the set of control points to estimate the position vector 
@@ -22,10 +24,9 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(system, T, initial, final, n, x, B, basis)
+function [c, ceq] = constraints(system, tf, T, initial, final, n, x, B, basis)
     % Extract the optimization variables
-    P = reshape(x(1:end-1), [length(n), max(n)+1]);     % Control points
-    tf = x(end);                                        % Final maneuver time
+    P = reshape(x, [length(n), max(n)+1]);     % Control points
 
     % Constants 
     I = system.Inertia;         % Inertia dyadic of the system 
@@ -58,5 +59,5 @@ function [c, ceq] = constraints(system, T, initial, final, n, x, B, basis)
     ceq = [];
 
     % Inequality (control authority)
-    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*ones(1,size(u,2))) angle];
+    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(T*ones(1,size(u,2))) angle];
 end

@@ -25,4 +25,6 @@ function [u] = acceleration_control(I,C,tf)
         Domega = 2*quaternion_product(C(9:12,i),quaternion_inverse(C(1:4,i)))+[0; cross(omega(2:4),I*omega(2:4))];
         u(:,i) = Domega(2:4);
     end
+
+    u = u/tf^2;
 end

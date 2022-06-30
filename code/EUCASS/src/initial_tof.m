@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 16/04/22
 
 %% Initial TOF %%
@@ -15,8 +15,7 @@
 % Outputs:- scalar tfapp, the initial approximation of the time of flight
 
 function [tfapp] = initial_tof(mu, T, initial, final)
-
-    % Approximation of the time of flight via the vis-viva theorem
+    % Approximation of the time of flight via the Vis-Viva theorem
     r0 = norm(initial([1 3]));              % Initial radius
     v0 = norm(initial(4:6));                % Initial velocity
     rf = norm(final([1 3]));                % Final radius

@@ -25,7 +25,7 @@ function plots(system, tf, tau, C, u, T, setup)
     xpos = 10; ypos = 150;
 
     % Final state vector
-    time_days = tau.*tf/86400;
+    time_days = tau.*tf/3600;
     
     % Final spacecraft trajectory in Cartesian coordinates
     n = system.V; 
@@ -47,7 +47,7 @@ function plots(system, tf, tau, C, u, T, setup)
     quiver3(zeros(3,1),zeros(3,1),zeros(3,1),[1;0;0],[0;1;0],[0;0;1])
     [X, Y, Z] = sphere(128);
     h = surfl(X, Y, Z); 
-    set(h, 'FaceAlpha', 0.5)
+    set(h, 'FaceAlpha', 0.1)
     shading interp
     plot3(x(1,1),x(2,1),x(3,1),'*k');         % Initial conditions
     plot3(x(1,:),x(2,:),x(3,:),'b');          % Initial conditions
@@ -80,7 +80,7 @@ function plots(system, tf, tau, C, u, T, setup)
     plot(time_days, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2), 'k','LineWidth',1)
     plot(time_days, u, 'LineWidth', 0.3)
     yline(T, '--k')
-    xlabel('Maneuver time [days]')
+    xlabel('Time [hours]')
     ylabel('$\mathbf{M}$')
     legend('$M$','$M_x$','$M_y$','$M_z$')
     grid on;
@@ -90,7 +90,7 @@ function plots(system, tf, tau, C, u, T, setup)
     plot(time, rad2deg(atan2(u(2,:),u(1,:)))); 
     hold off 
     grid on;
-    xlabel('Time')
+    xlabel('Time [hours]')
     ylabel('$\theta$')
     title('Torque in-plane angle')
 
@@ -99,7 +99,7 @@ function plots(system, tf, tau, C, u, T, setup)
     plot(time, rad2deg(atan2(u(3,:),sqrt(u(1,:).^2+u(2,:).^2)))); 
     hold off 
     grid on;
-    xlabel('Time')
+    xlabel('Time [hours]')
     ylabel('$\phi$')
     title('Torque out-of-plane angle')
 end

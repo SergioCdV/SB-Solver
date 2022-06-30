@@ -19,7 +19,7 @@
 function [P] = boundary_conditions(tfapp, n, x0, xf, P0, B, basis)
     % Sanity check 
     if (size(P0,2) < 4)
-        error('Rendezvous boundary conditions cannot be imposed');
+        error('Boundary conditions cannot be imposed');
     else
         P = P0;         % Initialization
     end

@@ -4,7 +4,9 @@
 %% Cost function %%
 % Function to estimate the time of flight
 
-% Inputs: - vector initial, the initial boundary conditions of the
+% Inputs: - matrix I, the inertia dyadic of the system
+%         - scalar tf, the maneuver time
+%         - vector initial, the initial boundary conditions of the
 %           trajectory 
 %         - vector final, the initial boundary conditions of the
 %           trajectory
@@ -18,10 +20,9 @@
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(mu, initial, final, n, tau, x, B, basis)
+function [r] = cost_function(I, tf, initial, final, n, tau, x, B, basis)
     % Minimize the control input
-    P = reshape(x(1:end-1), [length(n), max(n)+1]);     % Control points
-    tf = x(end);                                        % The final maneuver time
+    P = reshape(x(1:end), [length(n), max(n)+1]);     % Control points
 
     % Boundary conditions
     P = boundary_conditions(tf, n, initial, final, P, B, basis);
@@ -30,11 +31,11 @@ function [r] = cost_function(mu, initial, final, n, tau, x, B, basis)
     C = evaluate_state(P,B,n);
 
     % Control input
-    u = acceleration_control(mu,C,tf);        
+    u = acceleration_control(I,C,tf);        
 
     % Control cost
     a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);            % Dimensional acceleration
     
     % Cost function
-    r = trapz(tau,a);                               
+    r = tf*trapz(tau,a);                               
 end

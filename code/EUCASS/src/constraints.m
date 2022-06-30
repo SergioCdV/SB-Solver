@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 30/01/2022
 
 %% Constraints %% 
@@ -36,9 +36,9 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method)
     C = evaluate_state(P,B,n);
 
     % Radius constraints
-    r = sqrt(C(1,:).^2+C(3,:).^2);
-    r0 = sqrt(initial(1)^2+initial(3)^2);
-    rf = sqrt(final(1)^2+final(3)^2);
+    r = sqrt(C(1,:).^2+C(3,:).^2);          % Orbital radius in time
+    r0 = sqrt(initial(1)^2+initial(3)^2);   % Initial orbital radius
+    rf = sqrt(final(1)^2+final(3)^2);       % Final orbital radius
 
     % Control input 
     u = acceleration_control(mu,C,tf,method);

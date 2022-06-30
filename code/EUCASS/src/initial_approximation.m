@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 31/01/22
 
 %% Initial approximation %%
@@ -35,8 +35,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution
     tfapp = tfapp*Napp;
 
     % Generate the polynomial basis
-    n_init = 3; 
-    n = [n_init n_init n_init];
+    n_init = repmat(3, [1 3]);
     Bapp = state_basis(n,tau,basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)

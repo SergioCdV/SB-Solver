@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 16/04/22
 
 %% State basis %%
@@ -46,6 +46,6 @@ function [B, tau] = state_basis(n, tau, basis)
              end
 
         otherwise
-            error('No valid collocation polynomial basis has been selected');
+            error('No valid functional polynomial basis has been selected');
     end
 end
