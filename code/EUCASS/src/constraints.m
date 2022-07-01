@@ -6,9 +6,6 @@
 
 % Inputs: - scalar mu, the gravitational parameter of the central body 
 %         - scalar T, the maximum acceleration allowed for the spacecraft
-%         - vector n, the approximation degree to each position coordinate
-%         - array P, the set of control points to estimate the position vector 
-%         - array B, the polynomial basis in use in the approximation
 %         - vector initial, the initial boundary conditions of the
 %           trajectory 
 %         - vector final, the initial boundary conditions of the

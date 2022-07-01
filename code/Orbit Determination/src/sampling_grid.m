@@ -1,34 +1,48 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 16/04/22
 
-%% Collocation grid %%
-% Function to compute the collocation grid
+%% Sampling grid %%
+% Function to compute the sampling grid
 
-% Inputs: - scalar m, the number of collocation
-%         - string method, the type of grid to use
+% Inputs: - scalar m, the number of sampling points in the grid
+%         - string method, the type of grid to be used
 %         - string mode, to select if the sampling grid is based on the
 %           the intersection of low-order nodes or the nodes of a
 %           high-order polynomial
 
-% Outputs: - vector tau, the collocation points to be used 
+% Outputs: - vector tau, the sampling points to be used 
 
-function [tau] = collocation_grid(m, method, mode)
+function [tau] = sampling_grid(m, method, mode)
+    % Sanity check on the distribution mode 
+    switch (method)
+        case 'Linear'
+            mode = '';
+        case 'Normal'
+            mode = '';
+        case 'Random'
+            mode = '';
+        case 'Regularized'
+            mode = '';
+        otherwise
+    end
+
+    % Sampling grid generation
     switch (mode)
         case 'Intersection'
             tau = zeros(1,sum(2:m));
             for i = 2:m
-                tau(1+sum(2:i-1):sum(2:i)) = sampling_grid(i,method);
+                tau(1+sum(2:i-1):sum(2:i)) = grid(i, method);
             end
             tau = unique(tau);
             tau = sort(tau);
         otherwise
-            tau = sampling_grid(m,method);
+            tau = grid(m, method);
     end
 end
 
 %% Auxiliary functions 
 % Sampling grid computation
-function [tau] = sampling_grid(m,method)
+function [tau] = grid(m, method)
     switch (method)
         case 'Linear'
             tau = linspace(0,1,m);

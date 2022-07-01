@@ -15,14 +15,14 @@
 
 function [P, C] = initial_fitting(n, tau, C, basis)
     % Preallocation of the control points and the polynomials
-    P = zeros(length(n),max(n)+1); 
+    P = zeros(length(n), max(n)+1); 
     B = state_basis(n, tau, basis);
 
     % Compute the position control points leveraging the complete state vector
     C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:) C(2*size(P,1)+1:3*size(P,1),:)];
     for i = 1:length(n)
         A = [B{i}(1:n(i)+1,:) B{i}(n(i)+2:2*(n(i)+1),:) B{i}(2*n(i)+3:end,:)];
-        P(i,:) = C(i,:)*pinv(A);
+        P(i,1:n(i)+1) = C(i,:)*pinv(A);
     end
     
     % Evaluate the state vector

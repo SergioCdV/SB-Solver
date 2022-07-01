@@ -44,7 +44,9 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     t0 = system.time;           % Characteristic time
 
     % Approximation order 
-    n = repmat(n, [1 3]); 
+    if (length(n) == 1)
+        n = repmat(n, [1 3]);
+    end
     
     % Normalization
     % Gravitational parameter of the body
@@ -77,14 +79,14 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
 
     % Initial guess for the boundary control points
     mapp = 300;   
-    tapp = collocation_grid(mapp, sampling_distribution, '');
+    tapp =  sampling_grid(mapp, sampling_distribution, '');
     [~, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = collocation_grid(m, sampling_distribution, '');
+    tau = sampling_grid(m, sampling_distribution, 'Intersection');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess 

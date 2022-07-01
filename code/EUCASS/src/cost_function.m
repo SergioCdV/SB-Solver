@@ -4,16 +4,16 @@
 %% Cost function %%
 % Function to compute the cost function to be minimized
 
-% Inputs: - vector initial, the initial boundary conditions of the
+% Inputs: - scalar mu, the gravitational parameter of the central body 
+%         - vector initial, the initial boundary conditions of the
 %           trajectory 
 %         - vector final, the initial boundary conditions of the
 %           trajectory
-%         - scalar mu, the gravitational parameter of the central body 
-%         - vector x, the degree of freedom to be optimized 
-%         - cell array B, the polynomial basis to be used 
 %         - vector n, the vector of degrees of approximation of the state
 %           variables
 %         - vector tau, the vector of collocation points
+%         - vector x, the degree of freedom to be optimized 
+%         - cell array B, the polynomial basis to be used 
 %         - string basis, the polynomial basis to be used
 %         - string method, the parameter distribution to be used
 
@@ -45,5 +45,5 @@ function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, method)
     end
     
     % Cost function
-    r = trapz(tau,a);                               
+    r = trapz(tau,a)/tf;                               
 end

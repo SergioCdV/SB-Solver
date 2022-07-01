@@ -36,14 +36,14 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution
 
     % Generate the polynomial basis
     n_init = repmat(3, [1 3]);
-    Bapp = state_basis(n,tau,basis);
+    Bapp = state_basis(n_init,tau,basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(length(initial)/2,n_init+1);  
-    Papp = boundary_conditions(tfapp, n, initial, final, Napp, Papp, Bapp, basis);
+    Papp = zeros(length(initial)/2, max(n_init)+1);  
+    Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, Papp, Bapp, basis);
 
     % State vector approximations
-    Capp = evaluate_state(Papp, Bapp, n);
+    Capp = evaluate_state(Papp, Bapp, n_init);
 
     % Time-regularized solution 
     switch (sampling_distribution)
@@ -51,10 +51,10 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution
             % Arc-length regularization
             r = sqrt(Capp(1,:).^2+Capp(3,:).^2);
             tfapp = tfapp*trapz(tau, r.^(-1));  
-            Papp = boundary_conditions(tfapp, n, initial, final, Napp, Papp, Bapp, basis);
+            Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, Papp, Bapp, basis);
         
             % State vector approximations
-            Capp = evaluate_state(Papp, Bapp, n);
+            Capp = evaluate_state(Papp, Bapp, n_init);
         otherwise
     end
 end

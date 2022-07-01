@@ -10,7 +10,7 @@ animations = 0;                         % Set to 1 to generate the gif
 %% Setup of the solution method
 time_distribution = 'Chebyshev';      % Distribution of time intervals
 basis = 'Chebyshev';                  % Polynomial basis to be use
-n = 5;                                % Order of approximation functions for each coordinate
+n = [7 7 7 8];                                % Order of approximation functions for each coordinate
 m = 60;                               % Number of sampling points
 
 % System data 
@@ -31,7 +31,7 @@ final_bc = [deg2rad(90) deg2rad(0) deg2rad(270) zeros(1,3)];
 T = 1e-4;    
 
 % Maneuver time 
-tf = 600; 
+tf = 60; 
 
 % Setup 
 setup.resultsFlag = true; 

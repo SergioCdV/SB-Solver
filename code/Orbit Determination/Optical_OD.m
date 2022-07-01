@@ -11,7 +11,7 @@ animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Linear';     % Distribution of time intervals
 basis = 'Chebyshev';              % Polynomial basis to be use
 cost_policy = 'Least Squares';    % Minimization cost function
-n = 7;                            % Order of Bezier curve functions for each coordinate
+n = [7];                            % Order of Bezier curve functions for each coordinate
 m = 100;                          % Number of sampling points
 
 % System data 

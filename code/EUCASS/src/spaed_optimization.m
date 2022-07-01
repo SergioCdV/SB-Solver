@@ -68,14 +68,14 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
     % Initial guess for the boundary control points
     mapp = 300;   
-    tapp = collocation_grid(mapp, sampling_distribution, 'Intersection');
+    tapp = sampling_grid(mapp, sampling_distribution, '');
     [~, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = collocation_grid(m, sampling_distribution, '');
+    tau = sampling_grid(m, sampling_distribution, 'Intersection');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess reshaping
@@ -120,9 +120,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Control input
     u = acceleration_control(mu, C, tf, sampling_distribution);
     u = u/tf^2;
-
-    % Trajectory cost
-    dV = dV/tf;
     
     % Solution normalization
     switch (sampling_distribution)

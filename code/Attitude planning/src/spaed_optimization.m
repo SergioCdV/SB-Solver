@@ -31,7 +31,9 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     I = system.Inertia;      % Inertia of the system
 
     % Approximation order 
-    n = repmat(n, [1 4]); 
+    if (length(n) == 1)
+        n = repmat(n, [1 4]);
+    end
 
     % Boundary conditions 
     % Initial state vector 
@@ -50,14 +52,14 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Core optimization
     % Initial guess for the boundary control points
     mapp = 300;   
-    tapp = collocation_grid(mapp, sampling_distribution, '');
+    tapp = sampling_grid(mapp, sampling_distribution, '');
     [~, Capp] = initial_approximation(tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = collocation_grid(m, sampling_distribution, '');
+    tau = sampling_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess 

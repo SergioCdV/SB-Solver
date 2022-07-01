@@ -22,7 +22,7 @@
 
 function [r] = cost_function(I, tf, initial, final, n, tau, x, B, basis)
     % Minimize the control input
-    P = reshape(x(1:end), [length(n), max(n)+1]);     % Control points
+    P = reshape(x, [length(n), max(n)+1]);     % Control points
 
     % Boundary conditions
     P = boundary_conditions(tf, n, initial, final, P, B, basis);

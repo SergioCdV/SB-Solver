@@ -10,7 +10,7 @@ animations = 0;                         % Set to 1 to generate the gif
 %% Setup of the collocation method
 time_distribution = 'Linear';            % Distribution of time intervals
 basis = 'Chebyshev';                     % Polynomial basis to be use
-n = 9;                                   % Order of Bezier curve functions for each coordinate
+n = [9 5 4];                                   % Order of Bezier curve functions for each coordinate
 m = 20;                                 % Number of sampling points
 
 % System data
