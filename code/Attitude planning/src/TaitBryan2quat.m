@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based attitude planning %%
 % Date: 29/06/22
 
 %% Quaternion to Tait-Bryan angles %%

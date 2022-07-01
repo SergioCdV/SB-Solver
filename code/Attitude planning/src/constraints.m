@@ -1,13 +1,12 @@
-%% Project: 
+%% Project: Shape-based attitude planning %%
 % Date: 30/01/2022
 
 %% Constraints %% 
 % Function to compute the residual vector of the constraints of the problem
 
-% Inputs: - structure system, containing the definition of the maneuver to
-%           be performed
-%         - scalar tf, the maneuver time
-%         - scalar T, the maximum acceleration allowed for the spacecraft
+% Inputs: - structure system, containing the definition of the rigid body
+%           of interest
+%         - scalar T, the maximum torque allowed for the spacecraft
 %         - vector n, the approximation degree to each position coordinate
 %         - array P, the set of control points to estimate the position vector 
 %         - array B, the polynomial basis in use in the approximation
@@ -24,9 +23,10 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(system, tf, T, initial, final, n, x, B, basis)
+function [c, ceq] = constraints(system, T, initial, final, n, x, B, basis)
     % Extract the optimization variables
-    P = reshape(x, [length(n), max(n)+1]);     % Control points
+    P = reshape(x(1:end-1), [length(n), max(n)+1]);     % Control points
+    tf = x(end);                                        % Maneuver time
 
     % Constants 
     I = system.Inertia;         % Inertia dyadic of the system 
@@ -38,7 +38,7 @@ function [c, ceq] = constraints(system, tf, T, initial, final, n, x, B, basis)
     P = boundary_conditions(tf, n, initial, final, P, B, basis);
 
     % Trajectory evolution
-    C = evaluate_state(P,B,n);
+    C = evaluate_state(P, B, n);
 
     % Protection areas computation
     if (size(N,2) == 1)
@@ -53,11 +53,11 @@ function [c, ceq] = constraints(system, tf, T, initial, final, n, x, B, basis)
     end
 
     % Control input 
-    u = acceleration_control(I,C,tf);
+    u = acceleration_control(I, C, tf);
 
     % Equalities 
     ceq = [];
 
     % Inequality (control authority)
-    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(T*ones(1,size(u,2))) angle];
+    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*ones(1,size(u,2))) angle];
 end

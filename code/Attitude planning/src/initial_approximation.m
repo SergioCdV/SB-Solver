@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based attitude planning %%
 % Date: 31/01/22
 
 %% Initial approximation %%
@@ -21,10 +21,10 @@ function [Papp, Capp] = initial_approximation(tau, tfapp, initial, final, basis)
     % Generate the polynomial basis
     n_init = 3; 
     n = [n_init n_init n_init n_init];
-    Bapp = state_basis(n,tau,basis);
+    Bapp = state_basis(n, tau, basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(ceil(length(initial)/2),n_init+1);  
+    Papp = zeros(ceil(length(initial)/2), n_init+1);  
     Papp = boundary_conditions(tfapp, n, initial, final, Papp, Bapp, basis);
 
     % State vector approximations

@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based attitude planning %%
 % Date: 16/04/22
 
 %% Quaternion inverse %%

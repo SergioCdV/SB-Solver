@@ -1,4 +1,4 @@
-%%  %% 
+%% Project: Shape-based attitude planning %%
 % Sergio Cuevas del Valle
 % Date: 20/01/20
 % File: setup_path.m 

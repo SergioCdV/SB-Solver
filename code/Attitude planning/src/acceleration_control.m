@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based attitude planning %%
 % Date: 07/04/22
 
 %% Acceleration control %%
@@ -11,7 +11,7 @@
 
 % Outputs: - vector u, the nondimensional 3xm control vector
 
-function [u] = acceleration_control(I,C,tf)
+function [u] = acceleration_control(I, C, tf)
     % Compute the control vector as a residual of the dynamics
     c = tf;             % Normalizing factor
 
@@ -25,6 +25,4 @@ function [u] = acceleration_control(I,C,tf)
         Domega = 2*quaternion_product(C(9:12,i),quaternion_inverse(C(1:4,i)))+[0; cross(omega(2:4),I*omega(2:4))];
         u(:,i) = Domega(2:4);
     end
-
-    u = u/tf^2;
 end

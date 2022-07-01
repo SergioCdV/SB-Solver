@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based attitude planning %%
 % Date: 01/02/22
 
 %% Initial fitting %%

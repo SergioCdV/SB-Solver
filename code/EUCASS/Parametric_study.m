@@ -1,4 +1,4 @@
-%% Project: 
+%% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 01/02/22
 
 %% Set up
@@ -10,7 +10,7 @@ animations = 0;                         % Set to 1 to generate the gif
 %% Setup of the solution method
 time_distribution = 'Regularized';      % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
-n = 10;                                 % Order of Bezier curve functions for each coordinate
+n = 10;                                  % Polynomial order in the state vector expansion
 m = 60;                                 % Number of sampling points
 
 % System data 
