@@ -8,10 +8,10 @@ close all
 animations = 0;                         % Set to 1 to generate the gif
 
 %% Setup of the solution method
-time_distribution = 'Regularized';      % Distribution of time intervals
+time_distribution = 'Chebyshev';      % Distribution of time intervals
 basis = 'Chebyshev';                    % Polynomial basis to be use
-n = [10 7 10];                          % Polynomial order in the state vector expansion
-m = 60;                                 % Number of sampling points
+n = [20 20 20];                          % Polynomial order in the state vector expansion
+m = 600;                                 % Number of sampling points
 
 % System data 
 r0 = 149597870700;                      % 1 AU [m]
@@ -28,7 +28,7 @@ theta0 = deg2rad(95);
 initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 5e-3 deg2rad(15) deg2rad(1) deg2rad(10)]; 
+final_coe = [1.05*r0 1e-4 deg2rad(5) deg2rad(1) deg2rad(30)]; 
 thetaf = deg2rad(270);
 final_coe = [final_coe thetaf]; 
 

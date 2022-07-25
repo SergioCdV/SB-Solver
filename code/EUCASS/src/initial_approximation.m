@@ -51,6 +51,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution
             % Arc-length regularization
             r = sqrt(Capp(1,:).^2+Capp(3,:).^2);
             tfapp = tfapp*trapz(tau, r.^(-1));  
+            Papp = zeros(length(initial)/2, max(n_init)+1);  
             Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, Papp, Bapp, basis);
         
             % State vector approximations
