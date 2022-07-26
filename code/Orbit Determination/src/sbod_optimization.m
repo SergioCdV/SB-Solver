@@ -51,17 +51,10 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     end
     
     % Normalization
-    % Gravitational parameter of the body
-    mu = mu*(t0^2/r0^3);
-
-    % Measurements epochs
-    measurements(1,:) = measurements(1,:) / t0;
-        
-    % Time of flight
-    tfapp = tf/t0;
-    
-    % Spacecraft propulsion parameters 
-    T = T*(t0^2/r0);
+    mu = mu*(t0^2/r0^3);                            % Gravitational parameter of the body
+    measurements(1,:) = measurements(1,:) / t0;     % Measurements epochs
+    tfapp = tf/t0;                                  % Time of flight
+    T = T*(t0^2/r0);                                % Spacecraft propulsion parameters 
     
     % Boundary conditions
     initial_coe(1) = initial_coe(1)/r0;    
@@ -88,7 +81,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = sampling_grid(m, sampling_distribution, 'Intersection');
+    tau = sampling_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess 
@@ -101,7 +94,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     P_ub = [Inf*ones(L,1); Inf; Inf];
     
     % Objective function
-    objective = @(x)cost_function(mu, initial, final, measurements, n, x, B, cost_policy, basis, tau, dynamics);
+    objective = @(x)cost_function(mu, initial, final, measurements, n, x, B, cost_policy, tau, sampling_distribution, basis, dynamics);
     
     % Linear constraints
     A = [];
@@ -110,7 +103,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, T, initial, final, measurements, n, x, B, cost_policy, basis, dynamics);
+    nonlcon = @(x)constraints(mu, T, initial, final, measurements, n, x, B, cost_policy, tau, sampling_distribution, basis, dynamics);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -131,7 +124,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     r = sqrt(C(1,:).^2+C(3,:).^2);
 
     % Control input
-    u = acceleration_control(mu,C,tf,sampling_distribution);
+    u = acceleration_control(mu,C,tf,dynamics);
     u = u/tf^2;
 
     % Time domain normalization 

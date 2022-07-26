@@ -20,13 +20,14 @@
 %         - vector x, the degree of freedom to be optimized 
 %         - cell array B, the polynomial basis to be used
 %         - string cost_function, the minimization policy to follow
+%         - string sampling_grid, the time distribution law to be used
 %         - string basis, the polynomial basis to be used
 %         - string method, the parameter distribution to be used
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, cost_function, basis, dynamics)
+function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, cost_function, tau, sampling_grid, basis, dynamics)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % Final time of flight 
@@ -58,15 +59,20 @@ function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, co
         case 'Dynamics residual'
             epochs = measurements(1,:)/tf; 
 
-            if (epochs(1) == -1)
-                epochs = 2*epochs-1;
-            end
-
             switch (dynamics)
                 case 'Regularized'
                     options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
-                    [~, epochs] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), epochs, 0, options);
+                    [~, epochs] = ode45(@(t,s)Sundman_transformation(C,t,s), epochs, 0, options);
                     epochs = epochs.';
+            end
+
+            switch (sampling_grid)
+                case 'Chebyshev'
+                    epochs = 2*epochs-1;
+                case 'Legendre'
+                    epochs = 2*epochs-1;
+                case 'Laguerre'
+                    epochs = 2*epochs-1;
             end
     
             % State evolution
@@ -97,8 +103,8 @@ end
 
 %% Auxiliary function
 % Compute the Sundman transformation 
-function [ds] = Sundman_transformation(basis, n, P, t, s)
-    B = state_basis(n, s, basis);
+function [ds] = Sundman_transformation(n, basis, P, t, s)
+    B = state_basis(n, t, basis);
     C = evaluate_state(P,B,n);
-    ds = (C(1,:).^2+C(3,:).^2).^(-1/2);
+    ds = 1./sqrt(C(1,:).^2+C(3,:).^2);
 end

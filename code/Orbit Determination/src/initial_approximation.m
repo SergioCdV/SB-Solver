@@ -24,7 +24,7 @@
 function [Papp, Capp, Napp, tfapp] = initial_approximation(dynamics, tau, tfapp, initial, final, basis)
     % Generate the polynomial basis
     n_init = 3; 
-    n = [n_init n_init n_init];
+    n = repmat(n_init,1,3);
     Bapp = state_basis(n,tau,basis);
 
     if (~isempty(final))
@@ -43,7 +43,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(dynamics, tau, tfapp,
     end 
         
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(length(initial)/2,n_init+1);  
+    Papp = zeros(length(initial)/2, n_init+1);  
     Papp = boundary_conditions(tfapp, n, initial, final, Napp, Papp, Bapp, basis);
 
     % State vector approximations
