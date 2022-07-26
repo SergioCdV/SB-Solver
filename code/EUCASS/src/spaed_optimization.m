@@ -12,6 +12,8 @@
 %         - scalar K, an initial desired revolutions value 
 %         - scalar T, the maximum allowed acceleration
 %         - scalar m, the number of sampling nodes to use 
+%         - string dynamics, specifying the dynamics vector field of the
+%           problem
 %         - string sampling_distribution, to select the sampling distribution
 %           to use 
 %         - string basis, the polynomial basis to be used in the
@@ -29,7 +31,7 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, sampling_distribution, basis, n, setup)
+function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, dynamics, sampling_distribution, basis, n, setup)
     % Characteristics of the system 
     mu = system.mu;             % Characteristic gravitational parameter
     r0 = system.distance;       % Characteristic distance
@@ -75,7 +77,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = sampling_grid(m, sampling_distribution, 'Intersection');
+    tau = sampling_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess reshaping
@@ -120,39 +122,40 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Control input
     u = acceleration_control(mu, C, tf, sampling_distribution);
     u = u/tf^2;
+
+    % Time domain normalization 
+    switch (sampling_distribution)
+        case 'Chebyshev'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Legendre'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Laguerre'
+            tau = collocation_grid(m, 'Legendre', '');
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+    end
     
     % Solution normalization
-    switch (sampling_distribution)
+    switch (dynamics)
         case 'Regularized'
             % Initial TOF 
             rapp = sqrt(Capp(1,:).^2+Capp(3,:).^2);
             tfapp = tfapp*trapz(tapp, rapp);
 
-            % Normalised time grid
-            options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
-            [~, tau] = ode45(@(t,s)Sundman_transformation(basis, n, P, t, s), tau, 0, options);
-    
             % Control input
             r = sqrt(C(1,:).^2+C(3,:).^2);
             u = u./(r.^2);
-    
+
+            % Normalised time grid
+            options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
+            [~, tau] = ode45(@(t,s)Sundman_transformation(basis, n, P, t, s), tau, 0, options);
+        
             % Final TOF 
             tf = tau(end)*tf;
 
         otherwise    
-            % Time domain normalization 
-            switch (sampling_distribution)
-                case 'Chebyshev'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Legendre'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Laguerre'
-                    tau = collocation_grid(m, 'Legendre', '');
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-            end
     end
 
     % Results 

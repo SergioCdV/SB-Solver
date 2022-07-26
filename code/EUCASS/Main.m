@@ -8,10 +8,11 @@ close all
 animations = 0;                         % Set to 1 to generate the gif
 
 %% Setup of the solution method
-time_distribution = 'Chebyshev';      % Distribution of time intervals
+time_distribution = 'Chebyshev';        % Distribution of time intervals
 basis = 'Chebyshev';                    % Polynomial basis to be use
-n = [20 20 20];                          % Polynomial order in the state vector expansion
-m = 600;                                 % Number of sampling points
+dynamics = 'Regularized';               % Dynamics parametrization to be used
+n = [10 10 10];                         % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
 
 % System data 
 r0 = 149597870700;                      % 1 AU [m]
@@ -45,7 +46,7 @@ setup.animations = false;
 %% Results
 % Simple solution    
 tic
-[C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
+[C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, dynamics, time_distribution, basis, n, setup);
 toc 
 
 % Average results 
@@ -54,7 +55,7 @@ time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter
     tic 
-    [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, time_distribution, basis, n, setup);
+    [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, dynamics, time_distribution, basis, n, setup);
     time(i) = toc;
 end
 

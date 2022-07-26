@@ -8,16 +8,17 @@
 % Inputs: - scalar mu, the gravitational parameter of the system
 %         - array C, the 9xm state vector 
 %         - scalar tf, the final time of flight
-%         - string method, the collocation distribution to be used
+%         - string dynamics, the independent variable parametrization to be
+%           used
 
 % Outputs: - vector u, the nondimensional 3xm control vector
 
-function [u] = acceleration_control(mu, C, tf, method)
+function [u] = acceleration_control(mu, C, tf, dynamics)
     % Compute the radius vector
     r = sqrt(C(1,:).^2+C(3,:).^2);
 
     % Compute the control vector as a residual of the dynamics
-    switch (method)
+    switch (dynamics)
         case 'Regularized'
             % Normalizing factor
             c = tf;

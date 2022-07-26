@@ -15,11 +15,12 @@
 %         - vector x, the degree of freedom to be optimized 
 %         - cell array B, the polynomial basis to be used 
 %         - string basis, the polynomial basis to be used
-%         - string method, the parameter distribution to be used
+%         - string dynamics, the independent variable parametrization to be
+%           used
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, method)
+function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, dynamics)
     % Minimize the control input
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % The final time of flight
@@ -32,10 +33,10 @@ function [r] = cost_function(mu, initial, final, n, tau, x, B, basis, method)
     C = evaluate_state(P,B,n);
 
     % Control input
-    u = acceleration_control(mu,C,tf,method);        
+    u = acceleration_control(mu,C,tf,dynamics);        
 
     % Control cost
-    switch (method)
+    switch (dynamics)
         case 'Regularized'
             r = sqrt(C(1,:).^2+C(3,:).^2);                   % Radial evolution
             a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);         % Non-dimensional acceleration

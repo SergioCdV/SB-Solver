@@ -15,12 +15,13 @@
 %         - vector x, the degree of freedom to be optimized 
 %         - cell array B, the polynomial basis to be used
 %         - string basis, the polynomial basis to be used
-%         - string method, the parameter distribution to be used
+%         - string dynamics, the independent variable parametrization to be
+%           used
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method)
+function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, dynamics)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % Final time of flight 
@@ -38,13 +39,13 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, method)
     rf = sqrt(final(1)^2+final(3)^2);       % Final orbital radius
 
     % Control input 
-    u = acceleration_control(mu,C,tf,method);
+    u = acceleration_control(mu,C,tf,dynamics);
 
     % Equalities 
     ceq = [];
 
     % Inequality (control authority)
-    switch (method)
+    switch (dynamics)
         case 'Regularized'
             c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*r.^2.*ones(1,size(u,2))) r-2*max([r0 rf])]; 
         otherwise
