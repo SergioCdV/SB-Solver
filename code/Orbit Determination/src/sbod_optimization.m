@@ -16,6 +16,8 @@
 %         - scalar m, the number of sampling nodes to use 
 %         - scalar n, the polynomial degree to be used 
 %         - string cost_policy, the strategy to minimize
+%         - string dynamics, the parametrization of the dynamics
+%           vectorfield to be used
 %         - string sampling_distribution, to select the sampling distribution
 %           to use 
 %         - string basis, the polynomial basis to be used in the
@@ -32,7 +34,7 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system, tf, initial_coe, final_coe, measurements, T, m, n, cost_policy, sampling_distribution, basis, setup)
+function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system, tf, initial_coe, final_coe, measurements, T, m, n, cost_policy, dynamics, sampling_distribution, basis, setup)
     % Sanity checks 
     if (isempty(T))
         T = Inf;
@@ -80,7 +82,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp =  sampling_grid(mapp, sampling_distribution, '');
-    [~, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tapp, tfapp, initial, final, basis); 
+    [~, Capp, Napp, tfapp] = initial_approximation(dynamics, tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
@@ -99,7 +101,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     P_ub = [Inf*ones(L,1); Inf; Inf];
     
     % Objective function
-    objective = @(x)cost_function(mu, initial, final, measurements, n, x, B, cost_policy, basis, tau, sampling_distribution);
+    objective = @(x)cost_function(mu, initial, final, measurements, n, x, B, cost_policy, basis, tau, dynamics);
     
     % Linear constraints
     A = [];
@@ -108,7 +110,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, T, initial, final, measurements, n, x, B, cost_policy, basis, sampling_distribution);
+    nonlcon = @(x)constraints(mu, T, initial, final, measurements, n, x, B, cost_policy, basis, dynamics);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'iter-detailed', 'Algorithm', 'sqp');
@@ -127,9 +129,27 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
     % Final state evolution
     C = evaluate_state(P,B,n);
     r = sqrt(C(1,:).^2+C(3,:).^2);
+
+    % Control input
+    u = acceleration_control(mu,C,tf,sampling_distribution);
+    u = u/tf^2;
+
+    % Time domain normalization 
+    switch (sampling_distribution)
+        case 'Chebyshev'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Legendre'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Laguerre'
+            tau = collocation_grid(m, 'Legendre', '');
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+    end
     
     % Solution normalization
-    switch (sampling_distribution)
+    switch (dynamics)
         case 'Regularized'
             % Initial TOF 
             rapp = sqrt(Capp(1,:).^2+Capp(3,:).^2);
@@ -140,8 +160,7 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
             [~, tau] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), tau, 0, options);
     
             % Control input
-            u = acceleration_control(mu,C,tf,sampling_distribution);
-            u = u./(r.^2*tf^2);
+            u = u./(r.^2);
 
             % Final cost function 
             switch (cost_policy)
@@ -153,24 +172,6 @@ function [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system,
             tf = tau(end)*tf;
 
         otherwise
-            % Control input
-            u = acceleration_control(mu,C,tf,sampling_distribution);
-            u = u/tf^2;
-
-            % Time domain normalization 
-            switch (sampling_distribution)
-                case 'Chebyshev'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Legendre'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Laguerre'
-                    tau = collocation_grid(m, 'Legendre', '');
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-            end
-
             % Final cost function 
             switch (cost_policy)
                 case 'Dynamic residual'

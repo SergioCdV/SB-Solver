@@ -26,7 +26,7 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, cost_function, basis, method)
+function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, cost_function, basis, dynamics)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % Final time of flight 
@@ -52,22 +52,21 @@ function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, co
 
     % Equalities 
     ceq = [];
-
+       
     % Inequality (control authority)
     switch (cost_function)
         case 'Dynamics residual'
             epochs = measurements(1,:)/tf; 
-            switch (method)
+
+            if (epochs(1) == -1)
+                epochs = 2*epochs-1;
+            end
+
+            switch (dynamics)
                 case 'Regularized'
                     options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
                     [~, epochs] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), epochs, 0, options);
                     epochs = epochs.';
-                case 'Chebyshev'
-                    epochs = 2*epochs-1;
-                case 'Legendre'
-                    epochs = 2*epochs-1;
-                case 'Laguerre'
-                    epochs = 2*epochs-1;
             end
     
             % State evolution
@@ -82,13 +81,14 @@ function [c, ceq] = constraints(mu, T, initial, final, measurements, n, x, B, co
             r = mean(r)+3*std(r);
 
             c = [R-2*max([r0 rf]) r-tol];
+            
         otherwise
             % Control input 
-            u = acceleration_control(mu,C,tf,method);
+            u = acceleration_control(mu,C,tf,dynamics);
 
-            switch (method)
+            switch (dynamics)
                 case 'Regularized'
-                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-r.^2.*tf^2*T*ones(1,size(u,2)) R-2*max([r0 rf])]; 
+                    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-R.^2.*tf^2*T.*ones(1,size(u,2)) R-2*max([r0 rf])]; 
                 otherwise
                     c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-tf^2*T*ones(1,size(u,2)) R-2*max([r0 rf])];
             end

@@ -12,6 +12,8 @@
 %         - scalar K, an initial desired revolutions value 
 %         - scalar T, the maximum allowed acceleration
 %         - scalar m, the number of sampling nodes to use 
+%         - string dynamics, to indicate the parametrization of the
+%           dynamics to be used
 %         - string sampling_distribution, to select the sampling distribution
 %           to use 
 %         - string basis, the polynomial basis to be used in the
@@ -29,7 +31,7 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, sampling_distribution, basis, n, setup)
+function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, m, dynamics, sampling_distribution, basis, n, setup)
     % Characteristics of the system 
     mu = system.mu;             % Characteristic gravitational parameter
     r0 = system.distance;       % Characteristic distance
@@ -69,7 +71,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
-    [~, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tapp, tfapp, initial, final, basis); 
+    [~, Capp, Napp, tfapp] = initial_approximation(dynamics, tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
@@ -88,7 +90,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     P_ub = [Inf*ones(L,1); Inf; Inf];
     
     % Objective function
-    objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis, sampling_distribution);
+    objective = @(x)cost_function(mu, initial, final, n, tau, x, B, basis, dynamics);
     
     % Linear constraints and inequalities
     A = [];
@@ -97,7 +99,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, sampling_distribution);
+    nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, dynamics);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
@@ -118,11 +120,25 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     C = evaluate_state(P,B,n);
 
     % Control input
-    u = acceleration_control(mu, C, tf, sampling_distribution);
+    u = acceleration_control(mu, C, tf, dynamics);
     u = u/tf^2;
+
+    % Time domain normalization 
+    switch (sampling_distribution)
+        case 'Chebyshev'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Legendre'
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+        case 'Laguerre'
+            tau = collocation_grid(m, 'Legendre', '');
+            tau = (1/2)*(1+tau);
+            tf = tf*2;
+    end
     
     % Solution normalization
-    switch (sampling_distribution)
+    switch (dynamics)
         case 'Regularized'
             % Initial TOF 
             rapp = sqrt(Capp(1,:).^2+Capp(3,:).^2);
@@ -140,19 +156,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
             tf = tau(end)*tf;
 
         otherwise    
-            % Time domain normalization 
-            switch (sampling_distribution)
-                case 'Chebyshev'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Legendre'
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-                case 'Laguerre'
-                    tau = collocation_grid(m, 'Legendre', '');
-                    tau = (1/2)*(1+tau);
-                    tf = tf*2;
-            end
     end
 
     % Results 

@@ -9,6 +9,7 @@ animations = 0;                         % Set to 1 to generate the gif
 
 %% Setup of the solution method
 time_distribution = 'Linear';     % Distribution of time intervals
+parametrization = 'Regularized';       % Parametrization of the dynamics to be used
 basis = 'Chebyshev';              % Polynomial basis to be use
 cost_policy = 'Least Squares';    % Minimization cost function
 n = [7];                            % Order of Bezier curve functions for each coordinate
@@ -67,7 +68,7 @@ setup.animations = false;
 %% Results
 % Simple solution    
 tic
-[C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system, tf, initial_coe, final_coe, measurements, T, m, n, cost_policy, time_distribution, basis, setup);
+[C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system, tf, initial_coe, final_coe, measurements, T, m, n, cost_policy, parametrization, time_distribution, basis, setup);
 toc 
 
 E = abs(1e-1-abs(u(3,:)));
@@ -86,7 +87,7 @@ time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter
     tic 
-    [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system, tf, initial_coe, final_coe, measurements, T, m, n, cost_policy, time_distribution, basis, setup);
+    [C, e, u, tf, tfapp, tau, exitflag, output] = sbod_optimization(system, tf, initial_coe, final_coe, measurements, T, m, n, cost_policy, parametrization, time_distribution, basis, setup);
     time(i) = toc;
 end
 

@@ -18,11 +18,12 @@
 %         - vector tau, the vector of collocation points
 %         - string cost_policy, the policy to be minimized
 %         - string basis, the polynomial basis to be used
-%         - string method, the parameter distribution to be used
+%         - string dynamics, the parametrization of the dynamics
+%           vectorfield to be used
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(mu, initial, final, measurements, n, x, B, cost_policy, basis, tau, sampling_distribution)
+function [r] = cost_function(mu, initial, final, measurements, n, x, B, cost_policy, basis, tau, dynamics)
     % Minimize the control input
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % The final time of flight
@@ -33,17 +34,16 @@ function [r] = cost_function(mu, initial, final, measurements, n, x, B, cost_pol
 
     % Re-evaluate the measurement's epochs in case it is needed
     epochs = measurements(1,:)/tf; 
-    switch (sampling_distribution)
+
+    switch (dynamics)
         case 'Regularized'
             options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
             [~, epochs] = ode45(@(t,s)Sundman_transformation(basis,n,P,t,s), epochs, 0, options);
             epochs = epochs.';
-        case 'Chebyshev'
-            epochs = 2*epochs-1;
-        case 'Legendre'
-            epochs = 2*epochs-1;
-        case 'Laguerre'
-            epochs = 2*epochs-1;
+    end
+
+    if (epochs(1) == -1)
+        epochs = 2*epochs-1;
     end
 
     % Cost function
@@ -64,10 +64,10 @@ function [r] = cost_function(mu, initial, final, measurements, n, x, B, cost_pol
             C = evaluate_state(P,B,n);
 
             % Control input
-            u = acceleration_control(mu,C,tf,sampling_distribution);        
+            u = acceleration_control(mu,C,tf,dynamics);        
 
             % Control cost
-            switch (sampling_distribution)
+            switch (dynamics)
                 case 'Regularized'
                     r = sqrt(C(1,:).^2+C(3,:).^2);                   % Radial evolution
                     a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);         % Non-dimensional acceleration

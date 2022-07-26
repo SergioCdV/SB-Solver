@@ -23,14 +23,12 @@ function [u] = acceleration_control(mu,C,tf,method)
             c = tf;
 
             % Derivative of the radius with the arclength 
-            dr = dot(C(1,:).*C(4,:)+C(3,:).*C(6,:))./r;
+            dr = [C(1,:); zeros(1,size(C,2)); C(3,:)]./r;
 
             % Compute the control vector as a dynamics residual
-            u = [C(7,:)-dr.*C(4,:)./r+c.^2.*mu.*C(1,:)./r-C(1,:).*C(5,:).^2; ...
-                 C(1,:).*C(8,:)+2*C(4,:).*C(5,:); ... 
-                 C(9,:)-dr.*C(6,:)./r+c.^2.*mu.*C(3,:)./r];
-
-            u(2,:) = u(2,:)./r.^2; 
+            u = [C(7,:)-dr(1,:).*C(4,:)./r-C(1,:).*C(5,:).^2+c.^2.*mu.*C(1,:)./r; ...
+                 C(1,:).*(C(8,:)-dr(2,:).*C(5,:)./r)+2*C(4,:).*C(5,:); ... 
+                 C(9,:)-dr(3,:).*C(6,:)./r+c.^2.*mu.*C(3,:)./r]; 
 
         otherwise
             % Normalizing factor

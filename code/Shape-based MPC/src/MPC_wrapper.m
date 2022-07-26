@@ -44,8 +44,9 @@ function [t, S, U, dV] = MPC_wrapper(system, initial_coe, final_coe, T, method)
     i = 1;                                  % Initial slice index
 
     % Setup of the shape-based method
-    sampling_distribution = 'Regularized';  % Distribution of time intervals
+    sampling_distribution = 'Chebyshev';    % Distribution of time intervals
     basis = 'Chebyshev';                    % Polynomial basis to be use
+    dynamics = 'Kepler';                    % Parametrization of the state vector to be used
     n = 10;                                 % Polynomial order in the state vector expansion
     m = 100;                                % Number of sampling points
     setup.resultsFlag = false;              % Plotting options
@@ -60,11 +61,11 @@ function [t, S, U, dV] = MPC_wrapper(system, initial_coe, final_coe, T, method)
         % Compute the commands
         switch (method)
             case 'Shape-based'
-                [~, ~, u, tf] = spaed_optimization(system, initial_coe, final_coe, 1, T, m, sampling_distribution, basis, n, setup);
+                [~, ~, u, tf] = spaed_optimization(system, initial_coe, final_coe, 1, T, m, dynamics, sampling_distribution, basis, n, setup);
             case 'Linear programming'
-                [~, ~, u, tf] = spaed_optimization(system, initial_coe, final_coe, 0, T, m, sampling_distribution, basis, n, setup);
+                [~, ~, u, tf] = spaed_optimization(system, initial_coe, final_coe, 0, T, m, dynamics, sampling_distribution, basis, n, setup);
             case 'Non Linear programming'
-                [~, ~, u, tf] = spaed_optimization(system, initial_coe, final_coe, 0, T, m, sampling_distribution, basis, n, setup);
+                [~, ~, u, tf] = spaed_optimization(system, initial_coe, final_coe, 0, T, m, dynamics, sampling_distribution, basis, n, setup);
             otherwise
                 error('No valid control policy was selected.');
         end

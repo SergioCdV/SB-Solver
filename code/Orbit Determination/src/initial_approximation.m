@@ -12,6 +12,8 @@
 %         - vector final, the final boundary conditions of the
 %           trajectory
 %         - string basis, specifying the polynomial collacation basis
+%         - string dynamics, the parametrization of the dynamics
+%           vectorfield to be used
 
 % Outputs: - array Papp, the initial estimation of the boundary control
 %            points
@@ -19,7 +21,7 @@
 %          - scalar Napp, the estimated number of revolutions needed
 %          - scalar tfapp, the initial initial time of flight
 
-function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution, tau, tfapp, initial, final, basis)
+function [Papp, Capp, Napp, tfapp] = initial_approximation(dynamics, tau, tfapp, initial, final, basis)
     % Generate the polynomial basis
     n_init = 3; 
     n = [n_init n_init n_init];
@@ -48,7 +50,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(sampling_distribution
     Capp = evaluate_state(Papp, Bapp, n);
 
     % Time-regularized solution 
-    switch (sampling_distribution)
+    switch (dynamics)
         case 'Regularized'
             % Arc-length regularization
             r = sqrt(Capp(1,:).^2+Capp(3,:).^2);
