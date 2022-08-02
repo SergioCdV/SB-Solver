@@ -68,6 +68,26 @@ function [r] = cost_function(cost, mu, initial, final, n, tau, x, B, basis, dyna
             % Cost function
             r = trapz(tau,a); 
             
+        case 'Minimum power'
+            % Minimize the control input
+            P = reshape(x(1:end-2), [length(n), max(n)+1]);          % Control points
+            N = floor(x(end));                                       % The optimal number of revolutions
+            P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+
+            C = evaluate_state(P,B,n);                               % State evolution
+            [u, dv, ~] = acceleration_control(mu, tau, C, tf, dynamics); 
+
+            % Control cost
+            switch (dynamics)
+                case 'Sundman'
+                    r = sqrt(C(1,:).^2+C(3,:).^2);                   % Radial evolution
+                    u = u./(r.^2);                                   % Dimensional acceleration
+
+                case 'Kepler'
+            end
+
+            r = abs(trapz(tau,dot(dv,u,1))); 
+
         otherwise 
             error('No valid cost function was selected to be minimized');
     end       

@@ -7,12 +7,12 @@ close all
 
 %% Setup of the solution method
 animations = 0;                         % Set to 1 to generate the gif
-time_distribution = 'Linear';        % Distribution of time intervals
-basis = 'Bernstein';                    % Polynomial basis to be use
+time_distribution = 'Chebyshev';        % Distribution of time intervals
+basis = 'Chebyshev';                    % Polynomial basis to be use
 dynamics = 'Sundman';                    % Dynamics parametrization to be used
 n = [12 12 12];                         % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
-cost_function = 'Minimum energy';         % Cost function to be minimized
+cost_function = 'Minimum power';         % Cost function to be minimized
 
 % System data 
 r0 = 149597870700;                      % 1 AU [m]
