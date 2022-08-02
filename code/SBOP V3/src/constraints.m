@@ -21,7 +21,7 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, dynamics)
+function [c, ceq] = constraints(mu, T, initial, final, tau, n, x, B, basis, dynamics)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % Final time of flight 
@@ -39,15 +39,15 @@ function [c, ceq] = constraints(mu, T, initial, final, n, x, B, basis, dynamics)
     rf = sqrt(final(1)^2+final(3)^2);                   % Final orbital radius
 
     % Control input 
-    u = acceleration_control(mu, C, tf, dynamics);
+    u = acceleration_control(mu, tau, C, tf, dynamics);
 
     % Equalities 
     ceq = [];
 
     switch (dynamics)
         case 'Sundman'
-            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*r.^2.*ones(1,size(u,2))) r-2*max([r0 rf])]; 
+            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*r.^2) r-2*max([r0 rf])]; 
         case 'Kepler'
-            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*T*ones(1,size(u,2))) r-2*max([r0 rf])];
+            c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*repmat(T,1,size(u,2))) r-2*max([r0 rf])];
     end
 end

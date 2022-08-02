@@ -55,10 +55,10 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     mu = mu*(t0^2/r0^3);                                % Gravitational parameter of the body
 
     initial_coe(1) = initial_coe(1)/r0;                 % Boundary conditions normalization
-    final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
-
     s = coe2state(mu, initial_coe);                     % Initial state vector 
     initial = cylindrical2cartesian(s, false).';        % Initial state vector in cylindrical coordinates
+
+    final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
     s = coe2state(mu, final_coe);                       % Final state vector                   
     final = cylindrical2cartesian(s, false).';          % Final state vector in cylindrical coordinates 
 
@@ -99,7 +99,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, T, initial, final, n, x, B, basis, dynamics);
+    nonlcon = @(x)constraints(mu, T, initial, final, tau, n, x, B, basis, dynamics);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
@@ -120,7 +120,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     C = evaluate_state(P,B,n);
 
     % Control input
-    u = acceleration_control(mu, C, tf, dynamics);
+    u = acceleration_control(mu, tau, C, tf, dynamics);
     u = u/tf^2;
 
     % Time domain normalization 
@@ -146,7 +146,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
             % Control input
             r = sqrt(C(1,:).^2+C(3,:).^2);
-            u = u./(r.^2);
+            u = u./(r.^2*trapz(tau,r)^2);
             
             % Final TOF
             tf = tf*trapz(tau, r);
@@ -160,12 +160,4 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
         plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup);
     end
 end
- 
 
-%% Auxiliary functions 
-% Compute the derivative of time with respect to the generalized anomaly 
-function [dt] = Sundman_transformation(basis, n, P, t, s)
-    B = state_basis(n,s,basis);
-    C = evaluate_state(P,B,n);
-    dt = sqrt(C(1,:).^2+C(3,:).^2);
-end

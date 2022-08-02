@@ -9,9 +9,9 @@ close all
 animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Linear';        % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
-dynamics = 'Kepler';               % Dynamics parametrization to be used
-n = [10 10 10];                         % Polynomial order in the state vector expansion
-m = 200;                                % Number of sampling points
+dynamics = 'Sundman';                    % Dynamics parametrization to be used
+n = [12 12 12];                         % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
 cost_function = 'Minimum energy';         % Cost function to be minimized
 
 % System data 

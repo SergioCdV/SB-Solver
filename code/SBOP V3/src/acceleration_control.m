@@ -15,7 +15,7 @@
 %          - vector dv, the inertial velocity field 
 %          - vector f, the dynamics vector field
 
-function [u, dv, f] = acceleration_control(mu, C, tf, dynamics)
+function [u, dv, f] = acceleration_control(mu, tau, C, tf, dynamics)
     % Compute the radius vector
     r = sqrt(C(1,:).^2+C(3,:).^2);
 
@@ -27,7 +27,7 @@ function [u, dv, f] = acceleration_control(mu, C, tf, dynamics)
             dr = dot(dr,C(4:6,:),1);
 
             % Linear terms of the equations of motion
-            c = tf;                                                                         % Normalizing factor
+            c = tf*trapz(tau,r);                                                            % Normalizing factor
             f = -[c.^2.*mu.*C(1,:)./r; zeros(1,size(C,2)); c.^2.*mu.*C(3,:)./r];            % Regularized acceleration vector
             a = [C(7,:)-dr.*C(4,:)./r-C(1,:).*C(5,:).^2; ...
                  C(1,:).*(C(8,:)-dr.*C(5,:)./r)+2*C(4,:).*C(5,:); ... 

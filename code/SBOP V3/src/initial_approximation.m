@@ -50,7 +50,7 @@ function [Papp, Capp, Napp, tfapp] = initial_approximation(dynamics, tau, tfapp,
         case 'Sundman'
             % Arc-length regularization
             r = sqrt(Capp(1,:).^2+Capp(3,:).^2);
-            tfapp = tfapp*trapz(tau, r.^(-1));  
+            tfapp = tfapp/trapz(tau, r);  
             Papp = zeros(length(initial)/2, max(n_init)+1);  
             Papp = boundary_conditions(tfapp, n_init, initial, final, Napp, Papp, Bapp, basis);
         
