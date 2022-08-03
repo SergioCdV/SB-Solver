@@ -28,65 +28,62 @@ function [r] = cost_function(cost, mu, initial, final, n, tau, x, B, basis, dyna
         case 'Minimum time'
             switch (dynamics)
                 case 'Sundman'
-                    % Boundary conditions
-                    P = reshape(x(1:end-2), [length(n), max(n)+1]);          % Control points
-                    N = floor(x(end));                                       % The optimal number of revolutions
-                    P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
-
-                    C = evaluate_state(P,B,n);                               % State evolution
-                    r = sqrt(C(1,:).^2+C(3,:).^2);                           % Radial evolution
-
-                    % Cost function
-                    r = tf*trapz(tau,r);
+                    P = reshape(x(1:end-2), [length(n), max(n)+1]);                     % Control points
+                    N = floor(x(end));                                                  % The optimal number of revolutions
+                    P = boundary_conditions(tf, n, initial, final, N, P, B, basis);     % Boundary conditions control points
+                    C = evaluate_state(P,B,n);                                          % State evolution
+                    r = sqrt(C(1,:).^2+C(3,:).^2);                                      % Radial evolution
+                    r = tf*trapz(tau,r);                                                % Final time of flight
 
                 case 'Kepler'
-                    % Cost function
-                    r = tf;
+                    r = tf;                                                             % Final time of flight
             end
 
         case 'Minimum energy'
             % Minimize the control input
-            P = reshape(x(1:end-2), [length(n), max(n)+1]);          % Control points
-            N = floor(x(end));                                       % The optimal number of revolutions
-            P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+            P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
+            N = floor(x(end));                                                          % The optimal number of revolutions
+            P = boundary_conditions(tf, n, initial, final, N, P, B, basis);             % Boundary conditions control points
+            C = evaluate_state(P,B,n);                                                  % State evolution
 
-            C = evaluate_state(P,B,n);                               % State evolution
-            [u, ~, ~] = acceleration_control(mu, tau, C, tf, dynamics); 
-            u = u/tf;
+            [u, ~, ~] = acceleration_control(mu, tau, C, tf, dynamics);                 % Control vector
+            u = u/tf^2;                                                                 % Normalized control vector
         
-            % Control cost
             switch (dynamics)
                 case 'Sundman'
-                    r = sqrt(C(1,:).^2+C(3,:).^2);                   % Radial evolution
-                    u = u./(r*trapz(tau,r));                         % Dimensional acceleration
+                    r = sqrt(C(1,:).^2+C(3,:).^2);         % Radial evolution
+                    u = u./(r.^2);                         % Dimensional acceleration
 
                 case 'Kepler'
             end
 
-            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);                 % Non-dimensional acceleration norm
+            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);       % Non-dimensional acceleration norm
             
             % Cost function
-            r = trapz(tau,a); 
+            r = tf*trapz(tau,a); 
             
         case 'Minimum power'
             % Minimize the control input
-            P = reshape(x(1:end-2), [length(n), max(n)+1]);          % Control points
-            N = floor(x(end));                                       % The optimal number of revolutions
-            P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
+            P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
+            N = floor(x(end));                                                          % The optimal number of revolutions
+            P = boundary_conditions(tf, n, initial, final, N, P, B, basis);             % Boundary conditions control points
+            C = evaluate_state(P,B,n);                                                  % State evolution
 
-            C = evaluate_state(P,B,n);                               % State evolution
-            [u, dv, ~] = acceleration_control(mu, tau, C, tf, dynamics); 
+            [u, dv, ~] = acceleration_control(mu, tau, C, tf, dynamics);                % Control vector
+            u = u/tf^2;                                                                 % Normalized control vector
+            dv = dv/tf;                                                                 % Normalized velocity field
 
             % Control cost
             switch (dynamics)
                 case 'Sundman'
-                    r = sqrt(C(1,:).^2+C(3,:).^2);                   % Radial evolution
-                    u = u./(r.^2);                                   % Dimensional acceleration
+                    r = sqrt(C(1,:).^2+C(3,:).^2);      % Radial evolution
+                    u = u./(r.^2);                      % Dimensional acceleration
+                    dv = dv./r;                         % Dimensional velocity
 
                 case 'Kepler'
             end
 
-            r = abs(trapz(tau,dot(dv,u,1))); 
+            r = abs(tf*trapz(tau, dot(dv,u,1))); 
 
         otherwise 
             error('No valid cost function was selected to be minimized');

@@ -146,10 +146,12 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
             % Control input
             r = sqrt(C(1,:).^2+C(3,:).^2);
-            u = u./(r.^2*trapz(tau,r)^2);
+            u = u./(r.^2);
             
             % Final TOF
-            tf = tf*trapz(tau, r);
+            options = odeset('RelTol', 2.25e-14, 'AbsTol', 1e-22);
+            [~, tau] = ode45(@(t,s)Sundman_transformation(basis, n, P, t, s), tau, 0, options);
+            tf = tau(end)*tf;
 
         otherwise    
     end
