@@ -24,7 +24,7 @@ function [output] = TaitBryan2quat(quaternion_flag, input)
         roll = atan2(q(4)*q(1)+q(2)*q(3), 0.5-(q(1)^2+q(2)^2));         % Roll angle
         
         % Final Tait-Bryan angles
-        output = [yaw pitch roll input(5:8)];  
+        output = [yaw pitch roll input(5:7)];  
 
     else
         % Associated quaternion
@@ -32,10 +32,10 @@ function [output] = TaitBryan2quat(quaternion_flag, input)
         pitch = input(2);             % Pitch angle 
         roll = input(3);              % Roll angle
         
-        q(1) = sin(roll/2)*cos(pitch/2)*cos(yaw/2)-cos(roll/2)*sin(pitch/2)*sin(yaw/2);   
-        q(2) = cos(roll/2)*sin(pitch/2)*cos(yaw/2)+sin(roll/2)*cos(pitch/2)*sin(yaw/2); 
-        q(3) = cos(roll/2)*cos(pitch/2)*sin(yaw/2)-sin(roll/2)*sin(pitch/2)*cos(yaw/2); 
-        q(4) = cos(roll/2)*cos(pitch/2)*cos(yaw/2)+sin(roll/2)*sin(pitch/2)*sin(yaw/2);  
+        q(1) = cos(roll/2)*cos(pitch/2)*cos(yaw/2)+sin(roll/2)*sin(pitch/2)*sin(yaw/2);  
+        q(2) = sin(roll/2)*cos(pitch/2)*cos(yaw/2)-cos(roll/2)*sin(pitch/2)*sin(yaw/2);   
+        q(3) = cos(roll/2)*sin(pitch/2)*cos(yaw/2)+sin(roll/2)*cos(pitch/2)*sin(yaw/2); 
+        q(4) = cos(roll/2)*cos(pitch/2)*sin(yaw/2)-sin(roll/2)*sin(pitch/2)*cos(yaw/2); 
   
         % Final quaternion 
         output = [q input(4:6)];   

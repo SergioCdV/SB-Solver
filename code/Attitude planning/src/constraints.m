@@ -19,11 +19,12 @@
 %         - vector x, the degree of freedom to be optimized 
 %         - cell array B, the polynomial basis to be used
 %         - string basis, the polynomial basis to be used
+%         - string dynamics, the dynamics formulation to be used
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(system, T, initial, final, n, x, B, basis)
+function [c, ceq] = constraints(system, T, initial, final, n, x, B, basis, dynamics)
     % Extract the optimization variables
     P = reshape(x(1:end-1), [length(n), max(n)+1]);     % Control points
     tf = x(end);                                        % Maneuver time
@@ -53,7 +54,7 @@ function [c, ceq] = constraints(system, T, initial, final, n, x, B, basis)
     end
 
     % Control input 
-    u = acceleration_control(I, C, tf);
+    u = acceleration_control(I, C, tf, dynamics);
 
     % Equalities 
     ceq = [];

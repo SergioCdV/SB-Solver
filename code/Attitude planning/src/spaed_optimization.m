@@ -12,13 +12,7 @@
 %         - vector final_bcs, the final Tait-Bryan angles and angular
 %           velocity
 %         - scalar T, the maximum allowed torque
-%         - scalar m, the number of sampling nodes to use 
-%         - string sampling_distribution, to select the sampling distribution
-%           to use 
-%         - string basis, the polynomial basis to be used in the
-%           optimization
-%         - scalar n, the polynomial degree to be used 
-%         - structure setup, containing the setup of the figures
+%         - structure setup, containing the setup of the algorithm in general
 
 % Outputs: - array C, the final state evolution matrix
 %          - scalar dV, the final domega cost of the transfer 
@@ -28,12 +22,20 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_bcs, final_bcs, tf, T, m, sampling_distribution, basis, n, setup)
+function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_bcs, final_bcs, tf, T, setup)
+    % Setup of the algorithm
+    n = setup.order;                        % Order in the approximation of the state vector
+    dynamics = setup.formulation;           % Formulation of the dynamics
+    basis = setup.basis;                    % Polynomial basis to be used 
+    sampling_distribution = setup.grid;     % Sampling grid to be used
+    m = setup.nodes;                        % Number of nodes in the grid
+    cost = setup.cost_function;             % Cost function to be minimized
+
     % Characteristics of the system 
-    I = system.Inertia;         % Inertia matrix of the system
+    I = system.Inertia;                     % Inertia matrix of the system
 
     % Normalization constants 
-    t0 = 3600;                 % Seconds in an hour
+    t0 = 3600;                  % Seconds in an hour
 
     % Approximation order 
     if (length(n) == 1)
@@ -61,7 +63,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = sampling_grid(m, sampling_distribution, 'Intersection');
+    tau = sampling_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess 
@@ -74,7 +76,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     P_ub = [Inf*ones(L,1); 1];
     
     % Objective function
-    objective = @(x)cost_function(I, initial, final, n, tau, x, B, basis);
+    objective = @(x)cost_function(cost, I, initial, final, n, tau, x, B, basis, dynamics);
     
     % Linear constraints
     A = [];
@@ -83,7 +85,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(system, T, initial, final, n, x, B, basis);
+    nonlcon = @(x)constraints(system, T, initial, final, n, x, B, basis, dynamics);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
@@ -102,7 +104,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     C = evaluate_state(P,B,n);
     
     % Control input
-    u = acceleration_control(I, C, tf);
+    u = acceleration_control(I, C, tf, dynamics);
 
     % Dimensional time units
     tf = tf*t0;
@@ -124,7 +126,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
     % Results 
     if (setup.resultsFlag)
-        display_results(exitflag, output, tfapp, tf, dV);
+        display_results(exitflag, output, cost, tfapp, tf, dV);
         plots(system, tf, tau, C, u, T, setup);
     end
 end
