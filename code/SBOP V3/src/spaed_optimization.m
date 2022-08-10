@@ -53,6 +53,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
 
     % Normalization
     mu = mu*(t0^2/r0^3);                                % Gravitational parameter of the body
+    system.mu = mu; 
 
     initial_coe(1) = initial_coe(1)/r0;                 % Boundary conditions normalization
     s = coe2state(mu, initial_coe);                     % Initial state vector 
