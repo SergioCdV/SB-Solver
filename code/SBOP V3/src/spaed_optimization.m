@@ -100,7 +100,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, T, initial, final, tau, n, x, B, basis, dynamics);
+    nonlcon = @(x)constraints(mu, T, initial, final, tau, n, x, B, basis, dynamics, cost);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
@@ -123,20 +123,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
     % Control input
     u = acceleration_control(mu, tau, C, tf, dynamics);
     u = u/tf^2;
-
-    % Time domain normalization 
-    switch (sampling_distribution)
-        case 'Chebyshev'
-            tau = (1/2)*(1+tau);
-            tf = tf*2;
-        case 'Legendre'
-            tau = (1/2)*(1+tau);
-            tf = tf*2;
-        case 'Laguerre'
-            tau = collocation_grid(m, 'Legendre', '');
-            tau = (1/2)*(1+tau);
-            tf = tf*2;
-    end
     
     % Solution normalization
     switch (dynamics)
@@ -144,6 +130,15 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
             % Initial TOF 
             rapp = sqrt(Capp(1,:).^2+Capp(3,:).^2);
             tfapp = tfapp*trapz(tapp, rapp);
+            
+            switch (sampling_distribution)
+                case 'Chebyshev'
+                    tfapp = tfapp/4;
+                case 'Legendre'
+                    tfapp = tfapp/4;
+                case 'Laguerre'
+                    tfapp = tfapp/4;
+            end
 
             % Control input
             r = sqrt(C(1,:).^2+C(3,:).^2);
@@ -154,7 +149,20 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(syste
             [~, tau] = ode45(@(t,s)Sundman_transformation(basis, n, P, t, s), tau, 0, options);
             tf = tau(end)*tf;
 
-        otherwise    
+        otherwise  
+            % Time domain normalization and scale preserving
+            switch (sampling_distribution)
+                case 'Chebyshev'
+                    tau = (1/2)*(1+tau);
+                    tf = tf*2;
+                case 'Legendre'
+                    tau = (1/2)*(1+tau);
+                    tf = tf*2;
+                case 'Laguerre'
+                    tau = collocation_grid(m, 'Legendre', '');
+                    tau = (1/2)*(1+tau);
+                    tf = tf*2;
+            end
     end
 
     % Results 

@@ -17,11 +17,12 @@
 %         - string basis, the polynomial basis to be used
 %         - string dynamics, the independent variable parametrization to be
 %           used
+%         - string cost, the cost function to be minimized
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, tau, n, x, B, basis, dynamics)
+function [c, ceq] = constraints(mu, T, initial, final, tau, n, x, B, basis, dynamics, cost)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     tf = x(end-1);                                      % Final time of flight 
@@ -39,10 +40,23 @@ function [c, ceq] = constraints(mu, T, initial, final, tau, n, x, B, basis, dyna
     rf = sqrt(final(1)^2+final(3)^2);                   % Final orbital radius
 
     % Control input 
-    u = acceleration_control(mu, tau, C, tf, dynamics);
+    [u, dv] = acceleration_control(mu, tau, C, tf, dynamics);
 
     % Equalities 
     ceq = [];
+
+    switch (cost)
+        case 'Minimum power'
+           switch (dynamics)
+                case 'Sundman'
+                    W = tf*trapz(tau, dot(dv, u, 1)); 
+                case 'Kepler'
+                    W = tf*trapz(tau, dot(dv, u, 1));
+           end
+
+            ceq = [ceq W];
+        otherwise
+    end
 
     switch (dynamics)
         case 'Sundman'

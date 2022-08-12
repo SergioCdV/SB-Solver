@@ -33,11 +33,11 @@ function display_results(exitflag, cost, output, r0, t0, tfapp, tf, dV)
 
     % Cost results
     switch (cost)
-        case 'Minimum energy'
-            fprintf("Final cost %0.2f m/s\n\n", dV*r0/t0);
+        case 'Minimum fuel'
+            fprintf("Final cost: %0.2f m/s\n\n", dV*r0/t0);
         case 'Minimum time'
-            fprintf("Final cost %0.2f days\n\n", tf*days2sec);
+            fprintf("Final cost: %0.2f days\n\n", tf*days2sec);
         case 'Minimum power'
-            fprintf("Final cost %0.2f J\n\n", dV);
+            fprintf("Final cost: %0.2f J\n\n", dV);
     end
 end

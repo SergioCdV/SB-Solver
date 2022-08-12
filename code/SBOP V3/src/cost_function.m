@@ -4,7 +4,8 @@
 %% Cost function %%
 % Function to compute the cost function to be minimized
 
-% Inputs: - scalar mu, the gravitational parameter of the central body 
+% Inputs: - string cost, the cost function to be minimized
+%         - scalar mu, the gravitational parameter of the central body 
 %         - vector initial, the initial boundary conditions of the
 %           trajectory 
 %         - vector final, the initial boundary conditions of the
@@ -39,7 +40,7 @@ function [r] = cost_function(cost, mu, initial, final, n, tau, x, B, basis, dyna
                     r = tf;                                                             % Final time of flight
             end
 
-        case 'Minimum energy'
+        case 'Minimum fuel'
             % Minimize the control input
             P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
             N = floor(x(end));                                                          % The optimal number of revolutions
@@ -69,21 +70,21 @@ function [r] = cost_function(cost, mu, initial, final, n, tau, x, B, basis, dyna
             P = boundary_conditions(tf, n, initial, final, N, P, B, basis);             % Boundary conditions control points
             C = evaluate_state(P,B,n);                                                  % State evolution
 
-            [u, dv, ~] = acceleration_control(mu, tau, C, tf, dynamics);                % Control vector
+            [u, ~, ~] = acceleration_control(mu, tau, C, tf, dynamics);                 % Control vector
             u = u/tf^2;                                                                 % Normalized control vector
-            dv = dv/tf;                                                                 % Normalized velocity field
-
-            % Control cost
+        
             switch (dynamics)
                 case 'Sundman'
-                    r = sqrt(C(1,:).^2+C(3,:).^2);      % Radial evolution
-                    u = u./(r.^2);                      % Dimensional acceleration
-                    dv = dv./r;                         % Dimensional velocity
+                    r = sqrt(C(1,:).^2+C(3,:).^2);         % Radial evolution
+                    u = u./(r.^2);                         % Dimensional acceleration
 
                 case 'Kepler'
             end
 
-            r = abs(tf*trapz(tau, dot(dv,u,1))); 
+            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);       % Non-dimensional acceleration norm
+            
+            % Cost function
+            r = tf*trapz(tau,a);
 
         otherwise 
             error('No valid cost function was selected to be minimized');
