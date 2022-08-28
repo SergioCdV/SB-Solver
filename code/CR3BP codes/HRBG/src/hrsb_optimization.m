@@ -24,7 +24,7 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system, final_orbit, Sc, K, T, setup)
+function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system, St_orbit, Sc, theta0, K, T, setup)
     % Setup of the algorithm
     n = setup.order;                        % Order in the approximation of the state vector
     dynamics = setup.formulation;           % Formulation of the dynamics
@@ -32,7 +32,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system
     sampling_distribution = setup.grid;     % Sampling grid to be used
     m = setup.nodes;                        % Number of nodes in the grid
     cost = setup.cost_function;             % Cost function to be minimized   
-    manifold = setup.manifold;              % Manifold component to be nullified
 
     % Characteristics of the system 
     mu = system.mu;                         % Characteristic gravitational parameter of the CR3BP
@@ -51,18 +50,25 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system
     tau = sampling_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
-    % Target state evolution
-    order = 100;                                            % Order of the polynomial
+    % Chaser state evolution
+    order = 50;                                             % Order of the polynomial
+    theta = linspace(0,2*pi,size(Sc.Trajectory,1));         % Orbit torus anomaly 
 
-    [Cp, Cv, ~] = CTR_guidance(order, Sc.Trajectory(:,1).', Sc.Trajectory(:,2:7));
-
+    [Cp, Cv, ~] = CTR_guidance(order, theta, Sc.Trajectory(:,2:7));
+    
     Sc.Cp = Cp;                                             % Target's orbit position coordinates
     Sc.Cv = Cv;                                             % Target's orbit velocity coordinates
     Sc.Period = Sc.Trajectory(end,1);                       % Final target's period
 
+    % Target state evolution
+    theta = linspace(0,2*pi,size(St_orbit,1));              % Orbit torus anomaly
+    [Cp, Cv, ~] = CTR_guidance(order, theta, St_orbit);     % Regression of the target orbit
+    St.Cp = Cp;                                             % Target's orbit position coordinates
+    St.Cv = Cv;                                             % Target's orbit velocity coordinates
+
     % Boundary conditions   
-    initial = zeros(1,6);                                   % Relative initial conditions in cylindrical coordinates 
-    final = final_orbit(1,1:6).';                           % Rendezvous Condition
+    initial = zeros(1,6);                                   % Relative initial conditions given by the Rendezvous Condition
+    final = final_orbit([St.Cp; St.Cv], theta0);            % Final conditions on the target orbit
     final = cylindrical2cartesian(final, false).';          % Final conditions in cylindrical coordinates 
 
     % Normlized spacecraft propulsion parameters 
@@ -75,9 +81,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
     [~, Capp, Napp, tfapp] = initial_approximation(mu, Sc, tfapp, tapp, initial, final, basis, dynamics); 
-
-    % Initial guess for the optimal phase 
-    theta = 1;          
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
@@ -85,14 +88,14 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; tfapp; Napp; theta];
+    x0 = [x0; tfapp; Napp; theta0];
     
     % Upper and lower bounds 
-    P_lb = [-Inf*ones(L,1); 0; 0; 1];
-    P_ub = [Inf*ones(L,1); 10*12*2*pi; Inf; size(final_orbit,1)];
+    P_lb = [-Inf*ones(L,1); 0; 0; 0];
+    P_ub = [Inf*ones(L,1); 10*12*2*pi; Inf; 2*pi];
     
     % Objective function
-    objective = @(x)cost_function(final_orbit, cost, mu, Sc, initial, n, tau, x, B, basis, sampling_distribution, dynamics);
+    objective = @(x)cost_function(St, cost, mu, Sc, initial, n, tau, x, B, basis, sampling_distribution, dynamics);
     
     % Linear constraints and inequalities
     A = [];
@@ -101,7 +104,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system
     beq = [];
     
     % Non-linear constraints
-    nonlcon = @(x)constraints(final_orbit, cost, mu, Sc, T, initial, n, x, B, basis, tau, sampling_distribution, dynamics, manifold);
+    nonlcon = @(x)constraints(St, cost, mu, Sc, T, initial, n, x, B, basis, tau, sampling_distribution, dynamics);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
@@ -114,20 +117,21 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system
     P = reshape(sol(1:end-3), [size(P0,1) size(P0,2)]);     % Optimal control points
     tf = sol(end-2);                                        % Optimal time of flight
     N = floor(sol(end-1));                                  % Optimal number of revolutions 
-    theta = floor(sol(end));                                % Optimal insertion phase
+    theta = sol(end);                                       % Optimal insertion phase
+
+    % Final target trajectory 
+    Sc.Trajectory = target_trajectory(sampling_distribution, tf, tau, Sc.Period, [Sc.Cp; Sc.Cv]);
 
     % Compute the insertion phase and final conditions
-    final = final_orbit(theta,:);
-    final = cylindrical2cartesian(final.', false).';
-    
+    final = final_orbit([St.Cp; St.Cv], theta);
+    final = final-Sc.Trajectory(:,end);
+    final = cylindrical2cartesian(final, false).'; 
+
     % Final control points imposing boundary conditions
     P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
     
     % Final state evolution
     C = evaluate_state(P,B,n);
-
-    % Final target trajectory 
-    Sc.Trajectory = [target_trajectory(sampling_distribution, tf, tau, Sc.Period, Sc.Cp); target_trajectory(sampling_distribution, tf, tau, Sc.Period, Sc.Cv)];
     
     % Integrate the STM 
     if (setup.STM)          

@@ -20,14 +20,9 @@
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(final_orbit, cost, mu, St, initial, n, tau, x, B, basis, sampling_distribution, dynamics)
+function [r] = cost_function(St, cost, mu, Sc, initial, n, tau, x, B, basis, sampling_distribution, dynamics)
     % Optimization variables 
-    tf = x(end-2);                                      % The final time of flight
-    theta = floor(x(end));                              % Optimal insertion phase
-
-    % Compute the insertion phase and final conditions
-    final = final_orbit(theta,:);
-    final = cylindrical2cartesian(final.', false).';
+    tf = x(end-2);             % The final time of flight
    
     switch (cost)
         case 'Minimum time'
@@ -37,6 +32,15 @@ function [r] = cost_function(final_orbit, cost, mu, St, initial, n, tau, x, B, b
             % Minimize the control input
             P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
             N = floor(x(end-1));                                % The optimal number of revolutions
+
+            % Evaluate the initial periodic trajectory 
+            Sc.Trajectory = target_trajectory(sampling_distribution, tf, tau, Sc.Period, [Sc.Cp; Sc.Cv]);
+
+            % Compute the insertion phase and final conditions
+            theta = x(end);                                     % Optimal insertion phase
+            final = final_orbit([St.Cp; St.Cv], theta);
+            final = final-Sc.Trajectory(:,end);
+            final = cylindrical2cartesian(final, false).';
         
             % Boundary conditions
             P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
@@ -44,11 +48,8 @@ function [r] = cost_function(final_orbit, cost, mu, St, initial, n, tau, x, B, b
             % State evolution
             C = evaluate_state(P,B,n);
         
-            % Evaluate the initial periodic trajectory 
-            St.Trajectory = target_trajectory(sampling_distribution, tf, tau, St.Period, St.Cp);
-        
             % Control input
-            u = acceleration_control(mu, St, C, tf, dynamics);        
+            u = acceleration_control(mu, Sc, C, tf, dynamics);        
         
             % Control cost
             switch (dynamics)
@@ -79,10 +80,10 @@ function [r] = cost_function(final_orbit, cost, mu, St, initial, n, tau, x, B, b
             C = evaluate_state(P,B,n);
         
             % Evaluate the initial periodic trajectory 
-            St.Trajectory = target_trajectory(sampling_distribution, tf, tau, St.Period, St.Cp);
+            Sc.Trajectory = target_trajectory(sampling_distribution, tf, tau, Sc.Period, Sc.Cp);
         
             % Control input
-            u = acceleration_control(mu, St, C, tf, dynamics);        
+            u = acceleration_control(mu, Sc, C, tf, dynamics);        
         
             % Control cost
             switch (dynamics)

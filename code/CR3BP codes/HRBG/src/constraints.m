@@ -23,29 +23,30 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(final_orbit, cost, mu, St, T, initial, n, x, B, basis, tau, sampling_distribution, dynamics, manifold)
+function [c, ceq] = constraints(St, cost, mu, Sc, T, initial, n, x, B, basis, tau, sampling_distribution, dynamics)
     % Extract the optimization variables
     P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
     tf = x(end-2);                                      % Final time of flight 
     N = floor(x(end-1));                                % Optimal number of revolutions
-    theta = floor(x(end));                              % Optimal insertion phase
+
+    % Evaluate the initial periodic trajectory 
+    Sc.Trajectory = target_trajectory(sampling_distribution, tf, tau, Sc.Period, [Sc.Cp; Sc.Cv]);
 
     % Compute the insertion phase and final conditions
-    final = final_orbit(theta,:);
-    final = cylindrical2cartesian(final.', false).';
+    theta = x(end);                                     % Optimal insertion phase
+    final = final_orbit([St.Cp; St.Cv], theta);
+    final = final-Sc.Trajectory(:,end);
+    final = cylindrical2cartesian(final, false).';
 
     % Boundary conditions points
     P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
-
-    % Evaluate the target periodic trajectory
-    St.Trajectory = target_trajectory(sampling_distribution, tf, tau, St.Period, St.Cp);
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);
     S = cylindrical2cartesian(C(1:6,:), true);
 
     % Control input 
-    [u, dv] = acceleration_control(mu, St, C, tf, dynamics);
+    [u, dv] = acceleration_control(mu, Sc, C, tf, dynamics);
 
     % Equalities
     switch (cost)

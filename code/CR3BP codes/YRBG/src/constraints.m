@@ -22,23 +22,23 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(final_orbit, cost, mu, St, T, initial, n, x, B, basis, tau, sampling_distribution, dynamics)
+function [c, ceq] = constraints(curve, cost, mu, St, T, initial, n, x, B, basis, tau, sampling_distribution, dynamics)
     % Extract the optimization variables
-    P = reshape(x(1:end-4), [length(n), max(n)+1]);     % Control points
-    tf(1) = x(end-3);                                   % Final time of flight on the unstable manifold 
-    tf(2) = x(end-2);                                   % Final time of flight on the stable manifold 
+    P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
+    tf = x(end-2);                                      % Final time of flight on the unstable manifold 
     N = floor(x(end-1));                                % Optimal number of revolutions
-    theta = floor(x(end));                              % Optimal insertion phase
+
+    % Evaluate the initial periodic trajectory 
+    St.Trajectory = target_trajectory(sampling_distribution, tf, tau, St.Period, [St.Cp; St.Cv]);
 
     % Compute the insertion phase and final conditions
-    final = final_orbit(theta,:);
-    final = cylindrical2cartesian(final.', false).';
+    theta = x(end);                                     % Optimal insertion phase
+    final = final_orbit(curve, theta);
+    final = final-St.Trajectory(:,end);
+    final = cylindrical2cartesian(final, false).';
 
     % Boundary conditions points
     P = boundary_conditions(sum(tf), n, initial, final, N, P, B, basis);
-
-    % Evaluate the target periodic trajectory
-    St.Trajectory = target_trajectory(sampling_distribution, sum(tf), tau, St.Period, St.Cp);
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);
