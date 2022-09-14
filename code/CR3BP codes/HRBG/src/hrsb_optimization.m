@@ -177,7 +177,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = hrsb_optimization(system
 
     % Back transaltion of the origin of the synodic frame 
     C = cylindrical2cartesian(C, true);
-    C(1:6,:) = C(1:6,:)+Sc.Trajectory(1:6,:);
+    C = [Sc.Trajectory(1:6,:); C(1:6,:)];
     C = [C; STM];
 
     % Results 
