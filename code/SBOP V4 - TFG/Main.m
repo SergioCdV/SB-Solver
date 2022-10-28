@@ -9,7 +9,6 @@ close all
 animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Chebyshev';        % Distribution of time intervals
 basis = 'Chebyshev';                    % Polynomial basis to be use
-dynamics = 'Kepler';                    % Dynamics parametrization to be used
 n = [15 15 15];                         % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
@@ -42,7 +41,6 @@ setup.order = n;
 setup.basis = basis;
 setup.grid = time_distribution; 
 setup.nodes = m; 
-setup.formulation = dynamics; 
 setup.cost_function = cost_function;
 setup.resultsFlag = true; 
 setup.animations = false; 
@@ -50,7 +48,7 @@ setup.animations = false;
 %% Optimization
 % Simple solution    
 tic
-[C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, setup);
+[C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initial_coe, final_coe, K, T, setup);
 toc 
 
 % Average results 
@@ -59,7 +57,7 @@ time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter
     tic 
-    [C, dV, u, tf, tfapp, tau, exitflag, output] = spaed_optimization(system, initial_coe, final_coe, K, T, setup);
+    [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initial_coe, final_coe, K, T, setup);
     time(i) = toc;
 end
 
