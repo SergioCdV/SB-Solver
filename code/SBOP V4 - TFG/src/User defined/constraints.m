@@ -34,16 +34,11 @@ function [c, ceq] = constraints(mu, T, initial, final, B, basis, n, tau, x)
     % Trajectory evolution
     C = evaluate_state(P,B,n);
 
-    % Radius constraints
-    r = sqrt(C(1,:).^2+C(3,:).^2);                      % Orbital radius in time
-    r0 = sqrt(initial(1)^2+initial(3)^2);               % Initial orbital radius
-    rf = sqrt(final(1)^2+final(3)^2);                   % Final orbital radius
-
     % Control input 
     [u, ~] = acceleration_control(mu, C, tf);
 
     % Equalities 
     ceq = [];
 
-    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*repmat(T,1,size(u,2))) r-2*max([r0 rf])];
+    c = [sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)-(tf^2*repmat(T,1,size(u,2)))];
 end

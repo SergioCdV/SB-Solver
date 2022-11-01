@@ -77,7 +77,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Final collocation grid and basis 
-    tau = sampling_grid(m, sampling_distribution, '');
+    [tau, J] = sampling_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess reshaping
@@ -111,7 +111,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Solution 
     P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
     tf = sol(end-1);                                        % Optimal time of flight
-    N = floor(sol(end));                                    % Optimal number of revolutions 
+    N = floor(sol(end));                                    % Optimal number of revolutions
     
     % Final control points imposing boundary conditions
     P = boundary_conditions(tf, n, initial, final, N, P, B, basis);
@@ -119,21 +119,18 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Final state evolution
     C = evaluate_state(P,B,n);
 
-    % Control input
+    % Dimensional control input
     u = acceleration_control(mu, C, tf) / tf^2;
     
     % Time domain normalization and scale preserving
     switch (sampling_distribution)
         case 'Chebyshev'
             tau = (1/2)*(1+tau);
-            tf = tf*2;
+            tf = tf/J;
         case 'Legendre'
             tau = (1/2)*(1+tau);
-            tf = tf*2;
-        case 'Laguerre'
-            tau = collocation_grid(m, 'Legendre', '');
-            tau = (1/2)*(1+tau);
-            tf = tf*2;
+            tf = tf/J;
+        otherwise
     end
 
     % Results 

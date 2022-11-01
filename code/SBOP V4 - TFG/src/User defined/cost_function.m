@@ -37,7 +37,7 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, x)
             C = evaluate_state(P,B,n);                                                  % State evolution
     
             [u, ~, ~] = acceleration_control(mu, C, tf);                                % Control vector
-            u = u/tf^2;                                                                 % Normalized control vector
+            u = u / tf^2;                                                                % Normalized control vector
         
             a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);                                    % Non-dimensional acceleration norm
     

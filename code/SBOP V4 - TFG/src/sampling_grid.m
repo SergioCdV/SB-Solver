@@ -11,8 +11,9 @@
 %           high-order polynomial
 
 % Outputs: - vector tau, the sampling points to be used 
+%          - scalar J, the determinant of the transformation
 
-function [tau] = sampling_grid(m, method, mode)
+function [tau, J] = sampling_grid(m, method, mode)
     % Sanity check on the distribution mode 
     switch (method)
         case 'Linear'
@@ -29,41 +30,50 @@ function [tau] = sampling_grid(m, method, mode)
         case 'Intersection'
             tau = zeros(1,sum(2:m));
             for i = 2:m
-                tau(1+sum(2:i-1):sum(2:i)) = grid(i, method);
+                [tau(1+sum(2:i-1):sum(2:i)), J] = grid(i, method);
             end
             tau = unique(tau);
             tau = sort(tau);
         otherwise
-            tau = grid(m, method);
+            [tau, J] = grid(m, method);
     end
 end
 
 %% Auxiliary functions 
 % Sampling grid computation
-function [tau] = grid(m, method)
+function [tau, J] = grid(m, method)
     switch (method)
         case 'Linear'
             tau = linspace(0,1,m);
+            J = 1; 
         case 'Normal'
             tau = normrnd(0,1,1,m-2);
             tau = sort(tau);
             tau = (tau-min(tau))/(max(tau)-min(tau));
             tau = [0 tau 1];
+            J = 1; 
         case 'Random'
             tau = rand(1,m);
             tau = sort(tau);
+            J = 1; 
         case 'Legendre'
             tau = LG_nodes(m);
+            J = 1/2; 
         case 'Chebyshev'
             tau = CH_nodes(m);
+            J = 1/2;
         case 'Laguerre'
+            % Deprecated
             tau = LR_nodes(m,0);
+            J = 1; 
         case 'Hermite'
             % Deprecated
             tau = HT_nodes(m);
+            J = 1; 
         case 'Orthogonal Bernstein'
             % Deprecated
             tau = OB_nodes(m);
+            J = 1; 
         otherwise
             error('An appropriate time array distribution must be specified')
     end
