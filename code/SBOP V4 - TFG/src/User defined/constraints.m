@@ -22,11 +22,12 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, T, initial, final, B, basis, n, tau, x)
+function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
     % Extract the optimization variables
-    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
-    tf = x(end-1);                                      % Final time of flight 
-    N = floor(x(end));                                  % Optimal number of revolutions
+    P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
+    tf = x(end-2);                                      % Final time of flight 
+    N = floor(x(end-1));                                % Optimal number of revolutions
+    T = x(end);                                         % Needed thrust vector
 
     % Boundary conditions points
     P = boundary_conditions(tf, n, initial, final, N, P, B, basis);

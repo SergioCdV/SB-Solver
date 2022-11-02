@@ -23,7 +23,7 @@
 
 function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, x)
     % Optimization variables
-    tf = x(end-1);              % Final time of flight
+    tf = x(end-2);              % Final time of flight
     
     switch (cost)
         case 'Minimum time'
@@ -31,13 +31,13 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, x)
     
         case 'Minimum fuel'
             % Minimize the control input
-            P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
-            N = floor(x(end));                                                          % The optimal number of revolutions
+            P = reshape(x(1:end-3), [length(n), max(n)+1]);                             % Control points
+            N = floor(x(end-1));                                                        % The optimal number of revolutions
             P = boundary_conditions(tf, n, initial, final, N, P, B, basis);             % Boundary conditions control points
             C = evaluate_state(P,B,n);                                                  % State evolution
     
             [u, ~, ~] = acceleration_control(mu, C, tf);                                % Control vector
-            u = u / tf^2;                                                                % Normalized control vector
+            u = u / tf^2;                                                               % Normalized control vector
         
             a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);                                    % Non-dimensional acceleration norm
     

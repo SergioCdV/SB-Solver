@@ -103,13 +103,14 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     grid on;
 
     % Propulsive acceleration plot
+    gamma = r0/(t0/(1))^2;
     figure_propulsion = figure;
     set(figure_propulsion,'position',[xpos + 1.2*imsize,ypos,1.2*imsize,imsize])
     %title('Spacecraft acceleration in time')
     hold on
-    plot(tau, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)*r0/t0^2, 'k','LineWidth',1)
-    plot(tau, u*r0/t0^2, 'LineWidth', 0.3)
-    yline(T*r0/t0^2, '--k')
+    plot(tau, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)*gamma, 'k','LineWidth',1)
+    plot(tau, u*gamma, 'LineWidth', 0.3)
+    yline(T*gamma, '--k')
     xlabel('Flight time')
     ylabel('$\mathbf{a}$')
     legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
