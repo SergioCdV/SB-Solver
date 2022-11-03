@@ -141,6 +141,9 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % Dimensional control input
     u = acceleration_control(mu, C, tf) / tf^2;
+
+    % Dimensional velocity 
+    C(4:6,:) = C(4:6,:)/tf;
     
     % Time domain normalization and scale preserving
     switch (sampling_distribution)
