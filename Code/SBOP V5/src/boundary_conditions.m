@@ -25,19 +25,6 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
         P = P0;         % Initialization
     end
 
-    % Dimensionality check 
-    if (size(x0,2) ~= 1)
-        x0 = x0.';
-    end
-
-    if (size(xf,2) ~= 1)
-        xf = xf.';
-    end
-
-    if (size(n,2) ~= 1)
-        n = n.';
-    end
-
     % Add the revolutions to the final angle
     xf(2) = xf(2)+2*pi*N;
 
@@ -56,23 +43,41 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
                 P(i,n(i)+1) = xf(i);
             end
 
-        case 'Chebyshev'
-            % Hard coded inverse: A = [1 0 1; 1 4 9; 1 -4 9]^(-1)
-            A = [1.125 -0.0625 -0.0625; 0 0.125 -0.125; -0.125 0.0625 0.0625];
-            b = [((xf(1:3)-x0(1:3))/2+sum(P(:,6:2:end),2)).'; (xf(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).^2,2)).'; (x0(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).^2.*(-1).^(5:size(P,2)),2)).'];
-
-            P(:,2:4) = b.'*A.';
-            P(:,1) = 0.5*(x0(1:3)+xf(1:3))-sum(P(:,3:2:end),2);
-
-        case 'Legendre'
-            % Hard coded inverse: A = [1 -1 1 -1; 1 1 1 1; 0 2 -6 12; 0 2 6 12]^(-1)
-            A = [0.5 0.5 0.083333333333333 -0.083333333333333; -0.6 0.6 -0.05 -0.05; 0 0 -0.083333333333333 0.083333333333333; 0.1 -0.1 0.05 0.05];
-            b = [(x0(1:3)-sum(P(:,5:end),2)).'; ...
-                 (xf(1:3)-sum(P(:,5:end),2)).'; ...
-                 (2*x0(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).*(5:size(P,2)).*(-1).^(3:(size(P,2)-2)),2)).'; ...
-                 (2*xf(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).*(5:size(P,2)),2)).'];
-
-            P(:,1:4) = b.'*A.';
+%         case 'Chebyshev'
+%             % Dimensionality check 
+%             if (size(x0,2) ~= 1)
+%                 x0 = x0.';
+%             end
+%         
+%             if (size(xf,2) ~= 1)
+%                 xf = xf.';
+%             end
+%         
+%             % Hard coded inverse: A = [1 0 1; 1 4 9; 1 -4 9]^(-1)
+%             A = [1.125 -0.0625 -0.0625; 0 0.125 -0.125; -0.125 0.0625 0.0625];
+%             b = [((xf(1:3)-x0(1:3))/2+sum(P(:,6:2:end),2)).'; (xf(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).^2,2)).'; (x0(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).^2.*(-1).^(5:size(P,2)),2)).'];
+% 
+%             P(:,2:4) = b.'*A.';
+%             P(:,1) = 0.5*(x0(1:3)+xf(1:3))-sum(P(:,3:2:end),2);
+% 
+%         case 'Legendre'
+%             % Dimensionality check 
+%             if (size(x0,2) ~= 1)
+%                 x0 = x0.';
+%             end
+%         
+%             if (size(xf,2) ~= 1)
+%                 xf = xf.';
+%             end
+% 
+%             % Hard coded inverse: A = [1 -1 1 -1; 1 1 1 1; 0 2 -6 12; 0 2 6 12]^(-1)
+%             A = [0.5 0.5 1/12 -1/12; -0.6 0.6 -0.05 -0.05; 0 0 -1/12 1/12; 0.1 -0.1 0.05 0.05];
+%             b = [(x0(1:3)-sum(P(:,5:end),2)).'; ...
+%                  (xf(1:3)-sum(P(:,5:end),2)).'; ...
+%                  (2*x0(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).*(5:size(P,2)).*(-1).^(3:(size(P,2)-2)),2)).'; ...
+%                  (2*xf(4:6)-sum(P(:,5:end).*(4:(size(P,2)-1)).*(5:size(P,2)),2)).'];
+% 
+%             P(:,1:4) = b.'*A.';
 
         otherwise
             % Compute the partial state evolution 

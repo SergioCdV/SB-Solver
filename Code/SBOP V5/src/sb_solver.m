@@ -83,13 +83,25 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [tau, J] = sampling_grid(m, sampling_distribution, '');
     [B, tau] = state_basis(n, tau, basis);
 
-    % Final TOF scaling
+    % Final integration setup
     switch (sampling_distribution)
         case 'Chebyshev'
+            % Final TOF scaling
             tfapp = tfapp*J;
+            W = [];
+
         case 'Legendre'
+            % Final TOF scaling
             tfapp = tfapp*J;
+            
+            % Quadrature weights
+            dP = LG_derivative(m, tau, 1);
+            W = LG_weights(tau, dP(end,:));
+            W = [];
+
         otherwise
+            % Trapezoidal integration
+            W = [];
     end
 
     % Initial guess reshaping
@@ -109,7 +121,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     end
     
     % Objective function
-    objective = @(x)cost_function(cost, mu, initial, final, B, basis, n, tau, x);
+    objective = @(x)cost_function(cost, mu, initial, final, B, basis, n, tau, W, x);
 
     % Non-linear constraints
     nonlcon = @(x)constraints(mu, initial, final, B, basis, n, tau, x);

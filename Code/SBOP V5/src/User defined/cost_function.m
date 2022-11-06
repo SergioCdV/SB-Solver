@@ -10,18 +10,19 @@
 %           trajectory
 %         - vector final, the initial boundary conditions of the
 %           trajectory
+%         - cell array B, the polynomial basis to be used
+%         - string basis, the polynomial basis to be used
 %         - vector n, the vector of degrees of approximation of the state
 %           variables
 %         - vector tau, the vector of collocation points
+%         - vector W, the quadrature weights
 %         - vector x, the degree of freedom to be optimized
-%         - cell array B, the polynomial basis to be used
-%         - string basis, the polynomial basis to be used
 %         - string dynamics, the independent variable parametrization to be
 %           used
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, x)
+function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
     % Optimization variables
     tf = x(end-2);              % Final time of flight
     
@@ -42,7 +43,11 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, x)
             a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);                                    % Non-dimensional acceleration norm
     
             % Cost function
-            r = tf*trapz(tau,a);
+            if (isempty(W))
+                r = tf*trapz(tau,a);
+            else
+                r = tf*dot(W,a);
+            end
     
         otherwise
             error('No valid cost function was selected to be minimized');
