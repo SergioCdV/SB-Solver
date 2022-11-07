@@ -121,11 +121,10 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
                 m = max(n)+1;
             end
 
-            % Final collocation grid and basis 
-            [tau, J] = sampling_grid(m, sampling_distribution, '');
-
-            % Trapezoidal integration
-            W = [];
+            % Quadrature weights
+            [W, tau] = LG_weights(m);
+            W = W/2;
+            tau = 0.5*tau.'+0.5;
     end
 
     [B, tau] = state_basis(n, tau, basis);
