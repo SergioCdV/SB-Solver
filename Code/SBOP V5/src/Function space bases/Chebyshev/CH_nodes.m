@@ -15,6 +15,6 @@
 
 function [y] = CH_nodes(N)
     % Chebyshev nodes 
-    i = N-1:-1:0;
-    y = cos(pi*i/(N-1));
+    i = N:-1:0;
+    y = cos(pi*i/N);
 end

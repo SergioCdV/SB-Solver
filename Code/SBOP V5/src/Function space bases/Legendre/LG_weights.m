@@ -9,12 +9,16 @@
 % This scripts provides the function to compute the Legendre-Gauss weights
 % for a given domain interval and polynomial degree 
 
-% Inputs: - vector x, the Legendre nodes at which the weights shall be
-%           evaluated
-%         - vector dP, the n-th Legendre derivative at the Legendre nodes
+% Inputs: - scalar N, the order of the quadrature
 
 % Output: - vector w, the Legendre weights of interest
+%         - vector tau, the Legendre nodes of Pn
 
-function [w] = LG_weights(x, dP)    
-    w = 2./((1-x.^2).*(dP.^2));
+function [w, tau] = LG_weights(N)    
+    beta = .5./sqrt(1-(2*(1:N)).^(-2));         % 3-term recurrence coeffs
+    T = diag(beta,1) + diag(beta,-1);           % Jacobi matrix
+    [V,D] = eig(T);                             % Eigenvalue decomposition
+    x = diag(D);                                % Eigenvalue matrix  
+    [tau,i] = sort(x);                          % Legendre nodes
+    w = 2*V(1,i).^2;                            % Weights
 end

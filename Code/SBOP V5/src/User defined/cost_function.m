@@ -41,6 +41,12 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
             u = u / tf^2;                                                               % Normalized control vector
         
             a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);                                    % Non-dimensional acceleration norm
+
+%             switch basis
+%                 case 'Chebyshev'
+%                     a = a(1:length(a)/2)+a(length(a)/2+1:end);
+%                 otherwise
+%             end
     
             % Cost function
             if (isempty(W))

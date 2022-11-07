@@ -56,7 +56,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     end
 
     % Normalization
-    gamma = r0/(t0/(1))^2;                           % Characteristic acceleration of the system
+    gamma = r0/(t0/(1))^2;                              % Characteristic acceleration of the system
     mu = mu*(t0^2/r0^3);                                % Gravitational parameter of the body
     system.mu = mu; 
 
@@ -79,30 +79,53 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
-    % Final collocation grid and basis 
-    [tau, J] = sampling_grid(m, sampling_distribution, '');
-    [B, tau] = state_basis(n, tau, basis);
-
-    % Final integration setup
+    % Final sampling distribution setup
     switch (sampling_distribution)
         case 'Chebyshev'
+            % Sanity check on the quadrature number of points 
+            if (m <= max(n))
+                m = max(n)+1;
+            end
+
+            % Final collocation grid and basis 
+            [tau, J] = sampling_grid(m, sampling_distribution, '');
+
             % Final TOF scaling
             tfapp = tfapp*J;
-            W = [];
+            W = CC_weights(m);
+            [W, tau] = LG_weights(m);
+            tau = tau.';
 
         case 'Legendre'
+            % Sanity check on the quadrature number of points 
+            if (m <= max(n))
+                m = 2*max(n)+1;
+            end
+
+            % Final collocation grid and basis 
+            [~, J] = sampling_grid(m, sampling_distribution, '');
+
             % Final TOF scaling
             tfapp = tfapp*J;
             
             % Quadrature weights
-            dP = LG_derivative(m, tau, 1);
-            W = LG_weights(tau, dP(end,:));
-            W = [];
+            [W, tau] = LG_weights(m);
+            tau = tau.';
 
         otherwise
+            % Sanity check on the quadrature number of points 
+            if (m <= max(n))
+                m = max(n)+1;
+            end
+
+            % Final collocation grid and basis 
+            [tau, J] = sampling_grid(m, sampling_distribution, '');
+
             % Trapezoidal integration
             W = [];
     end
+
+    [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
