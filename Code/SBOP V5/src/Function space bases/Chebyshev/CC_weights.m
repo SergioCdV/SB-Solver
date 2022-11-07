@@ -7,7 +7,8 @@
 
 %% Clenshaw-Curtis weights %%
 % This scripts provides the function to compute the Clenshaw-Curtis weights
-% for a given domain interval and polynomial degree 
+% for a given domain interval and polynomial degree. Ref Greg von Winckel -
+% 02/12/2005.
 
 % Inputs: - vector x, the Legendre nodes at which the weights shall be
 %           evaluated
@@ -15,21 +16,18 @@
 
 % Output: - vector w, the Legendre weights of interest
 
-function [w] = CC_weights(N)  
-    % DCT-I matrix 
-    D = zeros(N/2+1);                           % Preallocation 
+function [w, tau] = CC_weights(N)  
+   % Constants 
+   n = N-1; 
 
-    for i = 1:(N/2+1)
-        for j = 1:(N/2+1)
-            if ((j-1) == 0 || ((j-1) == N/2))
-                D(i,j) = cos((j-1)*(i-1)*pi/(N/2))/N;
-            else
-                D(i,j) = 2*cos((j-1)*(i-1)*pi/(N/2))/N;
-            end
-        end
-    end
+   % FFT preallocation of the CC weights and nodes
+   c = zeros(N,2);
+   c(1:2:N,1) = (2./[1 1-(2:2:n).^2]).';
+   c(2,2) = 1; 
+   f = real(ifft([c(1:N,:); c(n:-1:2,:)]));
+   w = [f(1,1); 2*f(2:n,1); f(N,1)];
+   tau = n*f(1:N,2);
 
-    % Final computation
-    d = [1; 2./(1-(2:2:N-2).'.^2); 1/(1-N^2)];      % Coefficients
-    w = D.'*d;                                      % Final weights
+   [tau,i] = sort(tau); 
+   w = w(i);
 end

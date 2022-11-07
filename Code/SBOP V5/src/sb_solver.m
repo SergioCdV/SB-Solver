@@ -87,13 +87,16 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
                 m = max(n)+1;
             end
 
-            % Final collocation grid and basis 
-            [tau, J] = sampling_grid(m, sampling_distribution, '');
+            if (mod(m,2) ~= 0)
+                m = m+1;
+            end
+
+            % Jacobian domain transformation 
+            J = 0.5;
 
             % Final TOF scaling
             tfapp = tfapp*J;
-            W = CC_weights(m);
-            [W, tau] = LG_weights(m);
+            [W, tau] = CC_weights(m);
             tau = tau.';
 
         case 'Legendre'
@@ -102,8 +105,8 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
                 m = 2*max(n)+1;
             end
 
-            % Final collocation grid and basis 
-            [~, J] = sampling_grid(m, sampling_distribution, '');
+            % Jacobian domain transformation 
+            J = 0.5;
 
             % Final TOF scaling
             tfapp = tfapp*J;
