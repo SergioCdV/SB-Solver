@@ -79,53 +79,11 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
-    % Final sampling distribution setup
-    switch (sampling_distribution)
-        case 'Chebyshev'
-            % Sanity check on the quadrature number of points 
-            if (m <= max(n))
-                m = max(n)+1;
-            end
+    % Quadrature definition
+    [tau, W, J] = quadrature(n, m, sampling_distribution);
 
-            if (mod(m,2) ~= 0)
-                m = m+1;
-            end
-
-            % Jacobian domain transformation 
-            J = 0.5;
-
-            % Final TOF scaling
-            tfapp = tfapp*J;
-            [W, tau] = CC_weights(m);
-            tau = tau.';
-
-        case 'Legendre'
-            % Sanity check on the quadrature number of points 
-            if (m <= max(n))
-                m = 2*max(n)+1;
-            end
-
-            % Jacobian domain transformation 
-            J = 0.5;
-
-            % Final TOF scaling
-            tfapp = tfapp*J;
-            
-            % Quadrature weights
-            [W, tau] = LG_weights(m);
-            tau = tau.';
-
-        otherwise
-            % Sanity check on the quadrature number of points 
-            if (m <= max(n))
-                m = max(n)+1;
-            end
-
-            % Quadrature weights
-            [W, tau] = LG_weights(m);
-            W = W/2;
-            tau = 0.5*tau.'+0.5;
-    end
+    % Final TOF scaling
+    tfapp = tfapp*J;
 
     [B, tau] = state_basis(n, tau, basis);
 

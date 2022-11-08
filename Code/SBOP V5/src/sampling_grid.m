@@ -44,7 +44,7 @@ end
 function [tau, J] = grid(m, method)
     switch (method)
         case 'Linear'
-            tau = linspace(0,1,m);
+            tau = linspace(0,1,m+1);
             J = 1; 
         case 'Normal'
             tau = normrnd(0,1,1,m-2);
