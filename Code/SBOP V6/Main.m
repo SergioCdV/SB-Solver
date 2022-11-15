@@ -7,10 +7,10 @@ close all
 
 %% Setup of the solution method
 animations = 0;                         % Set to 1 to generate the gif
-time_distribution = 'Chebyshev';         % Distribution of time intervals
+time_distribution = 'Chebyshev';        % Distribution of time intervals
 basis = 'Chebyshev';                    % Polynomial basis to be use
-n = [15 15 15];                         % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+n = [10 10 10];                         % Polynomial order in the state vector expansion
+m = 500;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 
@@ -28,12 +28,12 @@ theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-final_coe = [1.5*r0 1e-4 deg2rad(5) deg2rad(1) deg2rad(30)]; 
+final_coe = [1.05*r0 1e-3 deg2rad(50) deg2rad(90) deg2rad(10)]; 
 thetaf = deg2rad(50);
 final_coe = [final_coe thetaf]; 
 
 % Spacecraft parameters 
-T = 0.5e-3;           % Maximum acceleration 
+T = 0.5e-1;           % Maximum acceleration 
 TOF = 1*365*3600*24;     % Desired TOF for the time-fixed problem
 
 % Setup 

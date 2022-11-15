@@ -85,6 +85,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Final TOF scaling
     tfapp = tfapp*J;
 
+    % Final state basis
     [B, tau] = state_basis(n, tau, basis);
 
     % Initial guess reshaping
