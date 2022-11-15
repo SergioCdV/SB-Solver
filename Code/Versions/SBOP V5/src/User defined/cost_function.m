@@ -45,6 +45,11 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
             % Cost function
             if (isempty(W))
                 r = tf*trapz(tau,a);
+            elseif (length(W) ~= length(tau))
+                r = 0; 
+                for i = 1:floor(length(tau)/length(W))
+                    r = r + tf*dot(W,a(1+length(W)*(i-1):length(W)*i));
+                end
             else
                 r = tf*dot(W,a);
             end

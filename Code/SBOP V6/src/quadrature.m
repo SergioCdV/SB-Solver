@@ -58,7 +58,8 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             % Integration domain 
             tau = sampling_grid(m, sampling_distribution, '');
 
-            % Trapezoidal weights
+            % Newton-Cotes Quadrature weights
+            W = NC_weights(2);
             W = [];
 
         case 'Normal'
@@ -68,8 +69,9 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             % Integration domain 
             tau = sampling_grid(m, sampling_distribution, '');
 
-            % Trapezoidal weights
-            W = []; 
+            % Newton-Cotes Quadrature weights
+            W = NC_weights(3);
+            W = [];
 
         case 'Random'
             % Jacobian domain transformation 
@@ -78,8 +80,9 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             % Integration domain 
             tau = sampling_grid(m, sampling_distribution, '');
 
-            % Trapezoidal weights
-            W = []; 
+            % Newton-Cotes Quadrature weights
+            W = NC_weights(10);
+            W = [];
 
         case 'Newton-Cotes'
             % Jacobian domain transformation 
@@ -89,7 +92,18 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             tau = sampling_grid(m, sampling_distribution, '');
 
             % Newton-Cotes Quadrature weights
-            W = NC_weights(m);
+            W = NC_weights(10);
+            W = [];
+
+        case 'Trapezoidal'
+            % Jacobian domain transformation 
+            J = 1;
+
+            % Integration domain 
+            tau = sampling_grid(m, 'Linear', '');
+
+            % No weights
+            W = [];
 
         otherwise
             % Sanity check on the quadrature number of points 

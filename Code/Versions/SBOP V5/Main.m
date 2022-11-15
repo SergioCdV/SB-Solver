@@ -10,7 +10,7 @@ animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Chebyshev';         % Distribution of time intervals
 basis = 'Chebyshev';                    % Polynomial basis to be use
 n = [15 15 15];                         % Polynomial order in the state vector expansion
-m = 20;                                % Number of sampling points
+m = 200;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 
