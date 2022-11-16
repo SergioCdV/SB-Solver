@@ -37,7 +37,7 @@ function [Papp, Uapp, tfapp] = initial_approximation(tau, tfapp, initial, final,
     tfapp = tfapp*Napp;
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(length(initial)/2, max(n_init)+1);
+    Papp = ones(length(initial)/2, max(n_init)+1);
     [B, ~] = state_basis(n_init, tau, basis);
     Uapp = evaluate_state(Papp, B, n_init);
 end

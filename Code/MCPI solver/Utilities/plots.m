@@ -34,7 +34,7 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     time_days = tau.*tf*t0/86400;
     
     % Final spacecraft trajectory in Cartesian coordinates
-    [S] = cylindrical2cartesian(C(1:3,:),true);
+    S = C;
     x = S(1,:);
     y = S(2,:); 
     z = S(3,:);

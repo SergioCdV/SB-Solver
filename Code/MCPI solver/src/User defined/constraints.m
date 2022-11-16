@@ -33,16 +33,14 @@ function [c, ceq] = constraints(cost, mu, initial, final, B, basis, n, tau, x)
     u = evaluate_state(P,B,n) / tf^2;
     
     % Integrate the trajectory
-    tol = 1e-12;
+    tol = 1e-5;
     x0 = repmat(initial, size(u,2), 1);
-    dyn = @(tau,x)dynamics(mu, tf, zeros(3,size(u,2)), tau, x);
-    [x0, ~] = MCPI(tau, x0, dyn, length(tau)-1, tol);
-
     dyn = @(tau,x)dynamics(mu, tf, u, tau, x);
-    [x, ~] = MCPI(tau, x0, dyn, length(tau)-1, tol);
+    [x, state] = MCPI(tau, x0, dyn, length(tau)-1, tol);
 
     % Equalities 
-    ceq = [x(end,[1 3])-final([1 3]) cos(x(end,2))-cos(final(2)) sin(x(end,2))-sin(final(2)) x(end,4:6)-final(4:6)];
+    % ceq = [x(end,[1 3])-final([1 3]) cos(x(end,2))-cos(final(2)) sin(x(end,2))-sin(final(2)) x(end,4:6)-final(4:6)];
+    ceq = x(end,:)-final;
 
 %     switch (cost)
 %         case 'Minimum time'
@@ -71,7 +69,7 @@ function [c, ceq] = constraints(cost, mu, initial, final, B, basis, n, tau, x)
 %     ceq = [ceq H];
 
     % Inequalities
-    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(tf^2*repmat(T,1,size(u,2))).^2];
+    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(repmat(T,1,size(u,2))).^2];
 end
 
 %% Auxiliary functions 

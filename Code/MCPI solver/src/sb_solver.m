@@ -75,6 +75,10 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
     [~, Uapp, tfapp] = initial_approximation(tapp, tfapp, initial, final, basis); 
+
+    % Cartesian boundary conditions 
+    initial = coe2state(mu, initial_coe).';             % Initial state vector
+    final = coe2state(mu, final_coe).';                 % Final state vector      
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Uapp, basis);
