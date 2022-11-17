@@ -105,7 +105,7 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             % No weights
             W = [];
 
-        otherwise
+        case 'Bernstein'
             % Sanity check on the quadrature number of points 
             if (m <= max(n))
                 m = max(n)+1;
@@ -118,5 +118,8 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             [W, tau] = LG_weights(m);
             W = W/2;
             tau = 0.5*tau.'+0.5;
+            
+        otherwise
+            error('No valid quadrature was selected');
     end
 end

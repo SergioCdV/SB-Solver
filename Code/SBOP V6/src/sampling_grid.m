@@ -74,6 +74,9 @@ function [tau, J] = grid(m, method)
             % Deprecated
             tau = OB_nodes(m);
             J = 1; 
+        case 'Bernstein'
+            tau = linspace(0,1,m+1);
+            J = 1; 
         otherwise
             error('An appropriate time array distribution must be specified')
     end
