@@ -38,6 +38,9 @@ function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
     % Control input 
     [u, ~] = acceleration_control(mu, C, tf);
 
+    % Equalities 
+    ceq = [];
+
     % Inequalities
     c = [dot(u,u,1)-(tf^2*repmat(T,1,size(u,2))).^2];
 end

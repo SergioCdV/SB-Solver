@@ -7,11 +7,11 @@ close all
 
 %% Setup of the solution method
 animations = 0;                         % Set to 1 to generate the gif
-time_distribution = 'Linear';        % Distribution of time intervals
+time_distribution = 'Bernstein';        % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
-n = [10 10 10];                         % Polynomial order in the state vector expansion
-m = 500;                                % Number of sampling points
-cost_function = 'Minimum fuel';         % Cost function to be minimized
+n = [10 10 10 10];                      % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
+cost_function = 'Minimum time';         % Cost function to be minimized
 
 % System data 
 r0 = 149597870700;                      % 1 AU [m]

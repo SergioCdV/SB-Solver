@@ -19,7 +19,7 @@ function [S] = state_mapping(x, direction)
         % Transformation from the Cartesian space to the U space
         for i = 1:size(x,2)
             S(1:4,i) = u_mapping(x(1:3,:));                               % Position space transformation
-            L = L_operator(S(1:4,i));                                     % KS matrix
+            L = KS_matrix(S(1:4,i));                                      % KS matrix
             S(5:8,i) = (1/2)*L.'*[x(4:6,:); zeros(1,size(x,2))];          % Velocity space transformation
         end
     else
@@ -28,7 +28,7 @@ function [S] = state_mapping(x, direction)
 
         % Transformation from the U space to the Cartesian space
         for i = 1:size(x,2)
-            L = L_operator(x(1:4,i));                                % KS matrix
+            L = KS_matrix(x(1:4,i));                                 % KS matrix
             aux = L*x(1:4,i);                                        % Position space transformation
             S(1:3,i) = aux(1:3);                                     % Position space transformation
             aux = 2/dot(S(1:4,i),S(1:4,i))*L*x(5:8,:);               % Velocity space transformation
