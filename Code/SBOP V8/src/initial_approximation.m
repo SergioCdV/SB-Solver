@@ -4,7 +4,8 @@
 %% Initial approximation %%
 % Function to estimate the initial time of flight, control points and curve approximation
 
-% Inputs: - scalar mu, the gravitational parameter of the system
+% Inputs: - dynamics, string specifying the independent variable
+%           determining the dynamics of the problem
 %         - vector tau, the collocation points to be used 
 %         - vector initial, the initial boundary conditions of the
 %           trajectory
@@ -14,13 +15,11 @@
 
 % Outputs: - array Papp, the initial estimation of the boundary control
 %            points
-%          - initial estimation of the control law
+%          - array Capp, the initial estimation of the spacecraft state vector
+%          - scalar thetaf, the estimated final anomaly
 %          - scalar tfapp, the initial initial time of flight
 
-function [Uapp, tfapp] = initial_approximation(mu, tau, tfapp, initial, final, basis)
-    % Constants 
-    n_init = [3 3 3];
-
+function [Papp, Capp, thetaf, tfapp] = initial_approximation(tau, tfapp, initial, final, basis)
     % Preliminary number of revolutions
     dtheta = final(2)-initial(2);
     if (dtheta < 0)
@@ -34,24 +33,16 @@ function [Uapp, tfapp] = initial_approximation(mu, tau, tfapp, initial, final, b
     
     % New initial TOF
     tfapp = tfapp*Napp;
+    thetaf = final(2)+2*pi*Napp;
 
-    % Initial state vector approximation
+    % Generate the polynomial basis
+    n_init = repmat(3, [1 length(initial)/2]);
     Bapp = state_basis(n_init, tau, basis);
-    Papp = zeros(length(initial)/2, max(n_init)+1);  
-    Papp = boundary_conditions(tfapp, n_init, initial, final, Papp, Bapp, basis);
-
-    N = size(Papp,1);                      % Number of state variables
-    Capp = zeros(3*N,size(Bapp{1},2));     % Preallocation for speed
-
-    for i = 1:N
-        % State vector fitting
-        k = n_init(i)+1;
-        for j = 1:3
-            Capp(i+N*(j-1),:) = Papp(i,1:n_init(i)+1)*Bapp{i}(1+k*(j-1):k*j,:);
-        end
-    end
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Uapp = Capp(7:9,:)+mu.*Capp(1:3,:)./sqrt(dot(Capp(1:3,:), Capp(1:3,:), 1)).^3;
-    Uapp = ones(3,size(Capp,2));
+    Papp = zeros(length(initial)/2, max(n_init)+1);  
+    Papp = boundary_conditions(tfapp, n_init, initial, final, thetaf, Papp, Bapp, basis);
+
+    % State vector approximation as a function of time
+    Capp = evaluate_state(Papp, Bapp, n_init);
 end

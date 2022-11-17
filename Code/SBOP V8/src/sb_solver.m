@@ -39,7 +39,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % Approximation order 
     if (length(n) == 1)
-        n = repmat(n, [1 3]);
+        n = repmat(n, [1 4]);
     end
 
     % Boundary conditions 
@@ -61,22 +61,22 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     system.mu = mu; 
 
     initial_coe(1) = initial_coe(1)/r0;                 % Boundary conditions normalization
+    s = coe2state(mu, initial_coe);                     % Initial state vector 
+    initial = state_mapping(s, true);                   % Initial conditions in the u space
     final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
+    s = coe2state(mu, final_coe);                       % Final state vector     
+    final = state_mapping(s, true);                     % Final conditions in the u space
 
     tfapp = tfapp/t0;                                   % Time of flight
-    T = T/gamma;                                        % Spacecraft propulsion parameters
-
-    % Cartesian boundary conditions 
-    initial = coe2state(mu, initial_coe).';             % Initial state vector
-    final = coe2state(mu, final_coe).';                 % Final state vector      
+    T = T/gamma;                                        % Spacecraft propulsion parameters 
  
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
-    [Uapp, tfapp] = initial_approximation(mu, tapp, tfapp, initial, final, basis); 
-
+    [~, Capp, thetaf, tfapp] = initial_approximation(tapp, tfapp, initial, final, basis); 
+    
     % Initial fitting for n+1 control points
-    [P0, ~] = initial_fitting(n, tapp, Uapp, basis);
+    [P0, ~] = initial_fitting(n, tapp, Capp, basis);
     
     % Quadrature definition
     [tau, W, J] = quadrature(n, m, sampling_distribution);
@@ -90,24 +90,24 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; zeros(6,1); tfapp; T];
+    x0 = [x0; tfapp; thetaf; T];
     
     % Upper and lower bounds 
     if (time_free)
-        tol = 1e-4/gamma;
-        P_lb = [-Inf*ones(L,1); -Inf*ones(6,1); 1e-4; T-tol];
-        P_ub = [Inf*ones(L,1); Inf*ones(6,1); Inf; T+tol];
+        tol = 1e-8/gamma;
+        P_lb = [-Inf*ones(L,1); 0; 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf; Inf; T+tol];
     else
         tol = 1e-4;
-        P_lb = [-Inf*ones(L,1); -Inf*ones(6,1); max(tfapp-tol,tol); 0];
-        P_ub = [Inf*ones(L,1); Inf*ones(6,1); tfapp+tol; 1/gamma];
+        P_lb = [-Inf*ones(L,1); max(tfapp-tol,0); 0; 0];
+        P_ub = [Inf*ones(L,1); tfapp+tol; Inf; 1/gamma];
     end
     
     % Objective function
     objective = @(x)cost_function(cost, mu, initial, final, B, basis, n, tau, W, x);
 
     % Non-linear constraints
-    nonlcon = @(x)constraints(cost, mu, initial, final, B, basis, n, tau, x);
+    nonlcon = @(x)constraints(mu, initial, final, B, basis, n, tau, x);
     
     % Linear constraints and inequalities
     A = [];
@@ -123,20 +123,30 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
     
     % Solution 
-    P = reshape(sol(1:end-8), [size(P0,1) size(P0,2)]);     % Optimal control points
-    tf = sol(end-1);                                        % Optimal time of flight
+    P = reshape(sol(1:end-3), [size(P0,1) size(P0,2)]);     % Optimal control points
+    tf = sol(end-2);                                        % Optimal time of flight in Sundman transformation
+    thetaf = sol(end-1);                                    % Final anomaly
     T = sol(end);                                           % Needed thrust vector
-        
+    
+    % Final control points imposing boundary conditions
+    P = boundary_conditions(tf, n, initial, final, thetaf, P, B, basis);
+    
     % Final state evolution
-    u = evaluate_state(P,B,n) / tf^2;
+    C = evaluate_state(P,B,n);
 
     % Dimensional velocity 
-    tol = 1e-12;
-    x0 = repmat(initial, size(u,2), 1);
-    dyn = @(tau, x)dynamics(mu, tf, u, tau, x);
-    [C, ~] = MCPI(tau, x0, dyn, length(tau)-1, tol);
-    C(:,4:6) = C(:,4:6)/tf;
-    C = C.';
+    C(5:8,:) = C(5:8,:)/tf;
+
+    % Dimensional control input
+    u = acceleration_control(mu, C, tf) / tf^2;
+    u = u(1:3,:);
+
+    % Sundman transformation 
+    dyn = @(tau, x)(tf*dot(C(1:4,:), C(1:4,:), 1));
+    [t, ~] = MPCI(tau, zeros(1,size(C,2)), dyn, length(tau)-1, 1e-10);
+
+    % Transformation to the Cartesian space 
+    C = state_mapping(C, false);
     
     % Time domain normalization and scale preserving
     switch (sampling_distribution)
@@ -154,7 +164,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Results 
     if (setup.resultsFlag)
         display_results(exitflag, cost, output, r0, t0, tfapp, tf, dV);
-        plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup);
+        plots(system, t(end), t/t(end), C, u, T, initial_coe, final_coe, setup);
     end
 end
 

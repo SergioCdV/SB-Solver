@@ -14,10 +14,13 @@
 function [C] = evaluate_state(P, B, n)
     % Extract the spacecraft coodinates evaluating the Bézier curve approximation
     N = size(P,1);                   % Number of state variables
-    C = zeros(N,size(B{1},2));       % Preallocation for speed
+    C = zeros(3*N,size(B{1},2));     % Preallocation for speed
 
     for i = 1:size(P,1)
         % State vector fitting
-        C(i,:) = P(i,1:n(i)+1)*B{i}(1:n(i)+1,:);
+        k = n(i)+1;
+        for j = 1:3
+            C(i+N*(j-1),:) = P(i,1:n(i)+1)*B{i}(1+k*(j-1):k*j,:);
+        end
     end
 end
