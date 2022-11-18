@@ -28,22 +28,16 @@ function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
     tf = x(end-1);                                      % Final time of flight 
     T = x(end);                                         % Needed thrust vector
 
-    % Boundary conditions points
-    P = boundary_conditions(tf, n, initial, final, P, B, basis);
+    u = evaluate_state(P, B, n);
 
     % Trajectory evolution
-    C = evaluate_state(P,B,n);
-
-    % Control input 
-    [u, ~] = acceleration_control(mu, C, tf);
+    tol = 1e-5;
+    dyn = @(tau,s)dynamics(mu, tf, [u; zeros(1,size(u,2))], tau, s);
+    [C, state] = MCPI(tau, repmat(initial, size(u,2), 1), dyn, length(tau)-1, tol);
 
     % Equalities 
-    F = zeros(4,size(C,2));
-    for i = 1:size(C,2)
-        F(:,i) = KS_matrix(C(1:4,i)).'*u(:,i)/tf^2;
-    end
-    ceq = [u(4,:) C(10,:)+(4/mu)*dot(C(6:9,:),F,1)];
+    ceq = C(end,:)-final;
 
     % Inequalities
-    c = [dot(u(1:3,:),u(1:3,:),1)-(tf^2*repmat(T,1,size(u,2))).^2];
+    c = [dot(u(1:3,:),u(1:3,:),1)-(repmat(T,1,size(u,2))).^2];
 end

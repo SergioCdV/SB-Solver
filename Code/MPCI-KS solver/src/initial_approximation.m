@@ -15,7 +15,8 @@
 
 % Outputs: - array Papp, the initial estimation of the boundary control
 %            points
-%          - array Capp, the initial estimation of the spacecraft state vector
+%          - array Uapp, the initial estimation of the spacecraft state
+%            vector control law
 %          - scalar tfapp, the initial initial time of flight
 
 function [Papp, Capp, tfapp] = initial_approximation(tau, tfapp, initial, final, basis)
@@ -24,9 +25,6 @@ function [Papp, Capp, tfapp] = initial_approximation(tau, tfapp, initial, final,
     Bapp = state_basis(n_init, tau, basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(length(initial)/2, max(n_init)+1);  
-    Papp = boundary_conditions(tfapp, n_init, initial, final, Papp, Bapp, basis);
-
-    % State vector approximation as a function of time
+    Papp = zeros(3, max(n_init)+1);  
     Capp = evaluate_state(Papp, Bapp, n_init);
 end

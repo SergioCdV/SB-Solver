@@ -9,7 +9,6 @@
 %         - scalar n, the order of the approximating polynomail function
 %         - vector x0, the initial 6 by 1 state vector (position and velocity)
 %         - vector xf, the final 6 by 1 state vector (position and velocity)
-%         - scalar thetaf, the final optimal insertion phase
 %         - array P0, the initial array of control points 
 %         - cell array B, the polynomial basis to be used
 %         - string basis, to select the polynomial basis to be used in the

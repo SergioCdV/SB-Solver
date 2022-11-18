@@ -128,7 +128,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     T = sol(end);                                           % Needed thrust vector
         
     % Final state evolution
-    u = evaluate_state(P,B,n) / tf^2;
+    u = evaluate_state(P,B,n);
 
     % Dimensional velocity 
     tol = 1e-12;

@@ -28,19 +28,21 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
 
     % Compute the state variable
     P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
-    P = boundary_conditions(tf, n, initial, final, P, B, basis);                % Boundary conditions control points
-    C = evaluate_state(P,B,n);                                                  % State evolution
+    U = evaluate_state(P,B,n);                                                  % State evolution
     
     % Compute the cost function
     switch (cost)
         case 'Minimum time'
-            a = dot(C(1:4,:), C(1:4,:), 1);                                     % Time transformation
+            % State integration
+            tol = 1e-3;
+            dyn = @(tau,s)dynamics(mu, tf, [U; zeros(1,size(U,2))], tau, s);
+            [C, ~] = MCPI(tau, repmat(initial, size(U,2), 1), dyn, length(tau)-1, tol);
+
+            % Cost function
+            a = dot(C(:,1:4), C(:,1:4), 2).';                                   % Time transformation
     
-        case 'Minimum fuel'
-            [u, ~, ~] = acceleration_control(mu, C, tf);                        % Control vector
-            u = u / tf^2;                                                       % Normalized control vector
-        
-            a = sqrt(dot(u,u,1));                                               % Non-dimensional acceleration norm
+        case 'Minimum fuel'        
+            a = sqrt(dot(U,U,1));                                               % Non-dimensional acceleration norm
     
         otherwise
             error('No valid cost function was selected to be minimized');

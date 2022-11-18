@@ -39,7 +39,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % Approximation order 
     if (length(n) == 1)
-        n = repmat(n, [1 5]);
+        n = repmat(n, [1 3]);
     end
 
     % Boundary conditions 
@@ -77,10 +77,10 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
-    [~, Capp, tfapp] = initial_approximation(tapp, tfapp, initial, final, basis); 
+    [~, Uapp, tfapp] = initial_approximation(tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
-    [P0, ~] = initial_fitting(n, tapp, Capp, basis);
+    [P0, ~] = initial_fitting(n, tapp, Uapp, basis);
     
     % Quadrature definition
     [tau, W, J] = quadrature(n, m, sampling_distribution);
@@ -131,18 +131,16 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     tf = sol(end-1);                                        % Optimal time of flight in Sundman transformation
     T = sol(end);                                           % Needed thrust vector
     
-    % Final control points imposing boundary conditions
-    P = boundary_conditions(tf, n, initial, final, P, B, basis);
-    
-    % Final state evolution
-    C = evaluate_state(P,B,n);
+    % Final control law
+    u = evaluate_state(P,B,n);
+
+    % State integration
+    tol = 1e-3;
+    dyn = @(tau,s)dynamics(mu, tf, [u; zeros(1,size(U,2))], tau, s);
+    [C, ~] = MCPI(tau, repmat(initial, size(U,2), 1), dyn, length(tau)-1, tol);
 
     % Dimensional velocity 
     C(6:10,:) = C(6:10,:)/tf;
-
-    % Dimensional control input
-    u = acceleration_control(mu, C, tf) / tf^2;
-    u = u(1:3,:);
 
     % Sundman transformation 
     dyn = @(tau, x)(tf*dot(C(1:4,:), C(1:4,:), 1).');
@@ -168,7 +166,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Results 
     if (setup.resultsFlag)
         display_results(exitflag, cost, output, r0, t0, tfapp, t(end), dV);
-        plots(system, t(end), tau, C, u, T, initial_coe, final_coe, setup);
+        plots(system, t(end), t/t(end), C, u, T, initial_coe, final_coe, setup);
     end
 end
 
