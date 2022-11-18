@@ -81,8 +81,8 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, thetaf, P0, B, basis)
 
         otherwise
             % Compute the partial state evolution 
-            thetaf = size(P,1);                   % Number of state variables
-            C = zeros(2*thetaf,2);                % Preallocation for speed
+            N = size(P,1);                   % Number of state variables
+            C = zeros(2*N,2);                % Preallocation for speed
             for i = 1:length(n)
                 C(i,:) = P0(i,3:n(i)-1)*B{i}(3:n(i)-1,[1 end]);
                 C(length(n)+i,:) = P0(i,3:n(i)-1)*B{i}(n(i)+4:2*n(i),[1 end]);

@@ -40,7 +40,7 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
             [u, ~, ~] = acceleration_control(mu, C, tf);                        % Control vector
             u = u / tf^2;                                                       % Normalized control vector
         
-            a = sqrt(dot(u,u,1));                                               % Non-dimensional acceleration norm
+            a = sqrt(dot(u,u,1)).*dot(C(1:4,:), C(1:4,:), 1);                                               % Non-dimensional acceleration norm
     
         otherwise
             error('No valid cost function was selected to be minimized');

@@ -168,7 +168,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Results 
     if (setup.resultsFlag)
         display_results(exitflag, cost, output, r0, t0, tfapp, t(end), dV);
-        plots(system, t(end), tau, C, u, T, initial_coe, final_coe, setup);
+        plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup);
     end
 end
 
