@@ -33,19 +33,18 @@ function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);
-    C(6:10,:) = C(6:10,:)/tf;
 
     % Control input 
     [u, ~] = acceleration_control(mu, C, tf);
-    u = u/tf^2;
 
     % Equalities 
-    F = zeros(4,size(C,2));
-    for i = 1:size(C,2)
-        F(:,i) = KS_matrix(C(1:4,i))*C(6:9,i);
-    end
-    ceq = [mu*C(10,:)/4+dot(F(1:3,:),u(1:3,:),1)./F(4,:)];
+    ceq = [u(1,:).*C(4,:)-u(2,:).*C(3,:)+u(3,:).*C(2,:)-u(4,:).*C(1,:) tf*dot(C(1:4,2:end-1),C(1:4,2:end-1),1).*C(10,2:end-1)+(8/mu)*dot(C(6:9,2:end-1),C(11:14,2:end-1)/tf,1) ];
 
     % Inequalities
-    c = [dot(u(1:3,:),u(1:3,:),1)-(repmat(T,1,size(u,2))).^2];
+    U = u(1:3,:);
+    for i = 1:size(C,2)
+        aux = KS_matrix(C(1:4,:)).'\u(:,i);
+        U(:,i) = aux(1:3);
+    end
+    c = [dot(U,U,1)-(tf^2*repmat(T,1,size(u,2))).^2];
 end

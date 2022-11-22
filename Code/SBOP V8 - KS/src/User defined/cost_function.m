@@ -38,7 +38,7 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
     
         case 'Minimum fuel'
             [u, ~, ~] = acceleration_control(mu, C, tf);                        % Control vector
-            u = u / tf^2;                                                       % Normalized control vector
+            u = u(1:3,:) / tf^2;                                                % Normalized control vector
         
             a = sqrt(dot(u,u,1)).*dot(C(1:4,:), C(1:4,:), 1);                                               % Non-dimensional acceleration norm
     

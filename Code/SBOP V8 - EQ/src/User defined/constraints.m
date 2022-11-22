@@ -39,8 +39,17 @@ function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
     [u, ~] = acceleration_control(mu, C, tf);
 
     % Equalities 
-    ceq = [cos(thetaf)-cos(final(6)) sin(thetaf)-sin(final(6))];
+    w = 1+C(2,:).*cos(C(6,:))+C(3,:).*cos(C(6,:));
+    f = tf*[zeros(2,size(C,2)); sqrt(mu*C(1,:)).*(w./C(1,:)).^2];
+    res = zeros(3,size(C,2)); 
+    for i = 1:size(C,2)
+        B = control_input(mu, C(:,i)); 
+        res(:,i) = C([7 11 12],i)/tf-B([1 5 6],:)*u(:,i)-f(:,i);
+    end
+
+    res = dot(res,res,1); 
+    ceq = [cos(thetaf)-cos(final(6)) sin(thetaf)-sin(final(6)) res];
 
     % Inequalities
-    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(tf*repmat(T,1,size(u,2))).^2];
+    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(repmat(T,1,size(u,2))).^2];
 end

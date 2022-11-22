@@ -62,11 +62,9 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     initial_coe(1) = initial_coe(1)/r0;                 % Boundary conditions normalization
     initial = coe2equinoctial(initial_coe, true);       % Initial MEEs
-    initial = [initial zeros(1,6)];
 
     final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
     final = coe2equinoctial(final_coe, true);           % Final MEEs
-    final = [final zeros(1,6)];
 
     tfapp = tfapp/t0;                                   % Time of flight
     T = T/gamma;                                        % Spacecraft propulsion parameters 
@@ -136,7 +134,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     C = evaluate_state(P,B,n);
 
     % Dimensional control input
-    u = acceleration_control(mu, C, tf) / tf;
+    u = acceleration_control(mu, C, tf);
 
     % Dimensional velocity 
     C(7:12,:) = C(7:12,:)/tf;

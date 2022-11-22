@@ -21,10 +21,5 @@ function [u, dv, f] = acceleration_control(mu, C, tf)
 
     % Compute the control vector as a dynamics residual
     u = a-f;
-    for i = 1:size(C,2)
-        L = KS_matrix(C(1:4,i)).';
-        u(:,i) = L^(-1)*u(:,i);
-    end
-
     u = 2*u./dot(C(1:4,:),C(1:4,:),1);
 end

@@ -40,7 +40,7 @@ function [Papp, Capp, thetaf, tfapp] = initial_approximation(tau, tfapp, initial
     Bapp = state_basis(n_init, tau, basis);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(length(initial)/2, max(n_init)+1);  
+    Papp = zeros(length(initial), max(n_init)+1);  
     Papp = boundary_conditions(tfapp, n_init, initial, final, thetaf, Papp, Bapp, basis);
 
     % State vector approximation as a function of time

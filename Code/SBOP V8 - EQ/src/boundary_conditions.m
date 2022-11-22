@@ -19,27 +19,21 @@
 
 function [P] = boundary_conditions(tfapp, n, x0, xf, thetaf, P0, B, basis)
     % Sanity check 
-    if (min(n) < 3)
+    if (min(n) < 2)
         error('Cauchy boundary conditions cannot be imposed');
     else
         P = P0;         % Initialization
     end
 
     % Add the revolutions to the final angle
-    xf(6) = thetaf;
-
-    % Dimensionalizing of the velocity 
-    x0(7:12) = tfapp*x0(7:12);
-    xf(7:12) = tfapp*xf(7:12);
+    xf(end) = thetaf;
 
     % Switch the polynomial basis to be used
     switch (basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
-            P(:,1) = x0(1:6);
-            P(:,2) = x0(1:6)+x0(7:12)./n;
+            P(:,1) = x0;
             for i = 1:length(n)
-                P(i,n(i)) = xf(i)-xf(length(xf)/2+i)/n(i);
                 P(i,n(i)+1) = xf(i);
             end
 
@@ -89,15 +83,13 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, thetaf, P0, B, basis)
             end
 
             % Assemble the linear system 
-            C = [x0.'-C(:,1) xf.'-C(:,end)];
-            C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:)];
+            C = [x0.'-C(1:N,1) xf.'-C(1:N,end)];
             
             % Control points for an orthogonal Bézier curve
             for i = 1:length(n)
-                index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
+                index = [1 n(i)+1];
                 A = B{i}(index,[1,end]);
-                A = [A(1:4,:) A(5:8,:)];
-                P(i,[1 2 n(i) n(i)+1]) = C(i,:)*A^(-1);
+                P(i,[1 n(i)+1]) = C(i,:)*A^(-1);
             end
     end
 end

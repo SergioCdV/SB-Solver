@@ -94,8 +94,8 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; tfapp; T];
-    
+    x0 = [x0; 5; T];
+   
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
