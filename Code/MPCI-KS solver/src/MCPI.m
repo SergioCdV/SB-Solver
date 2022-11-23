@@ -4,7 +4,7 @@ function [x, state] = MCPI(tau, x0, dynamics, order, tol)
     % Set up of the method 
     GoOn = true;                            % Convergence boolean
     iter = 1;                               % Initial iteration
-    maxIter = 1e3;                          % Maximum number of iterations
+    maxIter = 5e2;                          % Maximum number of iterations
     error = 1e3;                            % Initial error
 
     % Constants 
@@ -56,12 +56,12 @@ function [x, state] = MCPI(tau, x0, dynamics, order, tol)
         % Convergence check 
         dX = x-x0; 
         dX = sqrt(dot(dX,dX,2));
-        if (error < tol && norm(dX) < tol)
+        if (error < tol && max(dX) < tol)
             GoOn = false;
         else
             iter = iter+1;
             x0 = x; 
-            error = norm(dX);
+            error = max(dX);
         end
     end
 

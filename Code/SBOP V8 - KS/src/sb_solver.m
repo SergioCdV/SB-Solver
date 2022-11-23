@@ -66,6 +66,9 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
     s = coe2state(mu, final_coe);                       % Final state vector     
     final = state_mapping(s, true).';                   % Final conditions in the u space
+    theta = deg2rad(0);
+    R = [cos(theta) 0 0 -sin(theta); 0 cos(theta) sin(theta) 0; 0 -sin(theta) cos(theta) 0; sin(theta) 0 0 cos(theta)];
+    final = final*blkdiag(R,R).';
 
     tfapp = tfapp/t0;                                   % Time of flight
     T = T/gamma;                                        % Spacecraft propulsion parameters 
@@ -141,9 +144,10 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     u = u(1:3,:);
 
     % Sundman transformation 
-    dyn = @(tau, x)(tf*dot(C(1:4,:), C(1:4,:), 1).');
-    [t, state] = MCPI(tau, linspace(0,tf,size(C,2)), dyn, length(tau)-1, 1e-10);
-    t = t.';
+%     dyn = @(tau, x)(tf*dot(C(1:4,:), C(1:4,:), 1).');
+%     [t, state] = MCPI(tau, linspace(0,tf,size(C,2)), dyn, length(tau)-1, 1e-10);
+%     t = t.';
+     t = cumtrapz(tau,tf*dot(C(1:4,:),C(1:4,:),1));
 
     % Transformation to the Cartesian space 
     C = state_mapping(C, false);

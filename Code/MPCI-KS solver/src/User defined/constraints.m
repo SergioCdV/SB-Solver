@@ -31,7 +31,7 @@ function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
     u = evaluate_state(P, B, n);
 
     % Trajectory evolution
-    tol = 1e-5;
+    tol = 1e-3;
     dyn = @(tau,s)dynamics(mu, tf, [u; zeros(1,size(u,2))], tau, s);
     [C, state] = MCPI(tau, repmat(initial, size(u,2), 1), dyn, length(tau)-1, tol);
 

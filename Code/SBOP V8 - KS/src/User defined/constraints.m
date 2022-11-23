@@ -43,10 +43,8 @@ function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
     % Inequalities
     U = u(1:3,:);
     for i = 1:size(C,2)
-        aux = KS_matrix(C(1:4,:)).'\u(:,i)/tf^2;
+        aux = KS_matrix(C(1:4,:)).'\u(:,i);
         U(:,i) = aux(1:3);
     end
-    c = [dot(U,U,1)-(repmat(T,1,size(u,2))).^2];
-
-    c = [];
+    c = [dot(U,U,1)-(tf^2*repmat(T,1,size(u,2))).^2];
 end

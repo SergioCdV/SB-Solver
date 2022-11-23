@@ -16,16 +16,17 @@
 
 % State dynamics 
 function [ds] = dynamics(mu, tf, u, tau, s)
-    N = size(u,2);                                                       % Number of evaluation points
-    f = zeros(N,10);                                                     % Vector field
+    N = size(u,2);                                                      % Number of evaluation points
+    f = zeros(N,8);                                                     % Vector field
 
     % Dynamics
-    f(:,1:5) = s(:,6:10)/tf;                                             % Complete dynamics
+    f(:,1:4) = s(:,5:8);                                             % Complete dynamics
+    r = dot(s(:,1:4), s(:,1:4), 2);
+    E = -2*(mu/2-dot(s(:,5:8),s(:,5:8),2))./r;
     for i = 1:N
-        r = dot(s(i,1:4), s(i,1:4));
         L = KS_matrix(s(i,1:4)); 
-        f(i,6:10) = [-mu*s(i,5)/4.*s(i,1:4)+r*u(1:4,i).'*L/2 -(4/mu)*dot(s(i,6:9)/tf,u(1:4,i).'*L)];           
+        f(i,5:8) = -E(i)/2.*s(i,1:4)+tf*r(i)*u(1:4,i).'*L/2;           
     end
 
-    ds = tf*f;
+    ds = f;
 end

@@ -67,10 +67,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     s = coe2state(mu, final_coe);                       % Final state vector     
     final = state_mapping(s, true).';                   % Final conditions in the u space
 
-    % Append the semimajor axis variable 
-    initial = [initial(1:4) 1/initial_coe(1) initial(5:8) 0];
-    final = [final(1:4) 1/final_coe(1) final(5:8) 0];
-
     tfapp = tfapp/t0;                                   % Time of flight
     T = T/gamma;                                        % Spacecraft propulsion parameters 
  
@@ -136,16 +132,14 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % State integration
     tol = 1e-3;
-    dyn = @(tau,s)dynamics(mu, tf, [u; zeros(1,size(U,2))], tau, s);
-    [C, ~] = MCPI(tau, repmat(initial, size(U,2), 1), dyn, length(tau)-1, tol);
+    dyn = @(tau,s)dynamics(mu, tf, [u; zeros(1,size(u,2))], tau, s);
+    [C, ~] = MCPI(tau, repmat(initial, size(u,2), 1), dyn, length(tau)-1, tol);
 
     % Dimensional velocity 
-    C(6:10,:) = C(6:10,:)/tf;
+    C(:,5:8) = C(:,5:8)/tf;
 
     % Sundman transformation 
-    dyn = @(tau, x)(tf*dot(C(1:4,:), C(1:4,:), 1).');
-    [t, state] = MCPI(tau, linspace(0,tf,size(C,2)), dyn, length(tau)-1, 1e-10);
-    t = t.';
+    t = cumtrapz(tau, tf*dot(C(:,1:4),C(:,1:4),2));
 
     % Transformation to the Cartesian space 
     C = state_mapping(C, false);
