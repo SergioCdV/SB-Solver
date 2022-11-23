@@ -14,12 +14,18 @@
 %          - vector f, the dynamics vector field
 
 function [u, dv, f] = acceleration_control(mu, C, tf)
+    % Radial distance 
+    r = dot(C(1:4,:),C(1:4,:),1); 
+
+    % Energy evolution 
+    E = -2*(mu/2-dot(C(5:8,:),C(5:8,:),1))./r;
+
     % Linear terms of the equations of motion
-    a = C(11:14,:);                                                                 % Inertial acceleration field
-    f = -tf^2*(mu.*C(5,:)/4).*C(1:4,:);                                             % Acceleration vector
-    dv = C(6:9,:);                                                                  % Inertial velocity field
+    a = C(9:12,:);                                        % Inertial acceleration field
+    f = -tf^2*(E/2).*C(1:4,:);                            % Acceleration vector
+    dv = C(5:8,:);                                        % Inertial velocity field
 
     % Compute the control vector as a dynamics residual
     u = a-f;
-    u = 2*u./dot(C(1:4,:),C(1:4,:),1);
+    u = 2*u./r;
 end

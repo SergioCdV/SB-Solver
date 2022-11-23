@@ -39,7 +39,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % Approximation order 
     if (length(n) == 1)
-        n = repmat(n, [1 5]);
+        n = repmat(n, [1 4]);
     end
 
     % Boundary conditions 
@@ -67,10 +67,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     s = coe2state(mu, final_coe);                       % Final state vector     
     final = state_mapping(s, true).';                   % Final conditions in the u space
 
-    % Append the semimajor axis variable 
-    initial = [initial(1:4) 1/initial_coe(1) initial(5:8) 0];
-    final = [final(1:4) 1/final_coe(1) final(5:8) 0];
-
     tfapp = tfapp/t0;                                   % Time of flight
     T = T/gamma;                                        % Spacecraft propulsion parameters 
  
@@ -94,7 +90,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; 5; T];
+    x0 = [x0; 1; T];
    
     % Upper and lower bounds 
     if (time_free)
