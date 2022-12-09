@@ -13,33 +13,38 @@
 %          - vector dv, the inertial velocity field 
 %          - vector f, the dynamics vector field
 
-function [u, dv, f] = acceleration_control(mu, C, tf)
+function [u, dv, f] = acceleration_control(mu, C, L)
     % Compute the auxiliary variables
-    w = 1+C(2,:).*cos(C(6,:))+C(3,:).*sin(C(6,:));
+    w = 1+C(2,:).*cos(L)+C(3,:).*sin(L);
     s = 1+C(4,:).^2+C(5,:).^2;
 
     % Linear terms of the equations of motion
-    f = tf*[zeros(5,size(C,2)); sqrt(mu.*C(1,:)).*(w./C(1,:)).^2];                  % Acceleration vector
-    a = C(7:12,:);                                                                  % Inertial acceleration field
-    dv = C(7:12,:);                                                                 % Inertial velocity field
+    a = C(6:10,:);                                                                  % Inertial acceleration field
+    dv = C(6:10,:);                                                                 % Inertial velocity field
+
+    % Sundman transformation 
+    Tau = sqrt(mu*C(1,:)).*(w./C(1,:)).^2;
 
     % Compute the control vector as a dynamics residual
     u = zeros(3,size(C,2));
 
     % Tangential component
     alpha = 2*C(1,:)./w.*sqrt(C(1,:)/mu); 
-    u(2,:) = (a(1,:)-f(1,:))./alpha;
+    u(2,:) = a(1,:)./alpha;
 
     % Normal component
     beta = sqrt(C(1,:)/mu).*s./(2*w);
     u(3,:) = sqrt(a(4,:).^2+a(5,:).^2)./beta;
-    u(3,:) = u(3,:).*sign(a(4,:))./sign(cos(C(6,:)));
+    u(3,:) = u(3,:).*sign(a(4,:))./sign(cos(L));
 
     % Radial component
     delta = sqrt(C(1,:)/mu);
     for i = 1:size(C,2)
-        B = control_input(mu, C(:,i));
+        B = control_input(mu, [C(1:5,i); L(i)]);
         u(1,i) = (a(2,i)-B(2,2:3)*u(2:3,i))^2+(a(3,i)-B(3,2:3)*u(2:3,i))^2;
+
+        % Sundman transformation 
+        u(:,i) = u(:,i)*Tau(i);
     end
     u(1,:) = sqrt(u(1,:))./delta;
 end

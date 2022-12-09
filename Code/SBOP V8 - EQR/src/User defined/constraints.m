@@ -22,29 +22,39 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
+function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, tau, x)
     % Extract the optimization variables
     P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
-    tf = x(end-1);                                      % Final time of flight 
+    thetaf = x(end-1);                                  % Final insertion phase
     T = x(end);                                         % Needed thrust vector
 
     % Boundary conditions points
-    P = boundary_conditions(tf, n, initial, final, P, B, basis);
+    P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);
+
+    % Compute the longitude evolution 
+    L = initial(end)+thetaf*((tau(end)-tau(1))/2*tau+(tau(end)+tau(1))/2);
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);
 
     % Control input 
-    [u, ~] = acceleration_control(mu, C, tf);
-
-    % Equalities 
-    ceq = u(1,:).*C(4,:)-u(2,:).*C(3,:)+u(3,:).*C(2,:)-u(4,:).*C(1,:);
+    [u, ~] = acceleration_control(mu, C, L);
+ 
+    % Kinematic constraint 
+    w = 1+C(2,:).*cos(L)+C(3,:).*sin(L);
+    res = sqrt(mu*C(1,:)).*(w./C(1,:)).^2;
+    for i = 1:size(C,2)
+        B = control_input(mu, C(:,i)); 
+        res(i) = 1/(res(i)+B(6,3)*u(3,i));
+    end
 
     % Inequalities
-    U = u(1:3,:);
-    for i = 1:size(C,2)
-        aux = KS_matrix(C(1:4,:)).'\u(:,i);
-        U(:,i) = aux(1:3);
+    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(thetaf*repmat(T,1,size(u,2))).^2 -diff(res)];
+
+    % Equalities
+    ceq = [cos(L(end))-cos(final(6)) sin(L(end))-sin(final(6))];
+
+    if (time_free)
+        ceq = [ceq tf-trapz(L,res)];
     end
-    c = dot(U,U,1)-(tf^2*repmat(T,1,size(u,2))).^2;
 end

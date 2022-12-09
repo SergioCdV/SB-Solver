@@ -61,6 +61,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     system.mu = mu; 
 
     initial_coe(1) = initial_coe(1)/r0;                 % Boundary conditions normalization
+    E = -mu/(2*initial_coe(1));
     s = coe2state(mu, initial_coe);                     % Initial state vector 
     initial = state_mapping(s, true).';                 % Initial conditions in the u space
     final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
@@ -69,6 +70,9 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     theta = deg2rad(0);
     R = [cos(theta) 0 0 -sin(theta); 0 cos(theta) sin(theta) 0; 0 -sin(theta) cos(theta) 0; sin(theta) 0 0 cos(theta)];
     final = final*blkdiag(R,R).';
+    theta = deg2rad(0);
+    R = [cos(theta) 0 0 -sin(theta); 0 cos(theta) sin(theta) 0; 0 -sin(theta) cos(theta) 0; sin(theta) 0 0 cos(theta)];
+    initial = initial*blkdiag(R,R).';
 
     tfapp = tfapp/t0;                                   % Time of flight
     T = T/gamma;                                        % Spacecraft propulsion parameters 

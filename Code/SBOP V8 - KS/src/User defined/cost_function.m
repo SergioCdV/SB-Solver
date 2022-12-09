@@ -34,27 +34,27 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
     % Compute the cost function
     switch (cost)
         case 'Minimum time'
-            a = dot(C(1:4,:), C(1:4,:), 1);                                     % Time transformation
+            r = trapz(tau,tf*dot(C(1:4,:),C(1:4,:),1));                      % Time transformation
     
         case 'Minimum fuel'
             [u, ~, ~] = acceleration_control(mu, C, tf);                        % Control vector
             u = u(1:3,:) / tf^2;                                                % Normalized control vector
         
-            a = sqrt(dot(u,u,1)).*dot(C(1:4,:), C(1:4,:), 1);                                               % Non-dimensional acceleration norm
+            a = sqrt(dot(u,u,1)).*dot(C(1:4,:), C(1:4,:), 1);                   % Non-dimensional acceleration norm
+
+            % Cost function
+            if (isempty(W))
+                r = tf*trapz(tau,a);
+            elseif (length(W) ~= length(tau))
+                r = 0; 
+                for i = 1:floor(length(tau)/length(W))
+                    r = r + tf*dot(W,a(1+length(W)*(i-1):length(W)*i));
+                end
+            else
+                r = tf*dot(W,a);
+            end
     
         otherwise
             error('No valid cost function was selected to be minimized');
-    end
-
-    % Cost function
-    if (isempty(W))
-        r = tf*trapz(tau,a);
-    elseif (length(W) ~= length(tau))
-        r = 0; 
-        for i = 1:floor(length(tau)/length(W))
-            r = r + tf*dot(W,a(1+length(W)*(i-1):length(W)*i));
-        end
-    else
-        r = tf*dot(W,a);
     end
 end

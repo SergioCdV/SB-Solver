@@ -39,7 +39,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % Approximation order 
     if (length(n) == 1)
-        n = repmat(n, [1 6]);
+        n = repmat(n, [1 5]);
     end
 
     % Boundary conditions 
@@ -72,7 +72,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
-    [~, Capp, thetaf, tfapp] = initial_approximation(tapp, tfapp, initial, final, basis); 
+    [~, Capp, thetaf] = initial_approximation(tapp, tfapp, initial, final, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
@@ -89,17 +89,16 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; tfapp; thetaf; T];
+    x0 = [x0; thetaf; T];
     
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
-        P_lb = [-Inf*ones(L,1); 0; 0; T-tol];
-        P_ub = [Inf*ones(L,1); Inf; Inf; T+tol];
+        P_lb = [-Inf*ones(L,1); 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf; T+tol];
     else
-        tol = 1e-4;
-        P_lb = [-Inf*ones(L,1); max(tfapp-tol,0); 0; 0];
-        P_ub = [Inf*ones(L,1); tfapp+tol; Inf; 1/gamma];
+        P_lb = [-Inf*ones(L,1); 0; 0];
+        P_ub = [Inf*ones(L,1); Inf; 1/gamma];
     end
     
     % Objective function
@@ -122,37 +121,56 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
     
     % Solution 
-    P = reshape(sol(1:end-3), [size(P0,1) size(P0,2)]);     % Optimal control points
-    tf = sol(end-2);                                        % Optimal time of flight
+    P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
     thetaf = sol(end-1);                                    % Final anomaly
     T = sol(end);                                           % Needed thrust vector
     
     % Final control points imposing boundary conditions
-    P = boundary_conditions(tf, n, initial, final, thetaf, P, B, basis);
+    P = boundary_conditions(n, initial, final, thetaf, P, B, basis);
     
     % Final state evolution
     C = evaluate_state(P,B,n);
 
     % Dimensional control input
-    u = acceleration_control(mu, C, tf) / tf;
+    u = acceleration_control(mu, C, thetaf) / thetaf;
 
     % Dimensional velocity 
-    C(7:12,:) = C(7:12,:)/tf;
+    C(6:10,:) = C(6:10,:) / thetaf;
 
-    C = equinoctial2ECI(mu, C(1:6,:), true);
+    % Final time of flight 
+    w = 1+C(2,:).*cos(thetaf*tau)+C(3,:).*sin(thetaf*tau);
+    dL = 1/sqrt(mu*C(1,:)).*(C(1,:)./w).^2;
+    for i = 1:size(C,2)
+        B = control_input(mu, C(:,i)); 
+        dL(i) = dL(i)+1/(B(6,3)*u(3,i));
+    end
     
-    % Time domain normalization and scale preserving
+    if (isempty(W))
+        tf = thetaf*trapz(tau,a);
+    elseif (length(W) ~= length(tau))
+        tf = 0; 
+        for i = 1:floor(length(tau)/length(W))
+            tf = tf + thetaf*dot(W,a(1+length(W)*(i-1):length(W)*i));
+        end
+    else
+        tf = thetaf*dot(W,a);
+    end
+
+    % Domain normalization and scale preserving
     switch (sampling_distribution)
         case 'Chebyshev'
             tau = (1/2)*(1+tau);
-            tf = tf/J;
+            thetaf = thetaf/J;
             tfapp = tfapp/J;
         case 'Legendre'
             tau = (1/2)*(1+tau);
-            tf = tf/J;
+            thetaf = thetaf/J;
             tfapp = tfapp/J;
         otherwise
     end
+
+    C = [C(1:5,:); thetaf*tau; C(6:10,:)];
+    C = equinoctial2ECI(mu, C(1:6,:), true);
 
     % Results 
     if (setup.resultsFlag)

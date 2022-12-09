@@ -23,8 +23,6 @@
 % Outputs: - scalar r, the cost index to be optimized
 
 function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
-    % Optimization variables
-    tf = x(end-2);              % Final time of flight
     
     switch (cost)
         case 'Minimum time'
@@ -32,25 +30,26 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
     
         case 'Minimum fuel'
             % Minimize the control input
-            P = reshape(x(1:end-3), [length(n), max(n)+1]);                             % Control points
+            P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
             thetaf = x(end-1);                                                          % Final insertion phase
-            P = boundary_conditions(tf, n, initial, final, thetaf, P, B, basis);        % Boundary conditions control points
+            P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);        % Boundary conditions control points
             C = evaluate_state(P,B,n);                                                  % State evolution
     
-            [u, ~, ~] = acceleration_control(mu, C, tf);                                % Control vector
+            L = initial(end)+thetaf*((tau(end)-tau(1))/2*tau+(tau(end)+tau(1))/2);      % Longitude evolution
+            [u, ~, ~] = acceleration_control(mu, C, L);                                 % Control vector
         
-            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2) / tf;                               % Non-dimensional acceleration norm
+            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2) / thetaf;                           % Non-dimensional acceleration norm
     
             % Cost function
             if (isempty(W))
-                r = tf*trapz(tau,a);
+                r = trapz(tau,a);
             elseif (length(W) ~= length(tau))
                 r = 0; 
                 for i = 1:floor(length(tau)/length(W))
-                    r = r + tf*dot(W,a(1+length(W)*(i-1):length(W)*i));
+                    r = r + dot(W,a(1+length(W)*(i-1):length(W)*i));
                 end
             else
-                r = tf*dot(W,a);
+                r = dot(W,a);
             end
     
         otherwise
