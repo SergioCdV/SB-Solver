@@ -9,15 +9,13 @@
 %         - vector initial, the initial boundary conditions of the
 %           trajectory 
 %         - vector final, the initial boundary conditions of the
-%           trajectory
-%         - vector n, the vector of degrees of approximation of the state
-%           variables
-%         - vector x, the degree of freedom to be optimized 
+%           trajectory 
 %         - cell array B, the polynomial basis to be used
 %         - string basis, the polynomial basis to be used
-%         - string dynamics, the independent variable parametrization to be
-%           used
-%         - string cost, the cost function to be minimized
+%         - vector n, the vector of degrees of approximation of the state
+%           variables
+%         - vector tau, the normalized independent variable
+%         - vector x, the degree of freedom to be optimized
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq

@@ -8,12 +8,13 @@
 % Inputs: - scalar mu, the gravitational parameter of the system
 %         - array C, the 9xm state vector 
 %         - scalar tf, the final time of flight
+%         - vector t, the independent variable evolution
 
 % Outputs: - vector u, the nondimensional 3xm control vector
 %          - vector dv, the inertial velocity field 
 %          - vector f, the dynamics vector field
 
-function [u, dv, f] = acceleration_control(mu, C, tf)
+function [u, dv, f] = acceleration_control(mu, C, tf, t)
     % Compute the radius vector
     r = sqrt(C(1,:).^2+C(3,:).^2);
 
