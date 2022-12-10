@@ -7,13 +7,14 @@
 
 % Inputs: - scalar mu, the gravitational parameter of the system
 %         - array C, the 9xm state vector 
-%         - scalar tf, the final time of flight
+%         - vector L, the true longitude domain 
+%         - vector uprev, the previously converged control profile
 
 % Outputs: - vector u, the nondimensional 3xm control vector
 %          - vector dv, the inertial velocity field 
 %          - vector f, the dynamics vector field
 
-function [u, dv, f] = acceleration_control(mu, C, L)
+function [u, dv, f] = acceleration_control(mu, C, L, uprev)
     % Compute the auxiliary variables
     w = 1+C(2,:).*cos(L)+C(3,:).*sin(L);
     s = 1+C(4,:).^2+C(5,:).^2;
@@ -22,8 +23,15 @@ function [u, dv, f] = acceleration_control(mu, C, L)
     a = C(6:10,:);                                                                  % Inertial acceleration field
     dv = C(6:10,:);                                                                 % Inertial velocity field
 
+    % Keplerian motion 
+    f = zeros(size(a));
+
     % Sundman transformation 
     Tau = sqrt(mu*C(1,:)).*(w./C(1,:)).^2;
+    for i = 1:size(C,2)
+        B = control_input(mu, [C(1:5,i); L(i)]);
+        Tau(i) = Tau(i)+B(6,3)*uprev(3,i);
+    end
 
     % Compute the control vector as a dynamics residual
     u = zeros(3,size(C,2));

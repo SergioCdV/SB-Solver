@@ -10,7 +10,7 @@ animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Bernstein';        % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
 n = 13;                         % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+m = 200;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 
@@ -23,12 +23,12 @@ system.distance = r0;
 system.time = t0; 
 
 % Earth's orbital elements
-initial_coe = [r0 1e-3 0 deg2rad(3) deg2rad(0)]; 
+initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)]; 
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(4) deg2rad(0)]; 
+final_coe = [1.25*r0 3e-1 deg2rad(1) deg2rad(0) deg2rad(0)]; 
 thetaf = deg2rad(50);
 final_coe = [final_coe thetaf]; 
 
@@ -50,7 +50,7 @@ setup.animations = false;
 %% Optimization
 % Simple solution    
 tic
-[C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initial_coe, final_coe, TOF, T, setup);
+[C, dV, u, tf, tfapp, tau, thetaf, exitflag, output] = sb_solver(system, initial_coe, final_coe, TOF, T, setup);
 toc 
 
 % Average results 
@@ -59,7 +59,7 @@ time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter
     tic 
-    [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initial_coe, final_coe, TOF, T, setup);
+    [C, dV, u, tf, tfapp, tau, thetaf, exitflag, output] = sb_solver(system, initial_coe, final_coe, TOF, T, setup);
     time(i) = toc;
 end
 

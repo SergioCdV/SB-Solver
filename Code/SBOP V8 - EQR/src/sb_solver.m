@@ -11,6 +11,7 @@
 %         - vector final_coe, the final orbital elements 
 %         - scalar K, an initial desired revolutions value 
 %         - scalar T, the maximum allowed acceleration 
+%         - vector uprev, the previously converged control profile
 %         - structure setup, containing the setup of the algorithm in general
 
 % Outputs: - array C, the final state evolution matrix
@@ -19,11 +20,12 @@
 %          - scalar tf, the final time of flight 
 %          - scalar tfapp, the initial estimated time of flight 
 %          - vector tau, the time sampling points final distribution
+%          - scalar thetaf, the final true longitude
 %          - exitflag, the output state of the optimization process 
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initial_coe, final_coe, TOF, T, setup)
+function [C, dV, u, tf, tfapp, thetaf, tau, exitflag, output] = sb_solver(system, initial_coe, final_coe, TOF, T, setup)
     % Setup of the algorithm
     n = setup.order;                        % Order in the approximation of the state vector
     basis = setup.basis;                    % Polynomial basis to be used 
@@ -89,24 +91,31 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; thetaf; T];
+    x0 = [x0; initial(end); thetaf; T];
+
+    % Initial control guess 
+    uprev = zeros(3,length(tau)); 
     
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
-        P_lb = [-Inf*ones(L,1); 0; T-tol];
-        P_ub = [Inf*ones(L,1); Inf; T+tol];
+        P_lb = [-Inf*ones(L,1); -Inf; 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf; Inf; T+tol];
     else
-        P_lb = [-Inf*ones(L,1); 0; 0];
-        P_ub = [Inf*ones(L,1); Inf; 1/gamma];
+        P_lb = [-Inf*ones(L,1); -Inf; 0; 0];
+        P_ub = [Inf*ones(L,1); Inf; Inf; 1/gamma];
     end
-    
-    % Objective function
-    objective = @(x)cost_function(cost, mu, initial, final, B, basis, n, tau, W, x);
 
-    % Non-linear constraints
-    nonlcon = @(x)constraints(mu, initial, final, B, basis, n, tau, x);
-    
+    % Longitude domain 
+    switch (sampling_distribution)
+        case 'Chebyshev'
+            L = 0.5*(tau+1);
+        case 'Legendre'
+            L = 0.5*(tau+1);
+        otherwise
+            L = tau; 
+    end
+        
     % Linear constraints and inequalities
     A = [];
     b = [];
@@ -117,32 +126,63 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
     options.MaxFunctionEvaluations = 1e6;
     
-    % Optimisation
-    [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
-    
-    % Solution 
-    P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
-    thetaf = sol(end-1);                                    % Final anomaly
-    T = sol(end);                                           % Needed thrust vector
-    
-    % Final control points imposing boundary conditions
-    P = boundary_conditions(n, initial, final, thetaf, P, B, basis);
-    
-    % Final state evolution
-    C = evaluate_state(P,B,n);
+    % Loop 
+    GoOn = true; 
+    iter = 1; 
+    maxIter = 2; 
+    tol = 1e-4; 
 
-    % Dimensional control input
-    u = acceleration_control(mu, C, thetaf) / thetaf;
+    while (GoOn && iter < maxIter)
+        % Objective function
+        objective = @(x)cost_function(cost, mu, initial, final, uprev, B, basis, n, L, tau, W, x);
+    
+        % Non-linear constraints
+        nonlcon = @(x)constraints(mu, initial, final, tfapp, time_free, uprev, B, basis, n, L, tau, x);
+        
+        % Optimisation
+        [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
+        
+        % Solution 
+        P = reshape(sol(1:end-3), [size(P0,1) size(P0,2)]);     % Optimal control points
+        theta0 = sol(end-2);                                    % Initial anomaly
+        thetaf = sol(end-1);                                    % Final anomaly
+        T = sol(end);                                           % Needed thrust vector
+        
+        % Final control points imposing boundary conditions
+        P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);
+        
+        % Final state evolution
+        C = evaluate_state(P,B,n);
+    
+        % Compute the longitude evolution 
+        L = theta0+thetaf*L;
+    
+        % Dimensional control input
+        u = acceleration_control(mu, C, L, uprev) / thetaf;
+     
+        % Convergence analysis 
+        ds = uprev-u;
+    
+        if (max(sqrt(dot(ds,ds,1))) < tol) 
+            GoOn = false; 
+        else
+            % Next iteration variables 
+            x0 = reshape(P, [size(P,1)*size(P,2) 1]);
+            x0 = [x0; theta0; thetaf; T];
+            uprev = u;
+            iter = iter+1;
+        end
+    end
 
     % Dimensional velocity 
     C(6:10,:) = C(6:10,:) / thetaf;
 
     % Final time of flight 
-    w = 1+C(2,:).*cos(thetaf*tau)+C(3,:).*sin(thetaf*tau);
-    dL = 1/sqrt(mu*C(1,:)).*(C(1,:)./w).^2;
+    w = 1+C(2,:).*cos(L)+C(3,:).*sin(L);
+    a = sqrt(mu*C(1,:)).*(w./C(1,:)).^2;
     for i = 1:size(C,2)
         B = control_input(mu, C(:,i)); 
-        dL(i) = dL(i)+1/(B(6,3)*u(3,i));
+        a(i) = 1/(a(i)+B(6,3)*u(3,i));
     end
     
     if (isempty(W))
@@ -156,6 +196,9 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
         tf = thetaf*dot(W,a);
     end
 
+    C = [C(1:5,:); L; C(6:10,:)];
+    C = equinoctial2ECI(mu, C(1:6,:), true);
+
     % Domain normalization and scale preserving
     switch (sampling_distribution)
         case 'Chebyshev'
@@ -168,9 +211,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
             tfapp = tfapp/J;
         otherwise
     end
-
-    C = [C(1:5,:); thetaf*tau; C(6:10,:)];
-    C = equinoctial2ECI(mu, C(1:6,:), true);
 
     % Results 
     if (setup.resultsFlag)

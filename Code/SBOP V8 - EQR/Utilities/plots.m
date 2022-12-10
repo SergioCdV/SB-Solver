@@ -113,7 +113,7 @@ function plots(system, tf, tau, C, u, T, initial_coe, final_coe, setup)
     yline(T*gamma, '--k')
     xlabel('Flight time')
     ylabel('$\mathbf{a}$')
-    legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
+    legend('$a$','$a_r$','$a_t$','$a_n$')
     grid on;
     xlim([0 1])
 

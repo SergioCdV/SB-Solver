@@ -22,9 +22,10 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, tau, x)
+function [c, ceq] = constraints(mu, initial, final, tf, time_free, uprev, B, basis, n, L, tau, x)
     % Extract the optimization variables
-    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
+    P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
+    theta0 = x(end-2);                                  % Initial insertion phase
     thetaf = x(end-1);                                  % Final insertion phase
     T = x(end);                                         % Needed thrust vector
 
@@ -32,13 +33,13 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, 
     P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);
 
     % Compute the longitude evolution 
-    L = initial(end)+thetaf*((tau(end)-tau(1))/2*tau+(tau(end)+tau(1))/2);
+    L = theta0+thetaf*L;
 
     % Trajectory evolution
     C = evaluate_state(P,B,n);
 
     % Control input 
-    [u, ~] = acceleration_control(mu, C, L);
+    [u, ~] = acceleration_control(mu, C, L, uprev);
  
     % Kinematic constraint 
     w = 1+C(2,:).*cos(L)+C(3,:).*sin(L);
@@ -49,12 +50,12 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, 
     end
 
     % Inequalities
-    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(thetaf*repmat(T,1,size(u,2))).^2 -diff(res)];
+    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(thetaf*repmat(T,1,size(u,2))).^2 -res];
 
     % Equalities
-    ceq = [cos(L(end))-cos(final(6)) sin(L(end))-sin(final(6))];
+    ceq = [cos(L(end))-cos(final(6)) sin(L(end))-sin(final(6)) L(1)-initial(end)];
 
-    if (time_free)
-        ceq = [ceq tf-trapz(L,res)];
+    if (~time_free)
+        ceq = [ceq tf-thetaf*trapz(tau,res)];
     end
 end

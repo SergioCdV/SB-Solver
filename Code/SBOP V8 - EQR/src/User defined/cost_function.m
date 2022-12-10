@@ -10,6 +10,7 @@
 %           trajectory
 %         - vector final, the initial boundary conditions of the
 %           trajectory
+%         - vector uprev, the previously converged control profile
 %         - cell array B, the polynomial basis to be used
 %         - string basis, the polynomial basis to be used
 %         - vector n, the vector of degrees of approximation of the state
@@ -22,37 +23,48 @@
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
-    
+function [r] = cost_function(cost, mu, initial, final, uprev, B, basis, n, L, tau, W, x)
+    % State evolution
+    P = reshape(x(1:end-3), [length(n), max(n)+1]);                             % Control points
+    theta0 = x(end-2);                                                          % Initial insertion phase
+    thetaf = x(end-1);                                                          % Final insertion phase
+    P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);          % Boundary conditions control points
+    C = evaluate_state(P,B,n);                                                  % State evolution
+
+    % Compute the longitude evolution 
+    L = theta0+thetaf*L;
+
+    % Control vector 
+    [u, ~, ~] = acceleration_control(mu, C, L, uprev);                          % Control vector
+    u = u/thetaf;
+
     switch (cost)
         case 'Minimum time'
-            r = tf;             % Cost function
-    
-        case 'Minimum fuel'
-            % Minimize the control input
-            P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
-            thetaf = x(end-1);                                                          % Final insertion phase
-            P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);        % Boundary conditions control points
-            C = evaluate_state(P,B,n);                                                  % State evolution
-    
-            L = initial(end)+thetaf*((tau(end)-tau(1))/2*tau+(tau(end)+tau(1))/2);      % Longitude evolution
-            [u, ~, ~] = acceleration_control(mu, C, L);                                 % Control vector
-        
-            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2) / thetaf;                           % Non-dimensional acceleration norm
-    
-            % Cost function
-            if (isempty(W))
-                r = trapz(tau,a);
-            elseif (length(W) ~= length(tau))
-                r = 0; 
-                for i = 1:floor(length(tau)/length(W))
-                    r = r + dot(W,a(1+length(W)*(i-1):length(W)*i));
-                end
-            else
-                r = dot(W,a);
+            % Kinematic constraint 
+            w = 1+C(2,:).*cos(L)+C(3,:).*sin(L);
+            a = sqrt(mu*C(1,:)).*(w./C(1,:)).^2;
+            for i = 1:size(C,2)
+                B = control_input(mu, C(:,i)); 
+                a(i) = 1/(a(i)+B(6,3)*u(3,i));
             end
     
+        case 'Minimum fuel'
+            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);                           % Non-dimensional acceleration norm
+        
         otherwise
             error('No valid cost function was selected to be minimized');
     end
+
+    % Cost function
+    if (isempty(W))
+        r = trapz(tau,a);
+    elseif (length(W) ~= length(tau))
+        r = 0; 
+        for i = 1:floor(length(tau)/length(W))
+            r = r + dot(W,a(1+length(W)*(i-1):length(W)*i));
+        end
+    else
+        r = dot(W,a);
+    end
+
 end
