@@ -28,7 +28,7 @@ theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-final_coe = [1.25*r0 3e-1 deg2rad(1) deg2rad(0) deg2rad(0)]; 
+final_coe = [1.05*r0 1e-3 deg2rad(10) deg2rad(5) deg2rad(5)]; 
 thetaf = deg2rad(50);
 final_coe = [final_coe thetaf]; 
 

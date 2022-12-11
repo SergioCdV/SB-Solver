@@ -25,13 +25,13 @@
 
 function [r] = cost_function(cost, mu, initial, final, uprev, B, basis, n, L, tau, W, x)
     % State evolution
-    P = reshape(x(1:end-3), [length(n), max(n)+1]);                             % Control points
-    theta0 = x(end-2);                                                          % Initial insertion phase
+    P = reshape(x(1:end-2), [length(n), max(n)+1]);                             % Control points
     thetaf = x(end-1);                                                          % Final insertion phase
     P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);          % Boundary conditions control points
     C = evaluate_state(P,B,n);                                                  % State evolution
 
     % Compute the longitude evolution 
+    theta0 = initial(end)-thetaf*L(1);
     L = theta0+thetaf*L;
 
     % Control vector 

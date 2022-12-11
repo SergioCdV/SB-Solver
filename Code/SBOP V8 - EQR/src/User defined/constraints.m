@@ -24,8 +24,7 @@
 
 function [c, ceq] = constraints(mu, initial, final, tf, time_free, uprev, B, basis, n, L, tau, x)
     % Extract the optimization variables
-    P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
-    theta0 = x(end-2);                                  % Initial insertion phase
+    P = reshape(x(1:end-2), [length(n), max(n)+1]);     % Control points
     thetaf = x(end-1);                                  % Final insertion phase
     T = x(end);                                         % Needed thrust vector
 
@@ -33,6 +32,7 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, uprev, B, bas
     P = boundary_conditions(n, initial(1:5), final(1:5), P, B, basis);
 
     % Compute the longitude evolution 
+    theta0 = initial(end)-thetaf*L(1);
     L = theta0+thetaf*L;
 
     % Trajectory evolution
@@ -53,7 +53,7 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, uprev, B, bas
     c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(thetaf*repmat(T,1,size(u,2))).^2 -res];
 
     % Equalities
-    ceq = [cos(L(end))-cos(final(6)) sin(L(end))-sin(final(6)) L(1)-initial(end)];
+    ceq = [cos(L(end))-cos(final(6)) sin(L(end))-sin(final(6))];
 
     if (~time_free)
         ceq = [ceq tf-thetaf*trapz(tau,res)];

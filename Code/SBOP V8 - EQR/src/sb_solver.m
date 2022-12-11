@@ -91,7 +91,7 @@ function [C, dV, u, tf, tfapp, thetaf, tau, exitflag, output] = sb_solver(system
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; initial(end); thetaf; T];
+    x0 = [x0; thetaf; T];
 
     % Initial control guess 
     uprev = zeros(3,length(tau)); 
@@ -99,11 +99,11 @@ function [C, dV, u, tf, tfapp, thetaf, tau, exitflag, output] = sb_solver(system
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
-        P_lb = [-Inf*ones(L,1); -Inf; 0; T-tol];
-        P_ub = [Inf*ones(L,1); Inf; Inf; T+tol];
+        P_lb = [-Inf*ones(L,1); 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf; T+tol];
     else
-        P_lb = [-Inf*ones(L,1); -Inf; 0; 0];
-        P_ub = [Inf*ones(L,1); Inf; Inf; 1/gamma];
+        P_lb = [-Inf*ones(L,1); 0; 0];
+        P_ub = [Inf*ones(L,1); Inf; 1/gamma];
     end
 
     % Longitude domain 
@@ -143,8 +143,7 @@ function [C, dV, u, tf, tfapp, thetaf, tau, exitflag, output] = sb_solver(system
         [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
         
         % Solution 
-        P = reshape(sol(1:end-3), [size(P0,1) size(P0,2)]);     % Optimal control points
-        theta0 = sol(end-2);                                    % Initial anomaly
+        P = reshape(sol(1:end-2), [size(P0,1) size(P0,2)]);     % Optimal control points
         thetaf = sol(end-1);                                    % Final anomaly
         T = sol(end);                                           % Needed thrust vector
         
@@ -155,6 +154,7 @@ function [C, dV, u, tf, tfapp, thetaf, tau, exitflag, output] = sb_solver(system
         C = evaluate_state(P,B,n);
     
         % Compute the longitude evolution 
+        theta0 = initial(end)-thetaf*L(1);
         L = theta0+thetaf*L;
     
         % Dimensional control input
@@ -167,8 +167,7 @@ function [C, dV, u, tf, tfapp, thetaf, tau, exitflag, output] = sb_solver(system
             GoOn = false; 
         else
             % Next iteration variables 
-            x0 = reshape(P, [size(P,1)*size(P,2) 1]);
-            x0 = [x0; theta0; thetaf; T];
+            x0 = [reshape(P, [size(P,1)*size(P,2) 1]); thetaf; T];
             uprev = u;
             iter = iter+1;
         end
