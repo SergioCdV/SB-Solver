@@ -20,11 +20,15 @@
 
 function [Papp, Capp, sfapp] = initial_approximation(tau, tfapp, initial, final, basis)
     % Generate the polynomial basis
-    n_init = repmat(3, [1 length(initial)/2]);
+    n_init = repmat(3, [1 5]);
     Bapp = state_basis(n_init, tau, basis);
 
+    % Initial energy constraints 
+    initial(10) = 0;
+    final(10) = 0; 
+
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    Papp = zeros(length(initial)/2, max(n_init)+1);  
+    Papp = zeros(length(n_init), max(n_init)+1);  
     Papp = boundary_conditions(tfapp, n_init, initial, final, Papp, Bapp, basis);
 
     % State vector approximation as a function of time

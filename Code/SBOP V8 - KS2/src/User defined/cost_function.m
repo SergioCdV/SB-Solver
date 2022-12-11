@@ -24,13 +24,13 @@
 
 function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
     % Extract the optimization variables
-    P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
-    thetaf = x(end-2);                                  % Final fiber parameter
+    P = reshape(x(1:end-4), [length(n), max(n)+1]);     % Control points
+    dE0 = x(end-2);                                     % Initial energy derivative
+    dEf = x(end-3);                                     % Final energy derivative
     sf = x(end-1);                                      % Final time of flight 
 
-    R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
-    final = final*blkdiag(R,R).';
-
+    initial = [initial dE0];
+    final = [final dEf];
     P = boundary_conditions(sf, n, initial, final, P, B, basis);                % Boundary conditions control points
     C = evaluate_state(P,B,n);                                                  % State evolution
 

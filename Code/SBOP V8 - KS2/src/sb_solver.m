@@ -39,7 +39,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % Approximation order 
     if (length(n) == 1)
-        n = repmat(n, [1 4]);
+        n = repmat(n, [1 5]);
     end
 
     % Boundary conditions 
@@ -63,14 +63,23 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     tfapp = tfapp/t0;                                   % Time of flight
     T = T/gamma;                                        % Spacecraft propulsion parameters 
 
-    initial_coe(1) = initial_coe(1)/r0;                 % Boundary conditions normalization
-    s = coe2state(mu, initial_coe);                     % Initial state vector 
-    initial = state_mapping(s, true).';                 % Initial conditions in the u space
+    initial_coe(1) = initial_coe(1)/r0;                                   % Boundary conditions normalization
+    s = coe2state(mu, initial_coe);                                       % Initial state vector 
+    initial = state_mapping(s, true).';                                   % Initial conditions in the u space
+    initial = [initial(1:4) -mu/(2*initial_coe(1)) initial(5:8)];         % Initial energy constraint
 
-    final_coe(1) = final_coe(1)/r0;                     % Boundary conditions normalization
-    s = coe2state(mu, final_coe);                       % Final state vector     
-    final = state_mapping(s, true).';                   % Final conditions in the u space
+    final_coe(1) = final_coe(1)/r0;                                       % Boundary conditions normalization
+    s = coe2state(mu, final_coe);                                         % Final state vector     
+    final = state_mapping(s, true).';                                     % Final conditions in the u space
+    final = [final(1:4) -mu/(2*final_coe(1)) final(5:8)];                 % Initial energy constraint
 
+%     theta = deg2rad(270);
+%     R = [cos(theta) 0 0 -sin(theta); 0 cos(theta) sin(theta) 0; 0 -sin(theta) cos(theta) 0; sin(theta) 0 0 cos(theta)];
+%     final = final*blkdiag(R,R).';
+%     theta = deg2rad(0);
+%     R = [cos(theta) 0 0 -sin(theta); 0 cos(theta) sin(theta) 0; 0 -sin(theta) cos(theta) 0; sin(theta) 0 0 cos(theta)];
+%     initial = initial*blkdiag(R,R).';
+ 
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
@@ -91,16 +100,16 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; 0; sfapp; T];
+    x0 = [x0; 0; 0; sfapp; T];
    
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
-        P_lb = [-Inf*ones(L,1); 0; 0; T-tol];
-        P_ub = [Inf*ones(L,1); 2*pi; Inf; T+tol];
+        P_lb = [-Inf*ones(L,1); -Inf; -Inf; 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; T+tol];
     else
-        P_lb = [-Inf*ones(L,1); 0; 0; 0];
-        P_ub = [Inf*ones(L,1); 2*pi; Inf; 1/gamma];
+        P_lb = [-Inf*ones(L,1); -Inf; -Inf; 0; 0];
+        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; 1/gamma];
     end
     
     % Objective function
@@ -123,15 +132,15 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
     
     % Solution 
-    P = reshape(sol(1:end-3), [size(P0,1) size(P0,2)]);     % Optimal control points
-    thetaf = sol(end-2);                                    % Final fiber parameter
+    P = reshape(sol(1:end-4), [size(P0,1) size(P0,2)]);     % Optimal control points
+    dE0 = sol(end-2);                                       % Initial energy derivative
+    dEf = sol(end-3);                                       % Final energy derivative
     sf = sol(end-1);                                        % Optimal time of flight in Sundman transformation
     T = sol(end);                                           % Needed thrust vector
-
-    R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
-    final = final*blkdiag(R,R).';
- 
+    
     % Final control points imposing boundary conditions
+    initial = [initial dE0];
+    final = [final dEf];
     P = boundary_conditions(sf, n, initial, final, P, B, basis);
     
     % Final state evolution
