@@ -24,13 +24,18 @@
 
 function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, tau, x)
     % Extract the optimization variables
-    P = reshape(x(1:end-4), [length(n), max(n)+1]);     % Control points
+    P = reshape(x(1:end-5), [length(n), max(n)+1]);     % Control points
+    thetaf = x(end-4);                                  % Final fiber angle
     dE0 = x(end-2);                                     % Initial energy derivative
     dEf = x(end-3);                                     % Final energy derivative
     sf = x(end-1);                                      % Final time of flight 
     T = x(end);                                         % Needed thrust vector
 
     % Boundary conditions points
+    R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
+    final(1:4) = final(1:4)*R.';
+    final(6:9) = final(6:9)*R.';
+
     initial = [initial dE0];
     final = [final dEf];
     P = boundary_conditions(sf, n, initial, final, P, B, basis);
@@ -45,16 +50,14 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, 
     [u, ~] = acceleration_control(mu, C, sf);
 
     % Equalities 
-    E = C(5,:);
-    res = C(1,:).*C(9,:)-C(2,:).*C(8,:)+C(3,:).*C(7,:)-C(4,:).*C(6,:);
-    ceq = [-sf^2*E/4.*r+dot(C(5:8,:),C(5:8,:),1)-sf^2*mu/2 res u(4,:)];
+    l = bilinear_function(C(1:4,:),C(6:9,:));
+    m = -bilinear_function(C(11:14,:),C(1:4,:))-sf^2/2*bilinear_function(C(5,:).*C(1:4,:),C(1:4,:));
+    ceq = [m l];
     
     if (time_free)
         ceq = [ceq tf-sf*trapz(tau, r)];
     end
 
     % Inequalities
-    U = u(1:3,:);
-    c = [dot(U,U,1)-(sf^2*repmat(T,1,size(u,2))).^2];
-    c = [];
+    c = dot(u,u,1)./r-(sf^2*repmat(T,1,size(u,2))).^2;
 end

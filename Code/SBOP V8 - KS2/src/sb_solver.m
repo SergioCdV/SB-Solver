@@ -100,16 +100,16 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; 0; 0; sfapp; T];
+    x0 = [x0; 0; 0; 0; sfapp; T];
    
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
-        P_lb = [-Inf*ones(L,1); -Inf; -Inf; 0; T-tol];
-        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; T+tol];
+        P_lb = [-Inf*ones(L,1); 0; -Inf; -Inf; 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; Inf; T+tol];
     else
-        P_lb = [-Inf*ones(L,1); -Inf; -Inf; 0; 0];
-        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; 1/gamma];
+        P_lb = [-Inf*ones(L,1); 0; -Inf; -Inf; 0; 0];
+        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; Inf; 1/gamma];
     end
     
     % Objective function
@@ -132,13 +132,18 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
     
     % Solution 
-    P = reshape(sol(1:end-4), [size(P0,1) size(P0,2)]);     % Optimal control points
+    P = reshape(sol(1:end-5), [size(P0,1) size(P0,2)]);     % Optimal control points
+    thetaf = sol(end-4);                                    % Final fiber angle
     dE0 = sol(end-2);                                       % Initial energy derivative
     dEf = sol(end-3);                                       % Final energy derivative
     sf = sol(end-1);                                        % Optimal time of flight in Sundman transformation
     T = sol(end);                                           % Needed thrust vector
     
     % Final control points imposing boundary conditions
+    R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
+    final(1:4) = final(1:4)*R.';
+    final(6:9) = final(6:9)*R.';
+
     initial = [initial dE0];
     final = [final dEf];
     P = boundary_conditions(sf, n, initial, final, P, B, basis);
@@ -150,7 +155,12 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     C(6:10,:) = C(6:10,:)/sf;
 
     % Dimensional control input
+    r = dot(C(1:4,:),C(1:4,:),1);
     u = acceleration_control(mu, C, sf) / sf^2;
+    for i = 1:size(C,2)
+        L = KS_matrix(C(1:4,i));
+        u(:,i) = L*u(:,i)/r(i);
+    end
     u = u(1:3,:);
 
     % Transformation to the Cartesian space 

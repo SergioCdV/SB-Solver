@@ -45,18 +45,16 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, 
     [u, ~] = acceleration_control(mu, C, sf);
 
     % Equalities 
-    res = C(1,:).*C(9,:)-C(2,:).*C(8,:)+C(3,:).*C(7,:)-C(4,:).*C(6,:);
-    ceq = [u(4,:) res];
+    l = bilinear_function(C(1:4,:),C(5:8,:));
+    E = -4./r.*(mu/2-dot(C(5:8,:),C(5:8,:),1)/sf^2);
+    m = bilinear_function(C(9:12,:),C(1:4,:))-sf^2/2*bilinear_function(E.*C(1:4,:),C(1:4,:));
+    ceq = [l m];
 
     if (time_free)
         ceq = [ceq tf-sf*trapz(tau, r)];
     end
 
     % Inequalities
-    U = u(1:3,:);
-%     for i = 1:size(C,2)
-%         aux = KS_matrix(C(1:4,:)).'\u(:,i);
-%         U(:,i) = aux(1:3);
-%     end
-    c = [dot(U,U,1)-(sf^2*repmat(T,1,size(u,2))).^2];
+    c = [dot(u,u,1)-r.*(sf^2*repmat(T,1,size(u,2))).^2];
+    c = [];
 end

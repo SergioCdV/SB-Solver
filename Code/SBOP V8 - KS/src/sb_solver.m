@@ -83,7 +83,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [tau, W, J] = quadrature(n, m, sampling_distribution);
 
     % Final TOF scaling
-    tfapp = tfapp*J;
+    sfapp = sfapp*J;
 
     % Final state basis
     [B, tau] = state_basis(n, tau, basis);
@@ -96,11 +96,11 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
-        P_lb = [-Inf*ones(L,1); 0; 0; T-tol];
-        P_ub = [Inf*ones(L,1); 2*pi; Inf; T+tol];
+        P_lb = [-Inf*ones(L,1); -Inf; 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf; Inf; T+tol];
     else
-        P_lb = [-Inf*ones(L,1); 0; 0; 0];
-        P_ub = [Inf*ones(L,1); 2*pi; Inf; 1/gamma];
+        P_lb = [-Inf*ones(L,1); -Inf; 0; 0];
+        P_ub = [Inf*ones(L,1); Inf; Inf; 1/gamma];
     end
     
     % Objective function
@@ -137,12 +137,18 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Final state evolution
     C = evaluate_state(P,B,n);
 
-    % Dimensional velocity 
-    C(6:10,:) = C(6:10,:)/sf;
-
     % Dimensional control input
     u = acceleration_control(mu, C, sf) / sf^2;
+    r = dot(C(1:4,:),C(1:4,:));
+    for i = 1:size(C,2)
+        L = KS_matrix(C(1:4,i));
+        u(:,i) = L*u(:,i)/r(i);
+    end
+
     u = u(1:3,:);
+
+    % Dimensional velocity 
+    C(5:8,:) = C(5:8,:)/sf;
 
     % Transformation to the Cartesian space 
     C = state_mapping(C, false);
@@ -155,12 +161,12 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     switch (sampling_distribution)
         case 'Chebyshev'
             tau = (1/2)*(1+tau);
-            tf = tf/J;
-            tfapp = tfapp/J;
+            sf = sf/J;
+            sfapp = sfapp/J;
         case 'Legendre'
             tau = (1/2)*(1+tau);
-            tf = tf/J;
-            tfapp = tfapp/J;
+            sf = sf/J;
+            sfapp = sfapp/J;
         otherwise
     end
 

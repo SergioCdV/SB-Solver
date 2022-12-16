@@ -24,10 +24,15 @@
 
 function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
     % Extract the optimization variables
-    P = reshape(x(1:end-4), [length(n), max(n)+1]);     % Control points
+    P = reshape(x(1:end-5), [length(n), max(n)+1]);     % Control points
+    thetaf = x(end-4);                                  % Final fiber angle
     dE0 = x(end-2);                                     % Initial energy derivative
     dEf = x(end-3);                                     % Final energy derivative
     sf = x(end-1);                                      % Final time of flight 
+
+    R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
+    final(1:4) = final(1:4)*R.';
+    final(6:9) = final(6:9)*R.';
 
     initial = [initial dE0];
     final = [final dEf];

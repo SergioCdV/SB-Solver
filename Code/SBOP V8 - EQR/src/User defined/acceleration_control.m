@@ -52,7 +52,8 @@ function [u, dv, f] = acceleration_control(mu, C, L, uprev)
         u(1,i) = (a(2,i)-B(2,2:3)*u(2:3,i))^2+(a(3,i)-B(3,2:3)*u(2:3,i))^2;
 
         % Sundman transformation 
-        u(:,i) = u(:,i)*Tau(i);
+        u(3,i) = u(3,i)*Tau(i);
+        u(1:2,i) = u(1:2,i)*(Tau(i)+B(6,3)*u(3,i));
     end
     u(1,:) = sqrt(u(1,:))./delta;
 end

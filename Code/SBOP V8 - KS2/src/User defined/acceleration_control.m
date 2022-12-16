@@ -19,17 +19,13 @@ function [u, dv, f] = acceleration_control(mu, C, sf)
 
     % Energy evolution 
     E = C(5,:);
+    E = -4./r.*(mu/2-dot(C(6:9,:),C(6:9,:))/sf^2);
 
     % Linear terms of the equations of motion
-    a = C(11:14,:);                                   % Inertial acceleration field
+    a = C(11:14,:);                                 % Inertial acceleration field
     f = (E./2).*C(1:4,:);                           % Acceleration vector
-    dv = C(5:8,:);                                   % Inertial velocity field
+    dv = C(6:9,:);                                  % Inertial velocity field
 
     % Compute the control vector as a dynamics residual
-    u = 2*(a-sf^2*f)./r;
-    for i = 1:size(C,2)
-        L = KS_matrix(C(1:4,i));
-        u(:,i) = L*u(:,i)/r(i);
-    end
-    
+    u = 2*(a-sf^2*f)./r;    
 end
