@@ -42,20 +42,20 @@ function [u, dv, f] = acceleration_control(mu, C, L, uprev)
 
     % Normal component
     beta = sqrt(C(1,:)/mu).*s./(2*w);
-    u(3,:) = sqrt(a(4,:).^2+a(5,:).^2)./beta;
+    u(3,:) = sqrt(a(4,:).^2+a(5,:).^2).*abs(Tau)/beta;
     u(3,:) = u(3,:).*sign(a(4,:))./sign(cos(L));
 
     % Radial component
     delta = sqrt(C(1,:)/mu);
     for i = 1:size(C,2)
         B = control_input(mu, [C(1:5,i); L(i)]);
-        u(1,i) = (a(2,i)-B(2,2:3)*u(2:3,i))^2+(a(3,i)-B(3,2:3)*u(2:3,i))^2;
+        u(1,i) = ((a(2,i)-B(2,2:3)*u(2:3,i))^2+(a(3,i)-B(3,2:3)*u(2:3,i))^2)*(Tau(i)+B(6,3)*u(3,i))^2;
 
         % Sundman transformation 
-        u(3,i) = u(3,i)*Tau(i);
-        u(1:2,i) = u(1:2,i)*(Tau(i)+B(6,3)*u(3,i));
+        u(2,i) = u(2,i)*(Tau(i)+B(6,3)*u(3,i));
     end
     u(1,:) = sqrt(u(1,:))./delta;
+
 end
 
 

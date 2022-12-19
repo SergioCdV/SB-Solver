@@ -73,13 +73,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     final = state_mapping(s, true).';                                     % Final conditions in the u space
     final = [final(1:4) -mu/(2*final_coe(1)) final(5:8)];                 % Initial energy constraint
 
-%     theta = deg2rad(270);
-%     R = [cos(theta) 0 0 -sin(theta); 0 cos(theta) sin(theta) 0; 0 -sin(theta) cos(theta) 0; sin(theta) 0 0 cos(theta)];
-%     final = final*blkdiag(R,R).';
-%     theta = deg2rad(0);
-%     R = [cos(theta) 0 0 -sin(theta); 0 cos(theta) sin(theta) 0; 0 -sin(theta) cos(theta) 0; sin(theta) 0 0 cos(theta)];
-%     initial = initial*blkdiag(R,R).';
- 
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');

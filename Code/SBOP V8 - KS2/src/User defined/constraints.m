@@ -51,7 +51,9 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, 
 
     % Equalities 
     l = bilinear_function(C(1:4,:),C(6:9,:));
-    m = -bilinear_function(C(11:14,:),C(1:4,:))-sf^2/2*bilinear_function(C(5,:).*C(1:4,:),C(1:4,:));
+    m = bilinear_function(C(11:14,:),C(1:4,:))-sf^2/2*bilinear_function(C(5,:).*C(1:4,:),C(1:4,:));
+    dE = C(10,:)-2*dot(C(6:9,:),u,1)/sf^2;
+
     ceq = [m l];
     
     if (time_free)
@@ -59,5 +61,5 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, 
     end
 
     % Inequalities
-    c = dot(u,u,1)./r-(sf^2*repmat(T,1,size(u,2))).^2;
+    c = [C(5,:) dot(u,u,1)-r.*(sf^2*repmat(T,1,size(u,2))).^2];
 end

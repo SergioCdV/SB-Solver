@@ -19,7 +19,6 @@ function [u, dv, f] = acceleration_control(mu, C, sf)
 
     % Energy evolution 
     E = C(5,:);
-    E = -4./r.*(mu/2-dot(C(6:9,:),C(6:9,:))/sf^2);
 
     % Linear terms of the equations of motion
     a = C(11:14,:);                                 % Inertial acceleration field
