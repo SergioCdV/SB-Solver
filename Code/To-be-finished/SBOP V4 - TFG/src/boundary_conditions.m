@@ -43,6 +43,60 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
                 P(i,n(i)+1) = xf(i);
             end
 
+        case 'Chebyshev'
+            % Dimensionality check 
+            if (size(x0,2) ~= 1)
+                x0 = x0.';
+            end
+        
+            if (size(xf,2) ~= 1)
+                xf = xf.';
+            end
+        
+            % Symbolic regression 
+            l = size(P0,2)-3;
+            x0(1:3) = x0(1:3)-sum(P0(:,3:end-2).*(-1).^(2:l),2); 
+            xf(1:3) = xf(1:3)-sum(P0(:,3:end-2),2);
+            x0(4:6) = x0(4:6)-sum((-1).^(1:(l-1)).*P0(:,3:end-2).*(2:l).^2,2);
+            xf(4:6) = xf(4:6)-sum(P0(:,3:end-2).*(2:l).^2,2);
+    
+            A = [1 -1 (-1)^(size(P0,2)-1) (-1)^size(P0,2); ...
+                 1 1 1 1; ... 
+                 0 1 (-1)^(size(P0,2)-3)*(size(P0,2)-2)^2 (-1)^(size(P0,2)-2)*(size(P0,2)-1)^2; ...
+                 0 1 (size(P0,2)-2)^2 (size(P0,2)-1)^2];
+    
+            for i = 1:size(P,1)
+                sol = A\[x0(i); xf(i); x0(3+i); xf(3+i)];
+                P(i,[1 2 end-1 end]) = sol.';
+            end
+
+         case 'Legendre'
+            % Dimensionality check 
+            if (size(x0,2) ~= 1)
+                x0 = x0.';
+            end
+        
+            if (size(xf,2) ~= 1)
+                xf = xf.';
+            end
+
+            % Symbolic regression 
+            l = size(P0,2)-3;
+            x0(1:3) = x0(1:3)-sum(P0(:,3:end-2).*(-1).^(2:l),2); 
+            xf(1:3) = xf(1:3)-sum(P0(:,3:end-2),2);
+            x0(4:6) = x0(4:6)-sum((-1).^(1:(l-1)).*P0(:,3:end-2).*(2:l).*((3:l+1)/2),2);
+            xf(4:6) = xf(4:6)-sum(P0(:,3:end-2).*(2:l).*((3:l+1)/2),2);
+
+            A = [1 -1 (-1)^(size(P0,2)-1) (-1)^size(P0,2); ...
+                 1 1 1 1; ... 
+                 0 1 (-1)^(size(P0,2)-3)*(size(P0,2)-2)*(size(P0,2)-1)/2 (-1)^(size(P0,2)-2)*(size(P0,2)-1)*(size(P0,2))/2; ...
+                 0 1 (size(P0,2)-2)*(size(P0,2)-1)/2 (size(P0,2)-1)*(size(P0,2))/2];
+
+            for i = 1:size(P,1)
+                sol = A\[x0(i); xf(i); x0(3+i); xf(3+i)];
+                P(i,[1 2 end-1 end]) = sol.';
+            end
+
         otherwise
             % Compute the partial state evolution 
             N = size(P,1);                   % Number of state variables

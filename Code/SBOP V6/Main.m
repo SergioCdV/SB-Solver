@@ -10,7 +10,7 @@ animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Bernstein';        % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
 n = [20 20 20];                         % Polynomial order in the state vector expansion
-m = 500;                                % Number of sampling points
+m = 200;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 
@@ -28,7 +28,7 @@ theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-final_coe = [1.10*r0 7e-1 deg2rad(120) deg2rad(0) deg2rad(5)]; 
+final_coe = [1.10*r0 1e-2 deg2rad(0) deg2rad(10) deg2rad(5)]; 
 thetaf = deg2rad(20);
 final_coe = [final_coe thetaf]; 
 
