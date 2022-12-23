@@ -41,5 +41,5 @@ function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
     ceq = [];
 
     % Inequalities
-    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(tf^2*repmat(T,1,size(u,2))).^2];
+    c = u(1,:).^2+u(2,:).^2+u(3,:).^2-(tf^2*repmat(T,1,size(u,2))).^2;
 end

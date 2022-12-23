@@ -63,6 +63,8 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     tfapp = 2*pi; 
 
     % Transformation to synodic coordinates 
+    initial(1:3) = initial(1:3)+[-mu,0,0];
+    final(1:3) = final(1:3)+[-mu,0,0];
     initial(4:6) = initial(4:6)+cross([0;0;1], initial(1:3));
     final(4:6) = final(4:6)+cross([0;0;1], final(1:3));
  
