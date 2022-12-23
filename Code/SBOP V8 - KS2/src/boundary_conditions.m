@@ -50,21 +50,21 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, P0, B, basis)
                 xf = xf.';
             end
         
-            % Symbolic regression 
-            l = size(P0,2)-3;
-            x0(1:5) = x0(1:5)-sum(P0(:,3:end-2).*(-1).^(2:l),2); 
-            xf(1:5) = xf(1:5)-sum(P0(:,3:end-2),2);
-            x0(6:10) = x0(6:10)-sum((-1).^(1:(l-1)).*P0(:,3:end-2).*(2:l).^2,2);
-            xf(6:10) = xf(6:10)-sum(P0(:,3:end-2).*(2:l).^2,2);
-
-            A = [1 -1 (-1)^(size(P0,2)-1) (-1)^size(P0,2); ...
-                 1 1 1 1; ... 
-                 0 1 (-1)^(size(P0,2)-3)*(size(P0,2)-2)^2 (-1)^(size(P0,2)-2)*(size(P0,2)-1)^2; ...
-                 0 1 (size(P0,2)-2)^2 (size(P0,2)-1)^2];
-
             for i = 1:size(P,1)
-                sol = A\[x0(i); xf(i); x0(3+i); xf(3+i)];
-                P(i,[1 2 end-1 end]) = sol.';
+                % Symbolic regression 
+                l = n(i)-2;
+                X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
+                Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
+                X0(2) = x0(size(P,1)+i)-sum((-1).^(1:(l-1)).*P0(i,3:n(i)-1).*(2:l).^2,2);
+                Xf(2) = xf(size(P,1)+i)-sum(P0(i,3:n(i)-1).*(2:l).^2,2);
+
+                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                     1 1 1 1; ... 
+                     0 1 (-1)^(n(i)-2)*(n(i)-1)^2 (-1)^(n(i)-1)*n(i)^2; ...
+                     0 1 (n(i)-1)^2 n(i)^2];
+
+                sol = A\[X0(1); Xf(1); X0(2); Xf(2)];
+                P(i,[1 2 n(i) n(i)+1]) = sol.';
             end
 
         case 'Legendre'
@@ -77,21 +77,21 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, P0, B, basis)
                 xf = xf.';
             end
 
-            % Symbolic regression 
-            l = size(P0,2)-3;
-            x0(1:5) = x0(1:5)-sum(P0(:,3:end-2).*(-1).^(2:l),2); 
-            xf(1:5) = xf(1:5)-sum(P0(:,3:end-2),2);
-            x0(6:10) = x0(6:10)-sum((-1).^(1:(l-1)).*P0(:,3:end-2).*(2:l).*((3:l+1)/2),2);
-            xf(6:10) = xf(6:10)-sum(P0(:,3:end-2).*(2:l).*((3:l+1)/2),2);
-
-            A = [1 -1 (-1)^(size(P0,2)-1) (-1)^size(P0,2); ...
-                 1 1 1 1; ... 
-                 0 1 (-1)^(size(P0,2)-3)*(size(P0,2)-2)*(size(P0,2)-1)/2 (-1)^(size(P0,2)-2)*(size(P0,2)-1)*(size(P0,2))/2; ...
-                 0 1 (size(P0,2)-2)*(size(P0,2)-1)/2 (size(P0,2)-1)*(size(P0,2))/2];
-
             for i = 1:size(P,1)
-                sol = A\[x0(i); xf(i); x0(3+i); xf(3+i)];
-                P(i,[1 2 end-1 end]) = sol.';
+                % Symbolic regression 
+                l = n(i)-2;
+                X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
+                Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
+                X0(2) = x0(size(P,1)+i)-sum((-1).^(1:(l-1)).*P0(i,3:n(i)-1).*(2:l).*((3:l+1)/2),2);
+                Xf(2) = xf(size(P,1)+i)-sum(P0(i,3:n(i)-1).*(2:l).*((3:l+1)/2),2);
+
+                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                     1 1 1 1; ... 
+                     0 1 (-1)^(n(i)-2)*(n(i)-1)*n(i)/2 (-1)^(n(i)-1)*n(i)*(n(i)+1)/2; ...
+                     0 1 (n(i)-1)*n(i)/2 n(i)*(n(i)+1)/2];
+
+                sol = A\[X0(1); Xf(1); X0(2); Xf(2)];
+                P(i,[1 2 n(i) n(i)+1]) = sol.';
             end
 
         otherwise
