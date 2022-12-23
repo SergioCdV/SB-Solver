@@ -24,19 +24,26 @@
 
 function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
     % Extract the optimization variables
-    P = reshape(x(1:end-5), [length(n), max(n)+1]);     % Control points
-    thetaf = x(end-4);                                  % Final fiber angle
-    dE0 = x(end-2);                                     % Initial energy derivative
-    dEf = x(end-3);                                     % Final energy derivative
+%     P = reshape(x(1:end-5), [length(n), max(n)+1]);     % Control points
+%     thetaf = x(end-4);                                  % Final fiber angle
+%     dE0 = x(end-2);                                     % Initial energy derivative
+%     dEf = x(end-3);                                     % Final energy derivative
+%     sf = x(end-1);                                      % Final time of flight 
+% 
+%     R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
+%     final(1:4) = final(1:4)*R.';
+%     final(6:9) = final(6:9)*R.';
+
+    P = reshape(x(1:end-12), [length(n), max(n)+1]);    % Control points
+    thetaf = x(end-11:end-4).';                         % Final fiber angle
+    dE0 = x(end-3);                                     % Initial energy derivative
+    dEf = x(end-2);                                     % Final energy derivative
     sf = x(end-1);                                      % Final time of flight 
+    T = x(end);                                         % Needed thrust vector
 
-    R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
-    final(1:4) = final(1:4)*R.';
-    final(6:9) = final(6:9)*R.';
-
-    initial = [initial dE0];
-    final = [final dEf];
-    P = boundary_conditions(sf, n, initial, final, P, B, basis);                % Boundary conditions control points
+    initial_u = [initial dE0];
+    final_u = [thetaf(1:4) final(4) thetaf(5:8) dEf];
+    P = boundary_conditions(sf, n, initial_u, final_u, P, B, basis);                % Boundary conditions control points
     C = evaluate_state(P,B,n);                                                  % State evolution
 
     % Sundman transformation 
@@ -51,7 +58,7 @@ function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
             [u, ~, ~] = acceleration_control(mu, C, sf);                        % Control vector
             u = u(1:3,:) / sf^2;                                                % Normalized control vector
         
-            a = sqrt(dot(u,u,1)).*r;                                            % Non-dimensional acceleration norm
+            a = sqrt(dot(u,u,1));                                               % Non-dimensional acceleration norm
     
         otherwise
             error('No valid cost function was selected to be minimized');

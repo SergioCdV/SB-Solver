@@ -65,18 +65,18 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     initial_coe(1) = initial_coe(1)/r0;                                   % Boundary conditions normalization
     s = coe2state(mu, initial_coe);                                       % Initial state vector 
-    initial = state_mapping(s, true).';                                   % Initial conditions in the u space
-    initial = [initial(1:4) -mu/(2*initial_coe(1)) initial(5:8)];         % Initial energy constraint
+    initial_u = state_mapping(s, true).';                                 % Initial conditions in the u space
+    initial_u = [initial_u(1:4) -mu/(2*initial_coe(1)) initial_u(5:8)];   % Initial energy constraint
 
     final_coe(1) = final_coe(1)/r0;                                       % Boundary conditions normalization
     s = coe2state(mu, final_coe);                                         % Final state vector     
-    final = state_mapping(s, true).';                                     % Final conditions in the u space
-    final = [final(1:4) -mu/(2*final_coe(1)) final(5:8)];                 % Initial energy constraint
+    final_u = state_mapping(s, true).';                                   % Final conditions in the u space
+    final_u = [final_u(1:4) -mu/(2*final_coe(1)) final_u(5:8)];           % Initial energy constraint
 
     % Initial guess for the boundary control points
     mapp = 300;   
     tapp = sampling_grid(mapp, sampling_distribution, '');
-    [~, Capp, sfapp] = initial_approximation(tapp, tfapp, initial, final, basis); 
+    [~, Capp, sfapp] = initial_approximation(tapp, tfapp, initial_u, final_u, basis); 
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(n, tapp, Capp, basis);
@@ -93,23 +93,28 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     L = length(x0);
-    x0 = [x0; 0; 0; 0; sfapp; T];
+    x0 = [x0; final_u([1:4 6:9]).'; 0; 0; sfapp; T];
    
     % Upper and lower bounds 
     if (time_free)
         tol = 1e-8/gamma;
-        P_lb = [-Inf*ones(L,1); 0; -Inf; -Inf; 0; T-tol];
-        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; Inf; T+tol];
+        P_lb = [-Inf*ones(L,1); -Inf*ones(8,1); -Inf; -Inf; 0; T-tol];
+        P_ub = [Inf*ones(L,1); Inf*ones(8,1); Inf; Inf; Inf; T+tol];
     else
-        P_lb = [-Inf*ones(L,1); 0; -Inf; -Inf; 0; 0];
-        P_ub = [Inf*ones(L,1); Inf; Inf; Inf; Inf; 1/gamma];
+        P_lb = [-Inf*ones(L,1); -Inf*ones(8,1); -Inf; -Inf; 0; 0];
+        P_ub = [Inf*ones(L,1); Inf*ones(8,1); Inf; Inf; Inf; 1/gamma];
     end
+
+    % Final conditions
+    s = coe2state(mu, final_coe);                       % Final state vector                   
+    final = cylindrical2cartesian(s, false).';          % Final state vector in cylindrical coordinates 
+    final = [final(1:3) final_u(4) final(4:6)];
     
     % Objective function
-    objective = @(x)cost_function(cost, mu, initial, final, B, basis, n, tau, W, x);
+    objective = @(x)cost_function(cost, mu, initial_u, final, B, basis, n, tau, W, x);
 
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, initial, final, tfapp, time_free, B, basis, n, tau, x);
+    nonlcon = @(x)constraints(mu, initial_u, final, tfapp, time_free, B, basis, n, tau, x);
     
     % Linear constraints and inequalities
     A = [];
@@ -125,21 +130,28 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
     
     % Solution 
-    P = reshape(sol(1:end-5), [size(P0,1) size(P0,2)]);     % Optimal control points
-    thetaf = sol(end-4);                                    % Final fiber angle
-    dE0 = sol(end-2);                                       % Initial energy derivative
-    dEf = sol(end-3);                                       % Final energy derivative
-    sf = sol(end-1);                                        % Optimal time of flight in Sundman transformation
-    T = sol(end);                                           % Needed thrust vector
-    
-    % Final control points imposing boundary conditions
-    R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
-    final(1:4) = final(1:4)*R.';
-    final(6:9) = final(6:9)*R.';
+%     P = reshape(sol(1:end-5), [size(P0,1) size(P0,2)]);     % Optimal control points
+%     thetaf = sol(end-4);                                    % Final fiber angle
+%     dE0 = sol(end-2);                                       % Initial energy derivative
+%     dEf = sol(end-3);                                       % Final energy derivative
+%     sf = sol(end-1);                                        % Optimal time of flight in Sundman transformation
+%     T = sol(end);                                           % Needed thrust vector
+%     
+%     % Final control points imposing boundary conditions
+%     R = [cos(thetaf) 0 0 -sin(thetaf); 0 cos(thetaf) sin(thetaf) 0; 0 -sin(thetaf) cos(thetaf) 0; sin(thetaf) 0 0 cos(thetaf)];
+%     final(1:4) = final(1:4)*R.';
+%     final(6:9) = final(6:9)*R.';
 
-    initial = [initial dE0];
-    final = [final dEf];
-    P = boundary_conditions(sf, n, initial, final, P, B, basis);
+    P = reshape(sol(1:end-12), [length(n), max(n)+1]);     % Control points
+    thetaf = sol(end-11:end-4);                                  % Final fiber angle
+    dE0 = sol(end-3);                                     % Initial energy derivative
+    dEf = sol(end-2);                                     % Final energy derivative
+    sf = sol(end-1);                                      % Final time of flight 
+    T = sol(end);                                         % Needed thrust vector
+
+    initial_u = [initial_u dE0];
+    final_u = [thetaf(1:4).' final(4) thetaf(5:8).' dEf];
+    P = boundary_conditions(sf, n, initial_u, final_u, P, B, basis);
     
     % Final state evolution
     C = evaluate_state(P,B,n);
