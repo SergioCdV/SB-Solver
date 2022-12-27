@@ -36,5 +36,5 @@ function [Papp, Capp, sfapp] = initial_approximation(tau, tfapp, initial, final,
 
     % Initial final anomaly 
     r = dot(Capp(1:4,:),Capp(1:4,:),1);
-    sfapp = tfapp*trapz(tau,1./r); 
+    sfapp = tfapp*trapz(tau,sqrt(1*Capp(5,:))./r); 
 end
