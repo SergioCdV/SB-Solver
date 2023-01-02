@@ -32,49 +32,51 @@ function [P] = boundary_conditions(n, x0, xf, P0, B, basis)
                 P(i,n(i)+1) = xf(i);
             end
 
-%         case 'Chebyshev'
-%             % Dimensionality check 
-%             if (size(x0,2) ~= 1)
-%                 x0 = x0.';
-%             end
-%         
-%             if (size(xf,2) ~= 1)
-%                 xf = xf.';
-%             end
-%         
-%             % Symbolic regression 
-%             l = size(P0,2)-3;
-%             x0(1:5) = x0(1:5)-sum(P0(:,3:end-2).*(-1).^(2:l),2); 
-%             xf(1:5) = xf(1:5)-sum(P0(:,3:end-2),2);
-% 
-%             A = [1 (-1)^size(P0,2); 1 1];
-% 
-%             for i = 1:size(P,1)
-%                 sol = A\[x0(i); xf(i)];
-%                 P(i,[1 n(i)+1]) = sol.';
-%             end
-% 
-%         case 'Legendre'
-%             % Dimensionality check 
-%             if (size(x0,2) ~= 1)
-%                 x0 = x0.';
-%             end
-%         
-%             if (size(xf,2) ~= 1)
-%                 xf = xf.';
-%             end
-% 
-%             % Symbolic regression 
-%             l = size(P0,2)-3;
-%             x0(1:3) = x0(1:3)-sum(P0(:,3:end-2).*(-1).^(2:l),2); 
-%             xf(1:3) = xf(1:3)-sum(P0(:,3:end-2),2);
-% 
-%             A = [1 (-1)^size(P0,2); 1 1];
-% 
-%             for i = 1:size(P,1)
-%                 sol = A\[x0(i); xf(i)];
-%                 P(i,[1 n(i)+1]) = sol.';
-%             end
+        case 'Chebyshev'
+            % Dimensionality check 
+            if (size(x0,2) ~= 1)
+                x0 = x0.';
+            end
+        
+            if (size(xf,2) ~= 1)
+                xf = xf.';
+            end
+        
+            for i = 1:size(P,1)
+                % Symbolic regression 
+                l = n(i)-2;
+                X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
+                Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
+
+                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                     1 1 1 1];
+
+                sol = A\[X0(1); Xf(1)];
+                P(i,[1 2 n(i) n(i)+1]) = sol.';
+            end
+
+        case 'Legendre'
+            % Dimensionality check 
+            if (size(x0,2) ~= 1)
+                x0 = x0.';
+            end
+        
+            if (size(xf,2) ~= 1)
+                xf = xf.';
+            end
+
+            for i = 1:size(P,1)
+                % Symbolic regression 
+                l = n(i)-2;
+                X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
+                Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
+
+                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                     1 1 1 1];
+
+                sol = A\[X0(1); Xf(1)];
+                P(i,[1 2 n(i) n(i)+1]) = sol.';
+            end
 
         otherwise
             % Compute the partial state evolution 
@@ -92,7 +94,7 @@ function [P] = boundary_conditions(n, x0, xf, P0, B, basis)
             for i = 1:length(n)
                 index = [1 n(i)+1];
                 A = B{i}(index,[1,end]);
-                P(i,[1 n(i)+1]) = C(i,:)*A^(-1);
+                P(i,[1 2 n(i) n(i)+1]) = C(i,:)*A^(-1);
             end
     end
 end

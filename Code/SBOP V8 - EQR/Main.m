@@ -9,7 +9,7 @@ close all
 animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Chebyshev';        % Distribution of time intervals
 basis = 'Chebyshev';                    % Polynomial basis to be use
-n = 11;                         % Polynomial order in the state vector expansion
+n = 9;                         % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
@@ -28,8 +28,8 @@ theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(0) deg2rad(0)]; 
-thetaf = deg2rad(50);
+final_coe = [1.05*r0 1e-3 deg2rad(5) deg2rad(50) deg2rad(0)]; 
+thetaf = deg2rad(100);
 final_coe = [final_coe thetaf]; 
 
 % Spacecraft parameters 
