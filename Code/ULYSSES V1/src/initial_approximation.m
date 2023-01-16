@@ -36,6 +36,7 @@ function [Papp, Capp, thetaf, tfapp] = initial_approximation(tau, tfapp, initial
     thetaf = final(2)+2*pi*Napp;
 
     % Generate the polynomial basis
+    tau = linspace(0,1,length(tau));
     n_init = repmat(3, [1 3]);
     Bapp = state_basis(n_init, tau, basis);
 
@@ -45,4 +46,5 @@ function [Papp, Capp, thetaf, tfapp] = initial_approximation(tau, tfapp, initial
 
     % State vector approximation as a function of time
     Capp = evaluate_state(Papp, Bapp, n_init);
+    Capp(4:6,:) = Capp(4:6,:)/tfapp;
 end

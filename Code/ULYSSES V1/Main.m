@@ -8,7 +8,7 @@ close all
 %% Setup of the solution method
 animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Legendre';         % Distribution of time intervals
-m = 10;                                 % Number of sampling points
+m = 100;                                 % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 

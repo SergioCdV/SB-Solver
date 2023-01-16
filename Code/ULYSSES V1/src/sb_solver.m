@@ -67,7 +67,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Initial guess for the boundary control points
     [tau, W, J] = quadrature(3, m, sampling_distribution);
     D = LG_diffm(m, tau);
-    [~, P0, thetaf, tfapp] = initial_approximation(tau, tfapp, initial, final, 'Legendre'); 
+    [~, P0, thetaf, tfapp] = initial_approximation(tau, tfapp, initial, final, 'Bernstein'); 
     P0 = P0(1:2*size(P0,1)/3, :);
     
     % Final TOF scaling
@@ -77,6 +77,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     u0 = zeros(3*length(tau),1);
     L = length(x0);
+    % x0 = zeros(size(x0));
     x0 = [x0; u0; tfapp; T];
     
     % Upper and lower bounds 
@@ -91,10 +92,10 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     end
     
     % Objective function
-    objective = @(x)cost_function(cost, mu, initial, final, D, m, tau, W, x);
+    objective = @(x)cost_function(cost, mu, initial.', final.', D, m, tau, W, x);
 
     % Non-linear constraints
-    nonlcon = @(x)constraints(mu, initial, final, D, m, tau, x);
+    nonlcon = @(x)constraints(mu, initial.', final.', D, m, tau, x);
     
     % Linear constraints and inequalities
     A = [];
@@ -114,6 +115,8 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     u = reshape(sol(end-3*(m+1)-1:end-2), [3 size(P0,2)]);  % Optimal control points
     tf = sol(end-1);                                        % Optimal time of flight
     T = sol(end);                                           % Needed thrust vector
+
+    C = cylindrical2cartesian(C, true);
     
     % Time domain normalization and scale preserving
     switch (sampling_distribution)
