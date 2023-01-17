@@ -25,11 +25,10 @@ function [c, ceq] = constraints(mu, initial, final, D, m, tau, x)
     tf = x(end-1);                                                % Final time of flight
     T = x(end);                                                   % Needed thrust vector
 
-    epsilon = 1e-6; 
+    epsilon = 1e-1; 
 
     % Boundary equalities 
-    % bcs = [C(1:6,1)-initial.'; C([1 3:6],end)-final([1 3:6]).'; cos(C(2,end))-cos(final(2)); sin(C(2,end))-sin(final(2))];
-    bcs = [C(1:6,1)-initial; C([1 3:6],end)-final([1 3:6])];
+    bcs = [C(1:6,1)-initial; C([1 3:6],end)-final([1 3:6]); cos(C(2,end))-cos(final(2)); sin(C(2,end))-sin(final(2)) ];
     bcs = abs(bcs);
 
     % Path constraints 
@@ -40,6 +39,6 @@ function [c, ceq] = constraints(mu, initial, final, D, m, tau, x)
     res = max(abs(res),[],1);
 
     % Final constraints
-    c = [max(bcs) h res];
-    ceq = [cos(C(2,end))-cos(final(2)); sin(C(2,end))-sin(final(2)) ];
+    c = [h res-epsilon];
+    ceq = [];
 end

@@ -38,7 +38,7 @@ function [r] = cost_function(cost, mu, initial, final, D, m, tau, W, x)
             elseif (length(W) ~= length(tau))
                 r = 0; 
                 for i = 1:floor(length(tau)/length(W))
-                    r = r + tf*dot(W,a(1+length(W)*(i-1):length(W)*i));
+                    r = r + tf/2*dot(W,a(1+length(W)*(i-1):length(W)*i));
                 end
             else
                 r = tf*dot(W,a);

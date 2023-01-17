@@ -14,9 +14,10 @@
 % Output: - vector y, the Legendre nodes of interest
 
 function [y] = LG_nodes(N)    
-    beta = .5./sqrt(1-(2*(1:N)).^(-2));         % 3-term recurrence coeffs
+    beta = .5./sqrt(1-(2*(1:N-2)).^(-2));         % 3-term recurrence coeffs
     T = diag(beta,1) + diag(beta,-1);           % Jacobi matrix
     [~,D] = eig(T);                             % Eigenvalue decomposition
     x = diag(D);                                % Eigenvalue matrix  
+    x = [-1 x 1];
     y = sort(x);                                % Legendre nodes
 end

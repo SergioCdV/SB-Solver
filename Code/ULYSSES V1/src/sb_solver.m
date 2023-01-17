@@ -65,8 +65,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     T = T/gamma;                                        % Spacecraft propulsion parameters 
  
     % Initial guess for the boundary control points
-    [tau, W, J] = quadrature(3, m, sampling_distribution);
-    D = LG_diffm(m, tau);
+    [tau, W, J, D] = quadrature(3, m, sampling_distribution);
     [~, P0, thetaf, tfapp] = initial_approximation(tau, tfapp, initial, final, 'Bernstein'); 
     P0 = P0(1:2*size(P0,1)/3, :);
     
@@ -77,7 +76,6 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
     u0 = zeros(3*length(tau),1);
     L = length(x0);
-    % x0 = zeros(size(x0));
     x0 = [x0; u0; tfapp; T];
     
     % Upper and lower bounds 

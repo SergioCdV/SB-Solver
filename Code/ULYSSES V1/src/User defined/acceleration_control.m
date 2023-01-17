@@ -24,12 +24,12 @@ function [res] = acceleration_control(mu, D, C, u, tf, t)
 
     % Compute the acceleration term
     a = zeros(6,length(t));
+    v = C(1:3,:)*D.';
+    gamma = C(4:6,:)*D.';
     for i = 1:length(t)
-        v = sum(D(i,:).*C(1:3,:),2);
-        gamma = sum(D(i,:).*C(4:6,:),2);
-        a(:,i) = [v; gamma(1,1)-C(1,1).*v(2,1).^2; C(1,1).*gamma(2,1)+2*v(1,1).*v(2,1); gamma(3,1)];
+        a(:,i) = [v(:,i); gamma(1,i)-C(1,i).*v(2,i).^2; C(1,i).*gamma(2,i)+2*v(1,i).*v(2,i); gamma(3,i)];
     end
 
     % Compute the dynamics residual
-    res = tf/2*(f+[zeros(3,length(t));u])-a;
+    res = a-tf*(f+[zeros(3,length(t));u]);
 end

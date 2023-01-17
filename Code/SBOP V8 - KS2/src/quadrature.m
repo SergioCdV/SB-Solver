@@ -48,7 +48,7 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             J = 0.5;
 
             % Guass-Legendre Quadrature weights
-            [W, tau] = LG_weights(m);
+            [W, tau, ~] = LGL_weights(m);
             tau = tau.';
 
         case 'Linear'

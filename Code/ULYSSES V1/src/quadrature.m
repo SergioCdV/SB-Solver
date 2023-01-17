@@ -16,9 +16,10 @@
 % Outputs: - vector tau, the domain of integration
 %          - vector W, the quadrature weights 
 %          - scalar J, the Jacobian of the domain transformation
+%          - matrix D, the differentiation matrix
 
 
-function [tau, W, J] = quadrature(n, m, sampling_distribution)
+function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
     % Final sampling distribution setup
     switch (sampling_distribution)
         case 'Chebyshev'
@@ -35,7 +36,7 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             J = 0.5;
             
             % Clenshaw-Curtis Quadrature weights
-            [W, tau] = CC_weights(m);
+            [W, tau, D] = CC_weights(m);
             tau = tau.';
 
         case 'Legendre'
@@ -48,8 +49,7 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             J = 0.5;
 
             % Guass-Legendre Quadrature weights
-            [W, tau] = LG_weights(m);
-            tau = tau.';
+            [W, tau, D] = LGL_weights(m);
 
         case 'Linear'
             % Jacobian domain transformation 
