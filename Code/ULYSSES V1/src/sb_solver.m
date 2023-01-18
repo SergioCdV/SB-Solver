@@ -104,6 +104,10 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
     options.MaxFunctionEvaluations = 1e6;
+
+    options = optimoptions('fmincon','Display','off',...
+        'Algorithm','sqp','MaxFunEvals',Inf,...
+        'OptimalityTolerance', 100*eps, 'StepTolerance', 100*eps);
     
     % Optimisation
     [sol, dV, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);

@@ -19,17 +19,12 @@ function [res] = acceleration_control(mu, D, C, u, tf, t)
     r = sqrt(C(1,:).^2+C(3,:).^2);
 
     % Linear terms of the equations of motion
-    c = tf;                                                                                % Normalizing factor
     f = [C(4:6,:); -mu.*C(1,:)./r.^3; zeros(1,size(C,2)); -mu.*C(3,:)./r.^3];    % Dynamics vector in first order form
 
     % Compute the acceleration term
-    a = zeros(6,length(t));
-    v = C(1:3,:)*D.';
-    gamma = C(4:6,:)*D.';
-    for i = 1:length(t)
-        a(:,i) = [v(:,i); gamma(1,i)-C(1,i).*v(2,i).^2; C(1,i).*gamma(2,i)+2*v(1,i).*v(2,i); gamma(3,i)];
-    end
+    dC = C*D.';
+    a = [dC(1:3,:); dC(4,:)-C(1,:).*C(5,:).^2; C(1,:).*dC(5,:)+2*C(4,:).*C(5,:); dC(6,:)];
 
     % Compute the dynamics residual
-    res = a-tf*(f+[zeros(3,length(t));u]);
+    res = a-tf*f-tf*[zeros(3,length(t)); u];
 end

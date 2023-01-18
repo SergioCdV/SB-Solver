@@ -25,20 +25,17 @@ function [c, ceq] = constraints(mu, initial, final, D, m, tau, x)
     tf = x(end-1);                                                % Final time of flight
     T = x(end);                                                   % Needed thrust vector
 
-    epsilon = 1e-1; 
-
     % Boundary equalities 
     bcs = [C(1:6,1)-initial; C([1 3:6],end)-final([1 3:6]); cos(C(2,end))-cos(final(2)); sin(C(2,end))-sin(final(2)) ];
-    bcs = abs(bcs);
 
     % Path constraints 
     h = u(1,:).^2+u(2,:).^2+u(3,:).^2-(repmat(T,1,size(u,2))).^2;
 
     % Dynamics 
     res = acceleration_control(mu, D, C, u, tf, tau); 
-    res = max(abs(res),[],1);
+    res = reshape(res, [], 1);
 
     % Final constraints
-    c = [h res-epsilon];
-    ceq = [];
+    ceq = [bcs; res];              % Boundary and dynamics constraints
+    c = h;                      % Path inequalities
 end

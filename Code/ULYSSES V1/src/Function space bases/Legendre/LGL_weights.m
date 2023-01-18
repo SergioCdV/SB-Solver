@@ -56,7 +56,7 @@ function [W, tau, D] = LGL_weights(N)
     L = LG_basis(N, tau);
 
     % Quadrature weights
-    W = 1./(N*N1*L(end,:).^2);
+    W = 2./(N*N1*L(end,:).^2);
 
     % Differentiation matrix
     D = zeros(N+1);
