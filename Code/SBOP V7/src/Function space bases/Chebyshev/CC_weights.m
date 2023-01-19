@@ -15,8 +15,10 @@
 %         - vector dP, the n-th Legendre derivative at the Legendre nodes
 
 % Output: - vector w, the Legendre weights of interest
+%         - vector tau, the Chebyshev nodes 
+%         - matrix D, the Chebyshev differentiation matrix
 
-function [w, tau] = CC_weights(N)  
+function [w, tau, D] = CC_weights(N)  
    % Constants 
    n = N-1; 
 
@@ -28,6 +30,28 @@ function [w, tau] = CC_weights(N)
    w = [f(1,1); 2*f(2:n,1); f(N,1)];
    tau = n*f(1:N,2);
 
+   % Quadrature
    [tau,i] = sort(tau); 
    w = w(i);
+   D = Dmatrix(tau);
+end
+
+%% Auxiliary functions 
+% Differentiation matrix, p. 54, Spectral Methods in MATLAB, Lloyd N. Trefethen
+function [D] = Dmatrix(tau)
+    % Order of the matrix
+    N = length(tau)-1;
+    
+    % Main computation
+    if (N == 0) 
+        D = zeros(N);
+    else
+        x = cos(pi*(0:N)/N)';
+        c = [2; ones(N-1,1); 2].*(-1).^(0:N)';
+        X = repmat(x,1,N+1);
+        dX = X-X';
+        D = (c*(1./c)')./(dX+(eye(N+1)));       % Off-diagonal entries
+        D = D - diag(sum(D,2));                 % Diagonal entries
+        D = -D;                                 % Domain flip
+    end  
 end

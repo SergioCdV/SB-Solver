@@ -7,10 +7,10 @@ close all
 
 %% Setup of the solution method
 animations = 0;                         % Set to 1 to generate the gif
-time_distribution = 'Bernstein';        % Distribution of time intervals
-basis = 'Bernstein';                    % Polynomial basis to be use
+time_distribution = 'Chebyshev';        % Distribution of time intervals
+basis = 'Legendre';                    % Polynomial basis to be use
 n = [10 12 12];                         % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+m = 4;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 
@@ -33,7 +33,7 @@ thetaf = deg2rad(20);
 final_coe = [final_coe thetaf]; 
 
 % Spacecraft parameters 
-T = 0.5e-3;              % Maximum acceleration 
+T = 0.5e-4;              % Maximum acceleration 
 TOF = 1*365*3600*24;     % Desired TOF for the time-fixed problem
 
 % Setup 

@@ -74,7 +74,7 @@ function [C, dV, u, tf, tfapp, tau, exitflag, output] = sb_solver(system, initia
 
     % Initial guess reshaping
     x0 = reshape(P0, [size(P0,1)*size(P0,2) 1]);
-    u0 = zeros(3*length(tau),1);
+    u0 = T*ones(3*length(tau),1);
     L = length(x0);
     x0 = [x0; u0; tfapp; T];
     

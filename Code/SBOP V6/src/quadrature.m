@@ -1,7 +1,7 @@
 %% Project: 
 % Date: 08/11/22
 
-%% Quadrature scheem %%
+%% Quadrature scheme %%
 % Function to compute the quadrature scheme weights and associated
 % integration domain
 
@@ -18,7 +18,7 @@
 %          - scalar J, the Jacobian of the domain transformation
 
 
-function [tau, W, J] = quadrature(n, m, sampling_distribution)
+function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
     % Final sampling distribution setup
     switch (sampling_distribution)
         case 'Chebyshev'
@@ -48,7 +48,7 @@ function [tau, W, J] = quadrature(n, m, sampling_distribution)
             J = 0.5;
 
             % Guass-Legendre Quadrature weights
-            [W, tau, ~] = LGL_weights(m);
+            [W, tau, D] = LGL_weights(m);
             tau = tau.';
 
         case 'Linear'
