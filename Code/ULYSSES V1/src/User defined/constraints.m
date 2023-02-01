@@ -33,10 +33,9 @@ function [c, ceq] = constraints(mu, initial, final, D, m, tau, x)
 
     % Dynamics 
     res = acceleration_control(mu, D, C, u, tf, tau); 
-    res = reshape(res(2:end-1), [], 1);
+    res = reshape(res, [], 1);
 
     % Final constraints
     ceq = [bcs; res];              % Boundary and dynamics constraints
     c = h;                      % Path inequalities
-    c = [];
 end

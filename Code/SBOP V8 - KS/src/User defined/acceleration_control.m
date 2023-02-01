@@ -26,5 +26,5 @@ function [u, dv, f] = acceleration_control(mu, C, sf)
     dv = C(5:8,:);                                   % Inertial velocity field
 
     % Compute the control vector as a dynamics residual
-    u = 2*(a-sf^2*f)./r;
+    u = (a-sf^2*f);
 end

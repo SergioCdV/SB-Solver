@@ -7,10 +7,10 @@ close all
 
 %% Setup of the solution method
 animations = 0;                         % Set to 1 to generate the gif
-time_distribution = 'Bernstein';        % Distribution of time intervals
-basis = 'Bernstein';                    % Polynomial basis to be use
-n = [13 13 13];                         % Polynomial order in the state vector expansion
-m = 500;                                % Number of sampling points
+time_distribution = 'Legendre';        % Distribution of time intervals
+basis = 'Legendre';                    % Polynomial basis to be use
+n = 15;                         % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 
@@ -30,10 +30,10 @@ system.distance = r0;
 system.time = t0; 
 
 % Initial ECI position and velocity
-initial = [37e6 0 0 0 sqrt(3.986e14/(37e6)) 0]; 
+initial = [0 37e6 0 sqrt(3.986e14/(37e6)) 0 0]; 
 
 % Final ECI position and velocity
-final = [0.98*r0 0 0 -sqrt(3.986e14/(0.98*r0)) 0 0]; 
+final = [0.02*r0 0 0 sqrt(4.9e12/(0.02*r0)) 0 0]; 
 
 % Spacecraft parameters 
 T = 0.5e-3;              % Maximum acceleration 

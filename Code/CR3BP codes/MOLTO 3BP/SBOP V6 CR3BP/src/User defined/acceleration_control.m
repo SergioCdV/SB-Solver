@@ -20,7 +20,7 @@ function [u, dv, f] = acceleration_control(mu, C, tf, t)
     R(:,2) = [1-mu; 0; 0];          % Location of the second primary
 
     r(1:3,:) = C(1:3,:)-R(:,1);     % Relative position to the first primary
-    r(4:6,:) = C(4:6,:)-R(:,2);     % Relative position to the second primary
+    r(4:6,:) = C(1:3,:)-R(:,2);     % Relative position to the second primary
 
     % Linear terms of the equations of motion
     c = tf;                                                                                                          % Normalizing factor

@@ -55,5 +55,5 @@ function [c, ceq] = constraints(mu, initial, final, tf, time_free, B, basis, n, 
     end
 
     % Inequalities
-    c = [dot(u,u,1)-r.*(sf^2*repmat(T,1,size(u,2))).^2];
+    c = [dot(u,u,1)-0.5*r.^2.*(sf^2*repmat(T,1,size(u,2))).^2];
 end

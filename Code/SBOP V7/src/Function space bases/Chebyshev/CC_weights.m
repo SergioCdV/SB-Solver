@@ -20,6 +20,7 @@
 
 function [w, tau, D] = CC_weights(N)  
    % Constants 
+   N = N+1;
    n = N-1; 
 
    % FFT preallocation of the CC weights and nodes
