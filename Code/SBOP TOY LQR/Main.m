@@ -6,10 +6,11 @@ set_graphics();
 close all
 
 %% Setup of the solution method
-time_distribution = 'Legendre';       % Distribution of time intervals
+% Modify this!!!
+time_distribution = 'Legendre';       % Distribution of time intervals (chose between Legendre, Chebyshev or Bernstein)
 basis = 'Legendre';                   % Polynomial basis to be use
-n = 20;                                % Polynomial order in the state vector expansion
-m = 30;                                % Number of sampling points
+n = 20;                               % Polynomial order in the state vector expansion
+m = 30;                               % Number of sampling points
 
 % Initial boundary conditions
 initial_state = [0 0];
@@ -18,7 +19,7 @@ initial_state = [0 0];
 final_state = [1 0]; 
 
 % Constraints 
-TOF = 1;                 % Desired TOF for the time-fixed problem
+TOF = 1;                              % Desired TOF for the time-fixed problem
 
 % Setup 
 setup.order = n; 
@@ -34,7 +35,7 @@ tic
 [C, cost, u, tf, t, exitflag, output] = sb_solver(initial_state, final_state, TOF, setup);
 toc 
 
-% Compute the optimal analytical solution 
+% Compute the optimal analytical solution (for the original boundary conditions and TOF)
 uopt = -12*t+6;
     
 %% Plot results
