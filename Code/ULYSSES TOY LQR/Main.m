@@ -2,10 +2,7 @@
 % Date: 01/08/22
 
 %% Set up
-set_graphics(); 
-close all
-
-%% Set up
+setup_path();
 set_graphics(); 
 close all
 
