@@ -4,6 +4,6 @@
 %% Control function %% 
 % Function implementation of the control function as a dynamics residual
 
-function [M, L] = ControlFunction(beta, t0, tf, s)
-    u = 0;
+function [u] = ControlFunction(m, beta, t0, tf, tau, s)
+    u = zeros(m,size(s,2));
 end

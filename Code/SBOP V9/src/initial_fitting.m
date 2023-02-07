@@ -13,18 +13,23 @@
 %            cell
 %          - array C, the initial estimation of the spacecraft state vector
 
-function [P, C] = initial_fitting(n, tau, C, basis)
-    % Preallocation of the control points and the polynomials
+function [P, C] = initial_fitting(Problem, basis, tau, s)
+    % Constants 
+    n = Problem.PolOrder;       % Polynomial order for each state variable 
+    L = Problem.DerDeg;         % Order of the dynamics (maximum derivative order)
+    
+    % Preallocation of the control points and the expansion polynomials
     P = zeros(length(n), max(n)+1); 
-    B = state_basis(n, tau, basis);
+    B = state_basis(n, L, basis, tau);
 
     % Compute the position control points leveraging the complete state vector
-    C = [C(1:size(P,1),:) C(size(P,1)+1:2*size(P,1),:) C(2*size(P,1)+1:3*size(P,1),:)];
+    C = s.';
+    
     for i = 1:length(n)
-        A = [B{i}(1:n(i)+1,:) B{i}(n(i)+2:2*(n(i)+1),:) B{i}(2*n(i)+3:end,:)];
+        A = B{i}.';
         P(i,1:n(i)+1) = C(i,:)*pinv(A);
     end
     
     % Evaluate the state vector
-    C = evaluate_state(P, B, n);
+    C = evaluate_state(P, B, n, L);
 end

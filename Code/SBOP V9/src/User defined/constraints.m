@@ -1,44 +1,34 @@
 %% Project: Shape-based optimization for low-thrust transfers %%
 % Date: 30/01/2022
-
 %% Constraints %% 
 % Function to compute the residual vector of the constraints of the problem
 
-% Inputs: - scalar mu, the gravitational parameter of the central body 
-%         - scalar T, the maximum acceleration allowed for the spacecraft
-%         - vector initial, the initial boundary conditions of the
-%           trajectory 
-%         - vector final, the initial boundary conditions of the
-%           trajectory 
+% Inputs: - class Problem, defining the problem at hands
 %         - cell array B, the polynomial basis to be used
 %         - string basis, the polynomial basis to be used
-%         - vector n, the vector of degrees of approximation of the state
-%           variables
 %         - vector tau, the normalized independent variable
 %         - vector x, the degree of freedom to be optimized
 
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(mu, initial, final, B, basis, n, tau, x)
-    % Extract the optimization variables
-    P = reshape(x(1:end-3), [length(n), max(n)+1]);     % Control points
-    tf = x(end-2);                                      % Final time of flight 
-    thetaf = x(end-1);                                  % Final insertion phase
-    T = x(end);                                         % Needed thrust vector
+function [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x)
+    % Optimization variables
+    StateCard = (max(Problem.PolOrder)+1) * Problem.StateDim;                % Cardinal of the state modes
+    P = reshape(x(1:StateCard), Problem.StateDim, []);                       % Control points
+    t0 = x(StateCard+1);                                                     % Initial independent variable value
+    tf = x(StateCard+2);                                                     % Final independent variable value
+    beta = x(StateCard+3:end);                                               % Extra optimization parameters
 
-    % Boundary conditions points
-    P = boundary_conditions(tf, n, initial, final, thetaf, P, B, basis);
+    % Evaluate the boundary conditions and the state evolution
+    P = boundary_conditions(Problem, beta, t0, tf, B, basis, P);             % Boundary conditions control points
+    s = evaluate_state(P, B, Problem.PolOrder);                              % State evolution
 
-    % Trajectory evolution
-    C = evaluate_state(P,B,n);
-
-    % Control input 
-    [u, ~] = acceleration_control(mu, C, tf);
+    % Evaluate the control function 
+    [t, J] = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable and Jacobian of the transformation
+    u = Problem.ControlFunction(Problem.ControlDim, beta, t0, tf, t, s);     % Control function
+    u = J * u;
 
     % Equalities 
-    ceq = [cos(thetaf)-cos(final(2)) sin(thetaf)-sin(final(2))];
-
-    % Inequalities
-    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(tf^2*repmat(T,1,size(u,2))).^2];
+    [c, ceq] = Problem.Constraints(beta, t0, tf, tau, s, u);
 end

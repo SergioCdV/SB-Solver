@@ -17,7 +17,7 @@
 
 % Outputs: - array P, the updated boundary conditions control points, of dimensions size(x,1) x n+1 
 
-function [P] = boundary_conditions(tfapp, n, x0, xf, thetaf, P0, B, basis)
+function [P] = boundary_conditions(Problem, beta, t0, tf, B, basis, P0)
     % Sanity check 
     if (min(n) < 3)
         error('Cauchy boundary conditions cannot be imposed');
@@ -25,12 +25,12 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, thetaf, P0, B, basis)
         P = P0;         % Initialization
     end
 
-    % Add the revolutions to the final angle
-    xf(2) = thetaf;
+    % Boundary conditions
+    [s0, sf] = feval(Problem.BoundaryConditions, Problem.initial, Problem.final, beta, t0, tf);
 
-    % Dimensionalizing of the velocity 
-    x0(4:6) = tfapp*x0(4:6);
-    xf(4:6) = tfapp*xf(4:6);
+    % Dimensionalizing of the generalized velocities 
+    x0(4:6) = tfapp*s0(4:6);
+    xf(4:6) = tfapp*sf(4:6);
 
     % Switch the polynomial basis to be used
     switch (basis)
