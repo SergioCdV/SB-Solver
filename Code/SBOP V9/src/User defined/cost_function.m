@@ -22,39 +22,20 @@
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(cost, mu, initial, final, B, basis, n, tau, W, x)
-    % Optimization variables
-    tf = x(end-2);              % Final time of flight
-    
-    switch (cost)
-        case 'Minimum time'
-            r = tf;             % Cost function
-    
-        case 'Minimum fuel'
-            % Minimize the control input
-            P = reshape(x(1:end-3), [length(n), max(n)+1]);                             % Control points
-            thetaf = x(end-1);                                                          % Final insertion phase
-            P = boundary_conditions(tf, n, initial, final, thetaf, P, B, basis);        % Boundary conditions control points
-            C = evaluate_state(P,B,n);                                                  % State evolution
-    
-            [u, ~, ~] = acceleration_control(mu, C, tf);                                % Control vector
-            u = u / tf^2;                                                               % Normalized control vector
+function [r] = cost_function(Cost, initial, final, B, basis, n, tau, W, x)
+    % Minimize a given control input
+    P = reshape(x(1:end-3), [length(n), max(n)+1]);                             % Control points
+    thetaf = x(end-1);                                                          % Final insertion phase
+    P = boundary_conditions(tf, n, initial, final, thetaf, P, B, basis);        % Boundary conditions control points
+    C = evaluate_state(P,B,n);                                                  % State evolution
         
-            a = sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2);                                    % Non-dimensional acceleration norm
-    
-            % Cost function
-            if (isempty(W))
-                r = tf*trapz(tau,a);
-            elseif (length(W) ~= length(tau))
-                r = 0; 
-                for i = 1:floor(length(tau)/length(W))
-                    r = r + tf*dot(W,a(1+length(W)*(i-1):length(W)*i));
-                end
-            else
-                r = tf*dot(W,a);
-            end
-    
-        otherwise
-            error('No valid cost function was selected to be minimized');
+    % Evaluate the cost function
+    [L, M] = Cost.evaluate_cost(beta, t0, tf, C, u); 
+    r = M; 
+
+    if (isempty(W))
+        r = r + (tf-t0) * trapz(tau,L);
+    else
+        r = r + (tf-t0) * dot(W,L);
     end
 end

@@ -1,3 +1,3 @@
-x(1)^2
-
-x(1)+x(2)^2
+function [M, L] = CostFunction(beta, t0, tf, s, u)
+    
+end

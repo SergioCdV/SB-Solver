@@ -1,4 +1,8 @@
+%% Project: Shape-based optimization for low-thrust transfers %%
+% Date: 07/02/2023
 
+%% Cost class %% 
+% Class implementation of a cost function 
 
 classdef Cost 
     % Fundamental definition of the cost function
@@ -14,9 +18,34 @@ classdef Cost
     % Public methods
     methods 
         % Add cost function from txt file
-        function [obj] = Cost(myCostFile)
+        function [obj] = Cost()
+            % Save the cost function 
+            obj.CostFunction = @(beta,t0,tf,x,u)CostFunction(beta, t0, tf, s, u); 
+        end
+
+        % Add units
+        function [obj] = AddUnits(obj, myUnits)
+            % Units of the cost function
+            obj.units = myUnits;          
+        end
+        
+        % Evaluate the cost function
+        function [M, L] = evaluate_cost(obj, beta, t0, tf, s, u)
+            % Evaluate the user defined cost function
+            cost = feval(myFunc, beta, t0, tf, s, u);
+
+            % Decompose the cost vector
+            M = cost(1);    % Mayer penalty term
+            L = cost(2);    % Lagrange integral term
+        end
+    end
+
+    methods (Access = private)
+        % Add cost function from txt file
+        function [obj] = CostFromTxt(obj, myCostFile)
             % Read the txt file
-            eqs = fileread(strcat('Problem\',myCostFile));
+            obj.path = strcat('Problem\',myCostFile);
+            eqs = fileread(obj.path);
             eqs = strsplit(eqs, newline);
             eqs = strtrim(eqs);
 
@@ -30,20 +59,10 @@ classdef Cost
                 end
             end
 
-            myFunc = cellfun(@(beta, t0, tf, x, u)(str2func(['@(beta,t0,tf,s,u)' beta, t0, tf, x, u])), Eqs);
+            myFunc = str2func(['@(beta,t0,tf,x,u) ' strcat(Eqs{1,:})]);
 
             % Save the cost function 
             obj.CostFunction = myFunc; 
-        end
-        
-        % Evaluate the cost function
-        function [L, M] = evaluate_cost(obj, beta, t0, tf, s, u)
-            % Evaluate the user defined cost function
-            cost = feval(myFunc, beta, t0, tf, s, u);
-
-            % Decompose the cost vector
-            M = cost(1);    % Mayer penalty term
-            L = cost(2);    % Lagrange integral term
         end
     end
 end

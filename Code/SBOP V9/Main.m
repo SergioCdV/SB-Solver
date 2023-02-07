@@ -6,7 +6,8 @@ set_graphics();
 close all
 
 %% Setup of the solution method
-Cost_1 = Cost('Cost.txt'); 
+Cost_1 = Cost(); 
+control = Dynamics(); 
 
 animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Legendre';        % Distribution of time intervals
