@@ -4,6 +4,18 @@
 %% Control function %% 
 % Function implementation of the control function as a dynamics residual
 
-function [u] = ControlFunction(m, beta, t0, tf, tau, s)
-    u = zeros(m,size(s,2));
+function [u] = ControlFunction(params, beta, t0, tf, tau, s)
+    % Constants 
+    mu = params(1); 
+    
+    % Compute the radius vector
+    r = sqrt(s(1,:).^2+s(3,:).^2);
+
+    % Linear terms of the equations of motion
+    c = tf-t0;                                                                      % Normalizing factor
+    f = -[c.^2.*mu.*s(1,:)./r.^3; zeros(1,size(s,2)); c.^2.*mu.*s(3,:)./r.^3];      % Acceleration vector
+    a = [s(7,:)-s(1,:).*s(5,:).^2; s(1,:).*s(8,:)+2*s(4,:).*s(5,:); s(9,:)];        % Inertial acceleration field
+
+    % Compute the control vector as a dynamics residual
+    u = a-f;
 end

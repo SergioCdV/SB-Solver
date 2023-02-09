@@ -18,7 +18,7 @@
 %          - scalar J, the Jacobian of the domain transformation
 
 
-function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
+function [tau, W, J, f, D] = quadrature(n, m, sampling_distribution)
     % Final sampling distribution setup
     switch (sampling_distribution)
         case 'Chebyshev'
@@ -38,6 +38,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
             [W, tau] = CC_weights(m);
             tau = tau.';
 
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf+t0)/2+(tf-t0)/2*tau);
+
         case 'Legendre'
             % Sanity check on the quadrature number of points 
             if ((m-1)/2 <= max(n))
@@ -51,6 +54,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
             [W, tau, D] = LGL_weights(m);
             tau = tau.';
 
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf+t0)/2+(tf-t0)/2*tau);
+
         case 'Linear'
             % Jacobian domain transformation 
             J = 1;
@@ -61,6 +67,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
             % Newton-Cotes Quadrature weights
             W = NC_weights(2);
             W = [];
+
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf-t0)*tau);
 
         case 'Normal'
             % Jacobian domain transformation 
@@ -73,6 +82,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
             W = NC_weights(3);
             W = [];
 
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf-t0)*tau);
+
         case 'Random'
             % Jacobian domain transformation 
             J = 1;
@@ -83,6 +95,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
             % Newton-Cotes Quadrature weights
             W = NC_weights(10);
             W = [];
+
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf-t0)*tau);
 
         case 'Newton-Cotes'
             % Jacobian domain transformation 
@@ -95,6 +110,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
             W = NC_weights(10);
             W = [];
 
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf-t0)*tau);
+
         case 'Trapezoidal'
             % Jacobian domain transformation 
             J = 1;
@@ -104,6 +122,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
 
             % No weights
             W = [];
+
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf-t0)*tau);
 
         case 'Bernstein'
             % Sanity check on the quadrature number of points 
@@ -118,6 +139,9 @@ function [tau, W, J, D] = quadrature(n, m, sampling_distribution)
             [W, tau] = LG_weights(m);
             W = W/2;
             tau = 0.5*tau.'+0.5;
+
+            % Domain transformation 
+            f = @(t0, tf, tau)((tf-t0)*tau);
             
         otherwise
             error('No valid quadrature was selected');

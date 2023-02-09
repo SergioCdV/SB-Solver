@@ -6,5 +6,5 @@
 
 function [M, L] = CostFunction(beta, t0, tf, s, u)
     M = 0; 
-    L = 0;
+    L = sqrt(dot(u,u,1));
 end

@@ -14,13 +14,13 @@
 
 function [C] = evaluate_state(P, B, n, L)
     % Preallocation
-    N = size(P,1);                   % Number of state variables
-    C = zeros(3*N,size(B{1},2));     % State trajectory
+    N = size(P,1);                        % Number of state variables
+    C = zeros((L+1)*N, size(B{1},2));     % State trajectory
 
     for i = 1:size(P,1)
         % State vector fitting
         k = n(i)+1;
-        for j = 1:L
+        for j = 1:(L+1)
             C(i+N*(j-1),:) = P(i,1:n(i)+1)*B{i}(1+k*(j-1):k*j,:);
         end
     end

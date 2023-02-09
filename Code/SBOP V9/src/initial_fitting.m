@@ -23,10 +23,18 @@ function [P, C] = initial_fitting(Problem, basis, tau, s)
     B = state_basis(n, L, basis, tau);
 
     % Compute the position control points leveraging the complete state vector
-    C = s.';
-    
+    if (L > 1)
+        C = [s(1:Problem.StateDim,:) s(1+Problem.StateDim:2*Problem.StateDim,:)];
+    else
+        C = s(1:Problem.StateDim,:);       
+    end
+
     for i = 1:length(n)
-        A = B{i}.';
+        if (L > 1)
+            A = [B{i}(1:n(i)+1,:) B{i}(n(i)+2:2*(n(i)+1),:)];
+        else
+            A = B{i}(1:n(i)+1,:);
+        end
         P(i,1:n(i)+1) = C(i,:)*pinv(A);
     end
     

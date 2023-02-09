@@ -19,22 +19,34 @@
 
 function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     % Optimization variables
-    StateCard = (max(Problem.PolOrder)+1) * Problem.StateDim;           % Cardinal of the state modes
-    P = reshape(x(1:StateCard), Problem.StateDim, []);                  % Control points
+    L = Problem.DerDeg;                                                 % Maximum derivative degree
+    n = Problem.PolOrder;                                               % Order of the polynomial approximation
+    m = Problem.StateDim;                                               % State dimension
+    StateCard = (max(n)+1) * m;                                         % Cardinal of the state modes
+    P = reshape(x(1:StateCard), m, []);                                 % Control points
     t0 = x(StateCard+1);                                                % Initial independent variable value
     tf = x(StateCard+2);                                                % Final independent variable value
     beta = x(StateCard+3:end);                                          % Extra optimization parameters
     
     % Evaluate the boundary conditions
-    P = boundary_conditions(Problem, beta, t0, tf, B, basis, P);        % Boundary conditions control points
-    s = evaluate_state(P, B, Problem.PolOrder);                         % State evolution
+    P = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P);     % Boundary conditions control points
+    s = evaluate_state(P, B, n, L);                                     % State evolution
 
     % Evaluate the control function 
-    t = feval(domain_mapping, t0, tf, tau);                                  % Original time independent variable
-    u = Problem.ControlFunction(Problem.ControlDim, beta, t0, tf, t, s);     % Control function
+    t = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable
+    u = ControlFunction(Problem.Params, beta, t0, tf, t, s);            % Control function
+    
+    % Normalization
+    if (L > 1)
+        for i = 1:L
+            s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) / (tf - t0)^i ;     
+        end
+
+        u = u / (tf - t0)^i;
+    end
         
     % Evaluate the cost function (Lagrange and Mayer terms)
-    [L, M] = Problem.evaluate_cost(beta, t0, tf, s, u); 
+    [M, L] = CostFunction(beta, t0, tf, s, u); 
 
     if (isempty(W))
         r = M + (tf-t0) * trapz(tau,L);

@@ -5,6 +5,7 @@
 % Function implementation of the boundary conditions definition
 
 function [s0, sf] = BoundaryConditions(initial, final, beta, t0, tf)
-    M = 0; 
-    L = 0;
+    s0 = initial; 
+    sf = final;
+    sf(2) = beta(1);
 end
