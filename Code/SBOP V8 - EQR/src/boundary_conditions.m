@@ -48,7 +48,7 @@ function [P] = boundary_conditions(n, x0, xf, P0, B, basis)
                 X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
                 Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
 
-                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                A = [1 -1 (-1)^(n(i)-1) (-1)^n(i); ...
                      1 1 1 1];
 
                 sol = A\[X0(1); Xf(1)];
@@ -71,7 +71,7 @@ function [P] = boundary_conditions(n, x0, xf, P0, B, basis)
                 X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
                 Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
 
-                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                A = [1 -1 (-1)^(n(i)-1) (-1)^n(i); ...
                      1 1 1 1];
 
                 sol = A\[X0(1); Xf(1)];

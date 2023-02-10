@@ -54,19 +54,19 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, thetaf, P0, B, basis)
             end
         
             for i = 1:size(P,1)
-                % Symbolic regression 
+                % Symbolic regression
                 l = n(i)-2;
-                X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
-                Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
-                X0(2) = x0(size(P,1)+i)-sum((-1).^(1:(l-1)).*P0(i,3:n(i)-1).*(2:l).^2,2);
-                Xf(2) = xf(size(P,1)+i)-sum(P0(i,3:n(i)-1).*(2:l).^2,2);
+                X0(1,1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
+                X0(2,1) = xf(i)-sum(P0(i,3:n(i)-1),2);
+                X0(3,1) = x0(size(P,1)+i)-sum((-1).^(1:(l-1)).*P0(i,3:n(i)-1).*(2:l).^2,2);
+                X0(4,1) = xf(size(P,1)+i)-sum(P0(i,3:n(i)-1).*(2:l).^2,2);
 
-                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                A = [1 -1 (-1)^(n(i)-1) (-1)^n(i); ...
                      1 1 1 1; ... 
                      0 1 (-1)^(n(i)-2)*(n(i)-1)^2 (-1)^(n(i)-1)*n(i)^2; ...
                      0 1 (n(i)-1)^2 n(i)^2];
 
-                sol = A\[X0(1); Xf(1); X0(2); Xf(2)];
+                sol = A\X0;
                 P(i,[1 2 n(i) n(i)+1]) = sol.';
             end
 
@@ -83,17 +83,17 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, thetaf, P0, B, basis)
             for i = 1:size(P,1)
                 % Symbolic regression 
                 l = n(i)-2;
-                X0(1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
-                Xf(1) = xf(i)-sum(P0(i,3:n(i)-1),2);
-                X0(2) = x0(size(P,1)+i)-sum((-1).^(1:(l-1)).*P0(i,3:n(i)-1).*(2:l).*((3:l+1)/2),2);
-                Xf(2) = xf(size(P,1)+i)-sum(P0(i,3:n(i)-1).*(2:l).*((3:l+1)/2),2);
-
-                A = [1 -1 (-1)^n(i) (-1)^(n(i)+1); ...
+                X0(1,1) = x0(i)-sum(P0(i,3:n(i)-1).*(-1).^(2:l),2); 
+                X0(2,1) = xf(i)-sum(P0(i,3:n(i)-1),2);
+                X0(3,1) = x0(size(P,1)+i)-sum((-1).^(1:(l-1)).*P0(i,3:n(i)-1).*(2:l).*(3:l+1)/2,2);
+                X0(4,1) = xf(size(P,1)+i)-sum(P0(i,3:n(i)-1).*(2:l).*(3:l+1)/2,2);
+                
+                A = [1 -1 (-1)^(n(i)-1) (-1)^n(i); ...
                      1 1 1 1; ... 
                      0 1 (-1)^(n(i)-2)*(n(i)-1)*n(i)/2 (-1)^(n(i)-1)*n(i)*(n(i)+1)/2; ...
                      0 1 (n(i)-1)*n(i)/2 n(i)*(n(i)+1)/2];
 
-                sol = A\[X0(1); Xf(1); X0(2); Xf(2)];
+                sol = A\X0;
                 P(i,[1 2 n(i) n(i)+1]) = sol.';
             end
 

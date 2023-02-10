@@ -30,7 +30,7 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
  
     % Initial guess for the boundary control points
     mapp = 300;   
-    tapp = sampling_grid(mapp, sampling_distribution, '');
+    [tapp, ~, ~, ~] = quadrature(n, mapp, sampling_distribution);
     [betaapp, t0app, tfapp, ~, Capp] = initial_approximation(Problem, basis, tapp); 
     
     % Initial fitting for n+1 control points

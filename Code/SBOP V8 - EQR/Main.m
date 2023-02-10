@@ -10,7 +10,7 @@ animations = 0;                         % Set to 1 to generate the gif
 time_distribution = 'Legendre';        % Distribution of time intervals
 basis = 'Legendre';                    % Polynomial basis to be use
 n = 9;                         % Polynomial order in the state vector expansion
-m = 600;                                % Number of sampling points
+m = 200;                                % Number of sampling points
 cost_function = 'Minimum fuel';         % Cost function to be minimized
 
 % System data 
@@ -28,7 +28,7 @@ theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(89) deg2rad(0)]; 
+final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf]; 
 
