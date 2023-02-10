@@ -35,8 +35,7 @@ function [tau, W, J, f, D] = quadrature(n, m, sampling_distribution)
             J = 0.5;
             
             % Clenshaw-Curtis Quadrature weights
-            [W, tau] = CC_weights(m);
-            tau = tau.';
+            [tau, W] = CC_weights(m);
 
             % Domain transformation 
             f = @(t0, tf, tau)((tf+t0)/2+(tf-t0)/2*tau);
@@ -51,8 +50,7 @@ function [tau, W, J, f, D] = quadrature(n, m, sampling_distribution)
             J = 0.5;
 
             % Guass-Legendre Quadrature weights
-            [W, tau, D] = LGL_weights(m);
-            tau = tau.';
+            [tau, W, D] = LGL_weights(m);
 
             % Domain transformation 
             f = @(t0, tf, tau)((tf+t0)/2+(tf-t0)/2*tau);
@@ -136,7 +134,7 @@ function [tau, W, J, f, D] = quadrature(n, m, sampling_distribution)
             J = 1; 
 
             % Scaled Gauss-Legendre Quadrature weights
-            [W, tau] = LG_weights(m);
+            [tau, W] = LGL_weights(m);
             W = W/2;
             tau = 0.5*tau.'+0.5;
 

@@ -7,10 +7,10 @@ close all
 
 %% Problem definition 
 % Numerical solver definition 
-time_distribution = 'Bernstein';        % Distribution of time intervals
-basis = 'Bernstein';                   % Polynomial basis to be use
-n = [10 12 12];                        % Polynomial order in the state vector expansion
-m = 60;                                % Number of sampling points
+time_distribution = 'Chebyshev';        % Distribution of time intervals
+basis = 'Chebyshev';                   % Polynomial basis to be use
+n = [10 10 10];                        % Polynomial order in the state vector expansion
+m = 300;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
 
 OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 3, L); 
@@ -21,7 +21,7 @@ mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3
 t0 = sqrt(r0^3/mu);                     % Fundamental time unit
 
 % Earth's orbital elements
-initial_coe = [r0 1e-3 0 deg2rad(1) deg2rad(0)]; 
+initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)]; 
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 initial_coe(1) = initial_coe(1) / r0;
@@ -29,24 +29,24 @@ initial_coe(1) = initial_coe(1) / r0;
 mu = 1;                                 % Normalized parameter
 gamma = r0/(t0)^2;                      % Characteristic acceleration
 
-R = state2coe(mu, initial_coe.', 'Inertial').';
+R = coe2state(mu, initial_coe);
 S0 = cylindrical2cartesian(R, false);
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 1e-2 deg2rad(0) deg2rad(20) deg2rad(5)]; 
+final_coe = [7*r0 1e-2 deg2rad(20) deg2rad(1) deg2rad(5)]; 
 thetaf = deg2rad(20);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
 
-R = state2coe(mu, final_coe.', 'Inertial').';
+R = coe2state(mu, final_coe);
 SF = cylindrical2cartesian(R, false);
 
 % Spacecraft parameters 
-T = 0.5e-4;              % Maximum acceleration 
+T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
 % Add boundary conditions
-OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([mu; T; final(2)]);
+OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([mu; T; SF(2)]);
 
 %% Optimization
 % Simple solution    

@@ -11,26 +11,16 @@
 
 % Inputs: - scalar N, the order of the quadrature
 
-% Output: - vector w, the Legendre weights of interest
-%         - vector tau, the Legendre nodes of Pn
+% Output: - vector tau, the Legendre nodes of Pn
+%         - vector w, the Legendre weights of interest
 %         - matrix D, the differentiation matrix
 
-function [W, tau, D] = LGL_weights(N)    
+function [tau, W, D] = LGL_weights(N)    
     % Truncation + 1
     N1 = N+1;
 
     % CGL nodes
-    xc = cos(pi*(0:N)/N)';
-
-    % Uniform nodes
-    xu = linspace(-1,1,N1).';
-
-    % Make a close first guess to reduce iterations
-    if (N < 3)
-        tau = xc;
-    else
-        tau = xc + sin(pi*xu)./(4*N);
-    end
+    tau = cos(pi*(0:N)/N)';
 
     % Preallocation of the Legendre Vandermonde Matrix
     P = zeros(N1);
@@ -45,7 +35,7 @@ function [W, tau, D] = LGL_weights(N)
         P(:,2) = tau;
         
         for k = 2:N
-            P(:,k+1)=( (2*k-1)*tau.*P(:,k)-(k-1)*P(:,k-1) )/k;
+            P(:,k+1) = ( (2*k-1)*tau.*P(:,k)-(k-1)*P(:,k-1) )/k;
         end
          
         tau = xold-( tau.*P(:,N1)-P(:,N) )./( N1*P(:,N1) );
@@ -73,6 +63,4 @@ function [W, tau, D] = LGL_weights(N)
             end
         end
     end
-
-    tau = tau.';
 end

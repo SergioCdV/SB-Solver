@@ -18,7 +18,7 @@
 %         - vector tau, the Chebyshev nodes 
 %         - matrix D, the Chebyshev differentiation matrix
 
-function [w, tau, D] = CC_weights(N)  
+function [tau, w, D] = CC_weights(N)  
    % Constants 
    N = N+1;
    n = N-1; 
@@ -29,7 +29,7 @@ function [w, tau, D] = CC_weights(N)
    c(2,2) = 1; 
    f = real(ifft([c(1:N,:); c(n:-1:2,:)]));
    w = [f(1,1); 2*f(2:n,1); f(N,1)];
-   tau = n*f(1:N,2);
+   tau = n*f(1:N,2).';
 
    % Quadrature
    [tau,i] = sort(tau); 

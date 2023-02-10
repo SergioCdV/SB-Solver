@@ -21,9 +21,9 @@ function [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, ba
     L = Problem.DerDeg;         % Order of the dynamics (maximum derivative order)
 
     % Initial guess 
-    betaapp = Problem.final(2); 
+    betaapp = 6*pi+Problem.final(2); 
     t0app = 0; 
-    tfapp = 1; 
+    tfapp = 2*pi; 
 
     % Generate the polynomial basis
     n_init = repmat(3, [1 Problem.StateDim]).';
