@@ -31,7 +31,14 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     % Initial guess for the boundary control points
     mapp = 300;   
     [tapp, ~, ~, ~] = quadrature(n, mapp, sampling_distribution);
-    [betaapp, t0app, tfapp, ~, Capp] = initial_approximation(Problem, basis, tapp); 
+
+    if (~isempty(Problem.InitialGuess))
+        [betaapp, t0app, tfapp, ~, Capp] = initial_approximation(Problem, basis, tapp); 
+    else
+        t0app = 0; 
+        tfapp = 1; 
+        betapp = zeros(1,1000);
+    end
     
     % Initial fitting for n+1 control points
     [P0, ~] = initial_fitting(Problem, basis, tapp, Capp);
@@ -56,7 +63,7 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     P_lb = [-Inf*ones(Problem.StateDim * (max(n)+1),1); 0; 0; 0];
     P_ub = [Inf*ones(Problem.StateDim * (max(n)+1),1); 1e6; 1e6; Inf*ones(size(betaapp,1),1)];
 
-    [A, b, Aeq, beq] = LinConstraints(Problem, betaapp, P0);
+    [A, b, Aeq, beq] = Problem.LinConstraints(betaapp, P0);
     
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
@@ -79,7 +86,7 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     C = evaluate_state(P, B, n, L);
 
     t = feval(domain_mapping, t0, tf, tau);                             % True domain
-    u = ControlFunction(Problem.Params, beta, t0, tf, t, C);            % Control function
+    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, C);    % Control function
 
     % Normalization with respect to the independent variable
     m = Problem.StateDim;

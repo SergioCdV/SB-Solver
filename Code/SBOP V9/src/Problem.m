@@ -22,6 +22,14 @@ classdef Problem
 
         % General parameters 
         Params;         % General parameters
+
+        % Functions 
+        BoundaryConditions;
+        ControlFunction;
+        CostFunction;
+        LinConstraints;
+        NlinConstraints; 
+        InitialGuess;
     end
 
     methods 
@@ -53,6 +61,16 @@ classdef Problem
         % Add parameters 
         function [obj] = AddParameters(obj, myParameteres)
             obj.Params = myParameteres;
+        end
+
+        % Add functions 
+        function [obj] = AddFunctions(obj, myBoundaryConditions, myControlFunction, myCostFunction, myLinConstraints, myNlinConstraints, myInitialGuess)
+            obj.BoundaryConditions = myBoundaryConditions;
+            obj.ControlFunction = myControlFunction;
+            obj.CostFunction = myCostFunction;
+            obj.LinConstraints = myLinConstraints;
+            obj.NlinConstraints = myNlinConstraints;
+            obj.InitialGuess = myInitialGuess;
         end
 
         % Check function 

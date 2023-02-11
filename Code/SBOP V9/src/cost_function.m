@@ -34,7 +34,7 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
 
     % Evaluate the control function 
     t = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable
-    u = ControlFunction(Problem.Params, beta, t0, tf, t, s);            % Control function
+    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
     
     % Normalization
     if (L > 1)
@@ -46,7 +46,7 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     end
         
     % Evaluate the cost function (Lagrange and Mayer terms)
-    [M, L] = CostFunction(beta, t0, tf, s, u); 
+    [M, L] = Problem.CostFunction(Problem.Params, beta, t0, tf, s, u); 
 
     if (isempty(W))
         r = M + (tf-t0) * trapz(tau,L);

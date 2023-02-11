@@ -9,8 +9,8 @@ close all
 % Numerical solver definition 
 time_distribution = 'Legendre';        % Distribution of time intervals
 basis = 'Legendre';                   % Polynomial basis to be use
-n = [10 10 10];                        % Polynomial order in the state vector expansion
-m = 300;                                % Number of sampling points
+n = [10 12 12];                        % Polynomial order in the state vector expansion
+m = 60;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
 
 OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 3, L); 
@@ -18,7 +18,11 @@ OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(
 % System data 
 r0 = 149597870700;                      % 1 AU [m]
 mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2] 
-t0 = sqrt(r0^3/mu);                     % Fundamental time unit
+t0 = sqrt(r0^3/mu);                     % Fundamental time unit 
+Vc = r0/t0;                             % Characteristic velocity
+
+mu = 1;                                 % Normalized parameter
+gamma = r0/t0^2;                        % Characteristic acceleration
 
 % Earth's orbital elements
 initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)]; 
@@ -26,14 +30,11 @@ theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 initial_coe(1) = initial_coe(1) / r0;
 
-mu = 1;                                 % Normalized parameter
-gamma = r0/(t0)^2;                      % Characteristic acceleration
-
 R = coe2state(mu, initial_coe);
 S0 = cylindrical2cartesian(R, false);
 
 % Mars' orbital elements 
-final_coe = [7*r0 1e-2 deg2rad(20) deg2rad(1) deg2rad(5)]; 
+final_coe = [1.05*r0 1e-2 deg2rad(0) deg2rad(1) deg2rad(5)]; 
 thetaf = deg2rad(20);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
@@ -42,17 +43,24 @@ R = coe2state(mu, final_coe);
 SF = cylindrical2cartesian(R, false);
 
 % Spacecraft parameters 
-T = 0.5e-3;              % Maximum acceleration 
+T = 0.5e-4;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
 % Add boundary conditions
 OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([mu; T; SF(2)]);
+
+% Add functions 
+OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditions(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunction(params, beta, t0, tf, tau, s), ...
+                                     @(params, beta, t0, tf, s, u)CostFunction(params, beta, t0, tf, s, u), @(beta, P)LinConstraints(beta, P), ...
+                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints(params, beta, t0, tf, tau, s, u), @(params, initial, final)InitialGuess(params, initial, final));
 
 %% Optimization
 % Simple solution    
 tic
 [C, dV, u, t0, tf, tau, exitflag, output] = sb_solver(OptProblem);
 toc 
+
+dV = dV * Vc;
 
 % Average results 
 iter = 0; 
@@ -120,14 +128,13 @@ grid on;
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau, sqrt(u(1,:).^2+u(2,:).^2+u(3,:).^2)*gamma, 'k','LineWidth',1)
+plot(tau, sqrt(dot(u,u,1))*gamma, 'k','LineWidth',1)
 plot(tau, u*gamma, 'LineWidth', 0.3)
 yline(T*gamma, '--k')
 xlabel('Flight time')
 ylabel('$\mathbf{a}$')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
 grid on;
-xlim([0 1])
 
 figure 
 hold on

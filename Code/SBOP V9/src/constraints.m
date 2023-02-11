@@ -30,7 +30,7 @@ function [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x)
 
     % Evaluate the control function 
     t = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable and Jacobian of the transformation
-    u = ControlFunction(Problem.Params, beta, t0, tf, t, s);            % Control function
+    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
 
     % Normalization
     if (L > 1)
@@ -42,5 +42,5 @@ function [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x)
     end
 
     % Equalities 
-    [c, ceq] = NlinConstraints(Problem.Params, beta, t0, tf, tau, s, u);
+    [c, ceq] = Problem.NlinConstraints(Problem.Params, beta, t0, tf, tau, s, u);
 end
