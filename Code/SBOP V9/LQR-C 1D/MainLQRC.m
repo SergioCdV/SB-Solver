@@ -10,7 +10,7 @@ close all
 time_distribution = 'Bernstein';        % Distribution of time intervals
 basis = 'Bernstein';                    % Polynomial basis to be use
 n = 80;                                % Polynomial order in the state vector expansion
-m = 400;                                % Number of sampling points
+m = 300;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
 
 OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 1, L); 

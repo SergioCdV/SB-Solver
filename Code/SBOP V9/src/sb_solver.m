@@ -78,10 +78,6 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     t0 = sol(StateCard+1);                                                   % Initial independent variable value
     tf = sol(StateCard+2);                                                   % Final independent variable value
     beta = sol(StateCard+3:end);                                             % Extra optimization parameters
-
-    % Time domain normalization and scale preserving
-    tf = tf/J;
-    t0 = t0/J;
     
     % Final control points imposing boundary conditions
     P = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P);
@@ -92,6 +88,10 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     t = feval(domain_mapping, t0, tf, tau);                             % True domain
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, C);    % Control function
 
+    % Time domain normalization and scale preserving
+    tf = tf * J;
+    t0 = t0 * J;
+
     % Normalization with respect to the independent variable
     m = Problem.StateDim;
     if (L > 1)
@@ -101,6 +101,10 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
 
         u = u / (tf - t0)^i;
     end
+
+    xs = reshape(P, size(P,1) * size(P,2), []);
+    xs = [xs; t0; tf; beta];
+    cost = cost_function(Problem, B, basis, domain_mapping, tau, W, xs);
     
     % Results 
     display_results(exitflag, cost, output);
