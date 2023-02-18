@@ -43,7 +43,7 @@ R = coe2state(mu, final_coe);
 SF = cylindrical2cartesian(R, false);
 
 % Spacecraft parameters 
-T = 0.5e-4;              % Maximum acceleration 
+T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
 % Add boundary conditions
@@ -52,7 +52,9 @@ OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([mu; T; SF(2
 % Add functions 
 OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditions(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunction(params, beta, t0, tf, tau, s), ...
                                      @(params, beta, t0, tf, s, u)CostFunction(params, beta, t0, tf, s, u), @(beta, P)LinConstraints(beta, P), ...
-                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints(params, beta, t0, tf, tau, s, u), @(params, initial, final)InitialGuess(params, initial, final));
+                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints(params, beta, t0, tf, tau, s, u), ...
+                                     @BoundsFunction, ...
+                                     @(params, initial, final)InitialGuess(params, initial, final));
 
 %% Optimization
 % Simple solution    

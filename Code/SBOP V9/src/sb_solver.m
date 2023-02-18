@@ -44,7 +44,7 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     [P0, ~] = initial_fitting(Problem, basis, tapp, Capp);
     
     % Quadrature definition
-    [tau, W, J, domain_mapping] = quadrature(n, m, sampling_distribution);
+    [tau, W, ~, domain_mapping] = quadrature(n, m, sampling_distribution);
 
     % Final state basis
     [B, tau] = state_basis(n, L, basis, tau);
@@ -60,11 +60,11 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     nonlcon = @(x)constraints(Problem, B, basis, domain_mapping, tau, x);
 
     % Upper and lower bounds 
-    P_lb = [-Inf*ones(Problem.StateDim * (max(n)+1),1); 0; 0; 0];
-    P_ub = [Inf*ones(Problem.StateDim * (max(n)+1),1); 1e6; 1e6; Inf*ones(size(betaapp,1),1)];
+    [P_lb, P_ub] = opt_bounds(Problem, n, size(betaapp,1));
 
+    % Linear constraints
     [A, b, Aeq, beq] = Problem.LinConstraints(betaapp, P0);
-    
+
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
     options.MaxFunctionEvaluations = 1e6;
@@ -88,23 +88,17 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     t = feval(domain_mapping, t0, tf, tau);                             % True domain
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, C);    % Control function
 
-    % Time domain normalization and scale preserving
-    tf = tf * J;
-    t0 = t0 * J;
-
     % Normalization with respect to the independent variable
     m = Problem.StateDim;
-    if (L > 1)
+    if (L >= 1)
         for i = 1:L
-            C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) / (tf - t0)^i;     
+            C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) ./  t(2,:).^i;     
         end
 
-        u = u / (tf - t0)^i;
+        u = u ./ t(2,:).^i;
     end
 
-    xs = reshape(P, size(P,1) * size(P,2), []);
-    xs = [xs; t0; tf; beta];
-    cost = cost_function(Problem, B, basis, domain_mapping, tau, W, xs);
+    t = t(1,:);
     
     % Results 
     display_results(exitflag, cost, output);

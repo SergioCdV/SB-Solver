@@ -7,8 +7,8 @@ close all
 
 %% Problem definition 
 % Numerical solver definition 
-time_distribution = 'Bernstein';        % Distribution of time intervals
-basis = 'Bernstein';                    % Polynomial basis to be use
+time_distribution = 'Legendre';        % Distribution of time intervals
+basis = 'Legendre';                    % Polynomial basis to be use
 n = 80;                                % Polynomial order in the state vector expansion
 m = 300;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
@@ -23,7 +23,9 @@ OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters(1/6);
 % Add functions 
 OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditions_LQRC(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunction_LQRC(params, beta, t0, tf, tau, s), ...
                                      @(params, beta, t0, tf, s, u)CostFunction_LQRC(params, beta, t0, tf, s, u), @(beta, P)LinConstraints_LQRC(beta, P), ...
-                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints_LQRC(params, beta, t0, tf, tau, s, u), @(params, initial, final)InitialGuess_LQRC(params, initial, final));
+                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints_LQRC(params, beta, t0, tf, tau, s, u), ...
+                                     @BoundsFunction_LQRC, ...
+                                     @(params, initial, final)InitialGuess_LQRC(params, initial, final));
 
 %% Optimization
 % Simple solution    

@@ -15,7 +15,6 @@ L = 2;                                 % Degree of the dynamics
 
 OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 1, L); 
 
-
 % Add boundary conditions
 S0 = [0 0].';
 SF = [1 0].';
@@ -24,7 +23,9 @@ OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([]);
 % Add functions 
 OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditions_LQR(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunction_LQR(params, beta, t0, tf, tau, s), ...
                                      @(params, beta, t0, tf, s, u)CostFunction_LQR(params, beta, t0, tf, s, u), @(beta, P)LinConstraints_LQR(beta, P), ...
-                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints_LQR(params, beta, t0, tf, tau, s, u), @(params, initial, final)InitialGuess_LQR(params, initial, final));
+                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints_LQR(params, beta, t0, tf, tau, s, u), ...
+                                     @BoundsFunction_LQR, ...
+                                     @(params, initial, final)InitialGuess_LQR(params, initial, final));
 
 %% Optimization
 % Simple solution    

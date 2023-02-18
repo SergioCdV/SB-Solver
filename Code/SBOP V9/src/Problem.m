@@ -30,6 +30,7 @@ classdef Problem
         LinConstraints;
         NlinConstraints; 
         InitialGuess;
+        Bounds;
     end
 
     methods 
@@ -64,13 +65,14 @@ classdef Problem
         end
 
         % Add functions 
-        function [obj] = AddFunctions(obj, myBoundaryConditions, myControlFunction, myCostFunction, myLinConstraints, myNlinConstraints, myInitialGuess)
+        function [obj] = AddFunctions(obj, myBoundaryConditions, myControlFunction, myCostFunction, myLinConstraints, myNlinConstraints, myBoundsFunction, myInitialGuess)
             obj.BoundaryConditions = myBoundaryConditions;
             obj.ControlFunction = myControlFunction;
             obj.CostFunction = myCostFunction;
             obj.LinConstraints = myLinConstraints;
             obj.NlinConstraints = myNlinConstraints;
             obj.InitialGuess = myInitialGuess;
+            obj.Bounds = myBoundsFunction;
         end
 
         % Check function 
