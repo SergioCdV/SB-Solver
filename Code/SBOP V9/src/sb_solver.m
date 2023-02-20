@@ -86,18 +86,14 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     C = evaluate_state(P, B, n, L);
 
     t = feval(domain_mapping, t0, tf, tau);                             % True domain
-    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, C);    % Control function
 
     % Normalization with respect to the independent variable
     m = Problem.StateDim;
-    if (L >= 1)
-        for i = 1:L
-            C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) ./  t(2,:).^i;     
-        end
-
-        u = u ./ t(2,:).^i;
+    for i = 1:L
+        C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) ./ (tf-t0).^i;     
     end
 
+    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, C);    % Control function
     t = t(1,:);
     
     % Results 

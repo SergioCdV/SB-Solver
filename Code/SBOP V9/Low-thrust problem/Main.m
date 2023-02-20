@@ -7,10 +7,10 @@ close all
 
 %% Problem definition 
 % Numerical solver definition 
-time_distribution = 'Legendre';        % Distribution of time intervals
-basis = 'Legendre';                   % Polynomial basis to be use
+time_distribution = 'Bernstein';        % Distribution of time intervals
+basis = 'Bernstein';                   % Polynomial basis to be use
 n = [10 12 12];                        % Polynomial order in the state vector expansion
-m = 60;                                % Number of sampling points
+m = 100;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
 
 OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 3, L); 
@@ -34,8 +34,8 @@ R = coe2state(mu, initial_coe);
 S0 = cylindrical2cartesian(R, false);
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 1e-2 deg2rad(0) deg2rad(1) deg2rad(5)]; 
-thetaf = deg2rad(20);
+final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(1) deg2rad(5)]; 
+thetaf = deg2rad(120);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
 

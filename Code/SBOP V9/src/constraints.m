@@ -27,19 +27,14 @@ function [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x)
     % Evaluate the boundary conditions and the state evolution
     P = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P);     % Boundary conditions control points
     s = evaluate_state(P, B, n, L);                                     % State evolution
-
-    % Evaluate the control function 
     t = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable and Jacobian of the transformation
-    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
-
+    
     % Normalization
-    if (L >= 1)
-        for i = 1:L
-            s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ (tf-t0).^i;     
-        end
-
-        u = u ./ (tf-t0).^i;
+    for i = 1:L
+        s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ (tf-t0)^i;     
     end
+
+    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
 
     % Equalities 
     [c, ceq] = Problem.NlinConstraints(Problem.Params, beta, t0, tf, tau, s, u);

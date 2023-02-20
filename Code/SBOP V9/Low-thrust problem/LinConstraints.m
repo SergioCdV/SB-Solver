@@ -18,7 +18,7 @@ function [A, b, Aeq, beq] = LinConstraints(beta, P)
     A(1,end-size(beta,1)-1) = 1;                 % The initial time must be smaller than the final time (the independent variable is monotone)
     A(1,end-size(beta,1)) = -1;
     b = zeros(Dim,1);
-    
+
     % Linear constraints
     Aeq = zeros(Dim);
     Aeq(1,end-size(beta,1)-1) = 1;               % The initial time will be 0

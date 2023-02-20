@@ -31,26 +31,21 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     % Evaluate the boundary conditions
     P = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P);     % Boundary conditions control points
     s = evaluate_state(P, B, n, L);                                     % State evolution
-
-    % Evaluate the control function 
     t = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable
-    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
-    
-    % Normalization
-    if (L >= 1)
-        for i = 1:L
-            s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ (tf-t0).^i;     
-        end
 
-        u = u ./ (tf-t0).^i;
+    % Normalization
+    for i = 1:L
+        s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ (tf-t0)^i;     
     end
+
+    u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
         
     % Evaluate the cost function (Lagrange and Mayer terms)
     [M, L] = Problem.CostFunction(Problem.Params, beta, t0, tf, s, u); 
 
     if (isempty(W))
-        r = M + trapz(t(2,:).*tau,L);
+        r = M + trapz(tau,L);
     else
-        r = M + dot(t(2,:).*W,L);
+        r = M + dot(W,L);
     end
 end

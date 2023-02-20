@@ -7,8 +7,8 @@ close all
 
 %% Problem definition 
 % Numerical solver definition 
-time_distribution = 'Legendre';        % Distribution of time intervals
-basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Bernstein';        % Distribution of time intervals
+basis = 'Bernstein';                    % Polynomial basis to be use
 n = 10;                                % Polynomial order in the state vector expansion
 m = 60;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 

@@ -20,14 +20,14 @@ function [P_lb, P_ub] = opt_bounds(Problem, n, B)
     [LB, UB] = Problem.Bounds(); 
 
     if (isempty(LB))
-        P_lb = -Inf * ones(1,2 + (max(n)+1) + B);
+        P_lb = -Inf * ones(1,2 + (max(n)+1) + B).';
     else
-        P_lb = [repmat(LB(1:StateDim), 1, max(n)+1) LB(StateDim+1:end)];
+        P_lb = [repmat(LB(1:StateDim), 1, max(n)+1) LB(StateDim+1:end)].';
     end
 
     if (isempty(UB))
-        P_ub = Inf * ones(1,2 + (max(n)+1) + B);
+        P_ub = Inf * ones(1,2 + (max(n)+1) + B).';
     else
-        P_ub = [repmat(UB(1:StateDim), 1, max(n)+1) UB(StateDim+1:end)];
+        P_ub = [repmat(UB(1:StateDim), 1, max(n)+1) UB(StateDim+1:end)].';
     end
 end
