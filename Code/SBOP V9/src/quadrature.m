@@ -134,9 +134,9 @@ function [tau, W, J, f, D] = quadrature(n, m, sampling_distribution)
             J = 1; 
 
             % Scaled Gauss-Legendre Quadrature weights
-            [W, tau] = LG_weights(m);
+            [tau, W, D] = LGL_weights(m);
             W = W/2;
-            tau = 0.5*(tau.'+1);
+            tau = 0.5*(tau+1);
 
             % Domain transformation 
             f = @(t0, tf, tau)[(tf-t0) * tau; (tf-t0) * 0.5 * ones(1,length(tau))];

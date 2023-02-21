@@ -8,5 +8,5 @@
 function [LB, UB] = BoundsFunction()
     % Upper and lower bounds for the problem first order state vector, initial time, final time and parameters
     LB = [-Inf -Inf -Inf 0 0 0];
-    UB = [Inf Inf Inf 1 1e2 2*pi*1e2];
+    UB = [Inf Inf Inf 0.5 20 2*pi*5];
 end

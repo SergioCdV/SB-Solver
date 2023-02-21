@@ -44,8 +44,8 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     [M, L] = Problem.CostFunction(Problem.Params, beta, t0, tf, s, u); 
 
     if (isempty(W))
-        r = M + trapz(tau,L);
+        r = M + (tf-t0) * trapz(tau,L);
     else
-        r = M + dot(W,L);
+        r = M + (tf-t0) * dot(W,L);
     end
 end

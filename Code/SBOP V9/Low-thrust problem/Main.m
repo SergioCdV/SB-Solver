@@ -9,7 +9,7 @@ close all
 % Numerical solver definition 
 time_distribution = 'Bernstein';        % Distribution of time intervals
 basis = 'Bernstein';                   % Polynomial basis to be use
-n = [10 12 12];                        % Polynomial order in the state vector expansion
+n = [15 15 15];                        % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
 
@@ -34,7 +34,7 @@ R = coe2state(mu, initial_coe);
 S0 = cylindrical2cartesian(R, false);
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(1) deg2rad(5)]; 
+final_coe = [1.05*r0 1e-3 deg2rad(2) deg2rad(10) deg2rad(5)]; 
 thetaf = deg2rad(120);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
