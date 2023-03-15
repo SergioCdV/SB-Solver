@@ -124,8 +124,8 @@ classdef Problem
             end
 
             if (length(obj.PolOrder) ~= obj.StateDim)
-                warning('The input polynomial order vector mismatch the state dimension...'); 
-                obj.PolOrder = [obj.PolOrder min(obj.PolOrder)*ones(1,obj.StateDim-length(obj.PolOrder))];
+                warning('The input polynomial order vector mismatches the state dimension...'); 
+                obj.PolOrder = [obj.PolOrder min(obj.PolOrder)*ones(1,obj.StateDim-length(obj.PolOrder))].';
             elseif (size(obj.PolOrder,1) ~= obj.StateDim)
                 obj.PolOrder = obj.PolOrder.';
             end

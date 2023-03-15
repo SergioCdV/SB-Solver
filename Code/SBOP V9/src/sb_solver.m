@@ -90,7 +90,7 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     % Normalization with respect to the independent variable
     m = Problem.StateDim;
     for i = 1:L
-        C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) ./ (tf-t0).^i;     
+        C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) ./ ( t(2,:).^i );     
     end
 
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, C);    % Control function

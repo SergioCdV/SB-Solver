@@ -9,11 +9,13 @@ close all
 % Numerical solver definition 
 time_distribution = 'Bernstein';        % Distribution of time intervals
 basis = 'Bernstein';                   % Polynomial basis to be use
-n = [15 15 15];                        % Polynomial order in the state vector expansion
+n = [16 16 16];                        % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
 
-OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 3, L); 
+n = 15;
+
+OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(3, 3, L); 
 
 % System data 
 r0 = 149597870700;                      % 1 AU [m]

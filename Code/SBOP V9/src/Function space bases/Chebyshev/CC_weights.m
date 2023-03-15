@@ -33,7 +33,7 @@ function [tau, w, D] = CC_weights(N)
 
    % Quadrature
    [tau,i] = sort(tau); 
-   w = w(i);
+   w = w(i).';
    D = Dmatrix(tau);
 end
 

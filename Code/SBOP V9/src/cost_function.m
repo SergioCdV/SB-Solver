@@ -35,7 +35,7 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
 
     % Normalization
     for i = 1:L
-        s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ (tf-t0)^i;     
+        s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ ( t(2,:).^i );     
     end
 
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
@@ -44,8 +44,8 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     [M, L] = Problem.CostFunction(Problem.Params, beta, t0, tf, s, u); 
 
     if (isempty(W))
-        r = M + (tf-t0) * trapz(tau,L);
+        r = M + trapz(t(2,:).*tau,L);
     else
-        r = M + (tf-t0) * dot(W,L);
+        r = M + dot(t(2,:).*W,L);
     end
 end
