@@ -16,7 +16,7 @@
 %            points
 %          - array Capp, the initial estimation of the spacecraft state vector
 
-function [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, basis, tau)
+function [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, basis, domain_mapping, tau)
     % Constants 
     L = Problem.DerDeg;         % Order of the dynamics (maximum derivative order)
 
@@ -28,8 +28,9 @@ function [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, ba
     Bapp = state_basis(n_init, L, basis, tau);
 
     % Initial estimate of control points (using the non-orthonormal boundary conditions)
+    tapp = feval(domain_mapping, t0app, tfapp, tau);
     Papp = zeros(Problem.StateDim, max(n_init)+1);  
-    Papp = boundary_conditions(Problem, betaapp, t0app, tfapp, Bapp, basis, n_init, Papp);
+    Papp = boundary_conditions(Problem, betaapp, t0app, tfapp, tapp, Bapp, basis, n_init, Papp);
 
     % State vector approximation as a function of time
     Capp = evaluate_state(Papp, Bapp, n_init, L);

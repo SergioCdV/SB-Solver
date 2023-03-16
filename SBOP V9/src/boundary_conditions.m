@@ -17,7 +17,7 @@
 
 % Outputs: - array P, the updated boundary conditions control points, of dimensions size(x,1) x n+1 
 
-function [P] = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P0)
+function [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0)
     % Boundary conditions
     [s0, sf] = feval(@(initial, final, beta, t0, tf)Problem.BoundaryConditions(initial, final, beta, t0, tf), Problem.initial, Problem.final, beta, t0, tf);
 
@@ -38,8 +38,8 @@ function [P] = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P0)
     % Dimensionalizing of the generalized velocities 
     if (L > 1)
         for i = 1:L-1
-            s0(1+m*i:m*(i+1),1) = (tf - t0)^i * s0(1+m*i:m*(i+1),1);
-            sf(1+m*i:m*(i+1),1) = (tf - t0)^i * sf(1+m*i:m*(i+1),1);
+            s0(1+m*i:m*(i+1),1) = tau(2,1)^i * s0(1+m*i:m*(i+1),1);
+            sf(1+m*i:m*(i+1),1) = tau(2,end)^i * sf(1+m*i:m*(i+1),1);
         end
     end
 

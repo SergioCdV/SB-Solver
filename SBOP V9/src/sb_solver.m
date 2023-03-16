@@ -30,10 +30,10 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
  
     % Initial guess for the boundary control points
     mapp = 300;   
-    [tapp, ~, ~, ~] = quadrature(n, mapp, sampling_distribution);
+    [tapp, ~, ~, domain_mapping] = quadrature(n, mapp, sampling_distribution);
 
     if (~isempty(Problem.InitialGuess))
-        [betaapp, t0app, tfapp, ~, Capp] = initial_approximation(Problem, basis, tapp); 
+        [betaapp, t0app, tfapp, ~, Capp] = initial_approximation(Problem, basis, domain_mapping, tapp); 
     else
         t0app = 0; 
         tfapp = 1; 
@@ -78,19 +78,19 @@ function [C, cost, u, t0, tf, t, exitflag, output] = sb_solver(Problem)
     t0 = sol(StateCard+1);                                                   % Initial independent variable value
     tf = sol(StateCard+2);                                                   % Final independent variable value
     beta = sol(StateCard+3:end);                                             % Extra optimization parameters
+
+    t = feval(domain_mapping, t0, tf, tau);                             % True domain
     
     % Final control points imposing boundary conditions
-    P = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P);
+    P = boundary_conditions(Problem, beta, t0, tf, t, B, basis, n, P);
     
     % Final state evolution
     C = evaluate_state(P, B, n, L);
 
-    t = feval(domain_mapping, t0, tf, tau);                             % True domain
-
     % Normalization with respect to the independent variable
     m = Problem.StateDim;
     for i = 1:L
-        C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) ./ (tf-t0).^i;     
+        C(1+m*i:m*(i+1),:) = C(1+m*i:m*(i+1),:) ./ ( t(2,:).^i );     
     end
 
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, C);    % Control function
