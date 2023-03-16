@@ -29,9 +29,9 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     beta = x(StateCard+3:end);                                          % Extra optimization parameters
     
     % Evaluate the boundary conditions
-    P = boundary_conditions(Problem, beta, t0, tf, B, basis, n, P);     % Boundary conditions control points
-    s = evaluate_state(P, B, n, L);                                     % State evolution
     t = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable
+    P = boundary_conditions(Problem, beta, t0, tf, t, B, basis, n, P);  % Boundary conditions control points
+    s = evaluate_state(P, B, n, L);                                     % State evolution
 
     % Normalization
     for i = 1:L
