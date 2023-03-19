@@ -7,6 +7,6 @@
 
 function [LB, UB] = BoundsFunction()
     % Upper and lower bounds for the problem first order state vector, initial time, final time and parameters
-    LB = [-Inf 0 0];
-    UB = [Inf 1 Inf];
+    LB = [-Inf -Inf -Inf 0 0];
+    UB = [Inf Inf Inf 1 Inf];
 end

@@ -22,7 +22,5 @@ function [A, b, Aeq, beq] = LinConstraints(beta, P)
     % Linear constraints
     Aeq = zeros(Dim);
     Aeq(1,end-size(beta,1)-1) = 1;
-    Aeq(2,end-size(beta,1)) = 1;
     beq = zeros(Dim,1);
-    beq(2) = 2;
 end
