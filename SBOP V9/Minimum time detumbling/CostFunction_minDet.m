@@ -6,5 +6,5 @@
 
 function [M, L] = CostFunction(params, beta, t0, tf, s, u)
     M = 0; 
-    L = abs(u);
+    L = ones(1,size(u,2));
 end

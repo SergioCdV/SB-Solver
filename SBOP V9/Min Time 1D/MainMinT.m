@@ -7,8 +7,8 @@ close all
 
 %% Problem definition 
 % Numerical solver definition 
-time_distribution = 'Legendre';       % Distribution of time intervals
-basis = 'Legendre';                   % Polynomial basis to be use
+time_distribution = 'Bernstein';       % Distribution of time intervals
+basis = 'Bernstein';                   % Polynomial basis to be use
 n = 30;                                % Polynomial order in the state vector expansion
 m = 300;                                % Number of sampling points
 T = 1;                                 % Degree of the dynamics 
@@ -83,7 +83,6 @@ grid on;
 figure_propulsion = figure;
 hold on
 plot(tau, u, 'LineWidth', 0.3)
-plot(tau, uopt, 'ok');
 xlabel('$t$')
 ylabel('$\mathbf{u}$')
 grid on;

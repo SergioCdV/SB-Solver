@@ -48,9 +48,19 @@ function [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
             P(:,1) = s0(1:m);
-            P(:,2) = s0(1:m) + (L > 1) * s0(m+1:end)./n;
+
+            if (L > 1)
+                P(:,2) = s0(1:m) + s0(m+1:end)./n;
+            else
+                P(:,2) = s0(1:m);
+            end
+
             for i = 1:length(n)
-                P(i,n(i)) = sf(i) - (L > 1) * sf(m+i)/n(i);
+                if (L > 1)
+                    P(i,n(i)) = sf(i) - sf(m+i)/n(i);
+                else
+                    P(i,n(i)) = sf(i);
+                end
                 P(i,n(i)+1) = sf(i);
             end
 
