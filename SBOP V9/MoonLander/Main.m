@@ -7,32 +7,56 @@ close all
 
 %% Problem definition 
 % Numerical solver definition 
-time_distribution = 'Bernstein';       % Distribution of time intervals. 
+time_distribution = 'Bernstein';        % Distribution of time intervals
 basis = 'Bernstein';                   % Polynomial basis to be use
-n = 7;                                % Polynomial order in the state vector expansion
-m = 100;                               % Number of sampling points
+n = [16 16 16];                        % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
 L = 2;                                 % Degree of the dynamics 
 
-n = 15; 
+n = 15;
 
-OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(1, 1, L); 
+OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(3, 3, L); 
 
-% Boundary conditions
-S0 = [100; 20];
-SF = [0; 0];
+% System data 
+r0 = 149597870700;                      % 1 AU [m]
+mu = 1.32712440042e+20;                 % Gavitational parameter of the Sun [m^3 s^−2] 
+t0 = sqrt(r0^3/mu);                     % Fundamental time unit 
+Vc = r0/t0;                             % Characteristic velocity
 
-T = 1;              % Maximum acceleration 
-g = 4;              % Acceleration
+mu = 1;                                 % Normalized parameter
+gamma = r0/t0^2;                        % Characteristic acceleration
+
+% Earth's orbital elements
+initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)]; 
+theta0 = deg2rad(0);
+initial_coe = [initial_coe theta0]; 
+initial_coe(1) = initial_coe(1) / r0;
+
+R = coe2state(mu, initial_coe);
+S0 = cylindrical2cartesian(R, false);
+
+% Mars' orbital elements 
+final_coe = [1.05*r0 1e-3 deg2rad(2) deg2rad(10) deg2rad(5)]; 
+thetaf = deg2rad(120);
+final_coe = [final_coe thetaf]; 
+final_coe(1) = final_coe(1) / r0;
+
+R = coe2state(mu, final_coe);
+SF = cylindrical2cartesian(R, false);
+
+% Spacecraft parameters 
+T = 0.5e-3;              % Maximum acceleration 
+T = T/gamma;             % Normalized acceleration
 
 % Add boundary conditions
-OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([g; T]);
+OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([mu; T; SF(2)]);
 
 % Add functions 
-OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditionsML(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunctionML(params, beta, t0, tf, tau, s), ...
-                                     @(params, beta, t0, tf, s, u)CostFunctionML(params, beta, t0, tf, s, u), @(beta, P)LinConstraintsML(beta, P), ...
-                                     @(params, beta, t0, tf, tau, s, u)NlinConstraintsML(params, beta, t0, tf, tau, s, u), ...
-                                     @BoundsFunctionML, ...
-                                     @(params, initial, final)InitialGuessML(params, initial, final));
+OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditions(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunction(params, beta, t0, tf, tau, s), ...
+                                     @(params, beta, t0, tf, s, u)CostFunction(params, beta, t0, tf, s, u), @(beta, P)LinConstraints(beta, P), ...
+                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints(params, beta, t0, tf, tau, s, u), ...
+                                     @BoundsFunction, ...
+                                     @(params, initial, final)InitialGuess(params, initial, final));
 
 %% Optimization
 % Simple solution    
@@ -109,8 +133,8 @@ grid on;
 figure_propulsion = figure;
 hold on
 plot(tau, sqrt(dot(u,u,1))*gamma, 'k','LineWidth',1)
-plot(tau, u, 'LineWidth', 0.3)
-yline(T, '--k')
+plot(tau, u*gamma, 'LineWidth', 0.3)
+yline(T*gamma, '--k')
 xlabel('Flight time')
 ylabel('$\mathbf{a}$')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
