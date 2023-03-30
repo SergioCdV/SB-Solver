@@ -14,16 +14,13 @@ function [A, b, Aeq, beq] = LinConstraints(beta, P)
     Dim = 2+size(beta,1)+size(P,1)*size(P,2);    % Total dimension of the optimization variables
 
     % Linear inequalities
-    A = zeros(2,Dim);
-    A(1,end-size(beta,1)-1) = 1;                 % The initial time must be smaller than the final time (the independent variable is monotone)
+    A = zeros(Dim);
+    A(1,end-size(beta,1)-1) = 1;        % The initial time must be smaller than the final time (the independent variable is monotone)
     A(1,end-size(beta,1)) = -1;
-    A(2,end) = -1;
-    b = zeros(2,1);
-
+    b = zeros(Dim,1);
+    
     % Linear constraints
-    Aeq = zeros(1,Dim);
-    Aeq(1,end-size(beta,1)-1) = 1;               % The initial time will be 0
-    Aeq(2,end-size(beta,1)) = 1;                 % The initial time will be 0
-    beq = zeros(1,1);
-    beq(2,1) = 10;
+    Aeq = zeros(Dim);
+    Aeq(1,end-size(beta,1)-1) = 1;
+    beq = zeros(Dim,1);
 end

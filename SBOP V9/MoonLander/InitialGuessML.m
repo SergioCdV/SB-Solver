@@ -7,6 +7,6 @@
 function [beta, t0, tf] = InitialGuess(params, initial, final)
     % New initial TOF
     t0 = 0;
-    tf = 1;
+    tf = 10;
     beta = [];
 end
