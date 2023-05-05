@@ -17,23 +17,28 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, cost, u, t0, tf, t, exitflag, output] = solve(Problem)
-    % Checks 
-    Problem = Problem.Check(); 
+function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
+    % Last checks 
+    if (length(obj.PolOrder) ~= Problem.StateDim)
+        warning('The input polynomial order vector mismatches the state dimension...'); 
+        obj.PolOrder = [obj.PolOrder min(obj.PolOrder)*ones(1,Problem.StateDim-length(obj.PolOrder))].';
+    elseif (size(obj.PolOrder,1) ~= obj.StateDim)
+        obj.PolOrder = obj.PolOrder.';
+    end 
 
     % Setup of the algorithm
-    n = Problem.PolOrder;                     % Order in the approximation of the state vector
-    basis = Problem.Basis;                    % Polynomial basis to be used 
-    sampling_distribution = Problem.Grid;     % Sampling grid to be used
-    m = Problem.NumNodes;                     % Number of nodes in the grid
-    L = Problem.DerDeg;                       % Highest derivative in the dynamics
+    n = obj.PolOrder;                     % Order in the approximation of the state vector
+    basis = obj.Basis;                    % Polynomial basis to be used 
+    sampling_distribution = obj.Grid;     % Sampling grid to be used
+    m = obj.NumNodes;                     % Number of nodes in the grid
+    L = Problem.DerDeg;                   % Highest derivative in the dynamics
  
     % Initial guess for the boundary control points
     mapp = 300;   
     [tapp, ~, ~, domain_mapping] = quadrature(n, mapp, sampling_distribution);
 
     if (~isempty(Problem.InitialGuess))
-        [betaapp, t0app, tfapp, ~, Capp] = initial_approximation(Problem, basis, domain_mapping, tapp); 
+        [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, basis, domain_mapping, tapp); 
     else
         t0app = 0; 
         tfapp = 1; 
@@ -41,26 +46,26 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(Problem)
     end
     
     % Initial fitting for n+1 control points
-    [P0, ~] = initial_fitting(Problem, basis, tapp, Capp);
+    [P0, ~] = obj.initial_fitting(Problem, basis, tapp, Capp);
     
     % Quadrature definition
     [tau, W, ~, domain_mapping] = quadrature(n, m, sampling_distribution);
 
     % Final state basis
-    [B, tau] = state_basis(n, L, basis, tau);
+    [B, tau] = obj.state_basis(n, L, basis, tau);
 
     % Initial guess reshaping
     x0 = reshape(P0, size(P0,1) * size(P0,2), []);
     x0 = [x0; t0app; tfapp; betaapp];
         
     % Objective function
-    objective = @(x)cost_function(Problem, B, basis, domain_mapping, tau, W, x);
+    objective = @(x)obj.cost_function(Problem, B, basis, domain_mapping, tau, W, x);
 
     % Non-linear constraints
-    nonlcon = @(x)constraints(Problem, B, basis, domain_mapping, tau, x);
+    nonlcon = @(x)obj.constraints(Problem, B, basis, domain_mapping, tau, x);
 
     % Upper and lower bounds 
-    [P_lb, P_ub] = opt_bounds(Problem, n, size(betaapp,1));
+    [P_lb, P_ub] = obj.opt_bounds(Problem, n, size(betaapp,1));
 
     % Linear constraints
     [A, b, Aeq, beq] = Problem.LinConstraints(betaapp, P0);
@@ -79,13 +84,13 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(Problem)
     tf = sol(StateCard+2);                                                   % Final independent variable value
     beta = sol(StateCard+3:end);                                             % Extra optimization parameters
 
-    t = feval(domain_mapping, t0, tf, tau);                             % True domain
+    t = feval(domain_mapping, t0, tf, tau);                                  % True domain
     
     % Final control points imposing boundary conditions
-    P = boundary_conditions(Problem, beta, t0, tf, t, B, basis, n, P);
+    P = obj.boundary_conditions(Problem, beta, t0, tf, t, B, basis, n, P);
     
     % Final state evolution
-    C = evaluate_state(P, B, n, L);
+    C = obj.evaluate_state(P, B, n, L);
 
     % Normalization with respect to the independent variable
     m = Problem.StateDim;
@@ -97,5 +102,5 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(Problem)
     t = t(1,:);
     
     % Results 
-    display_results(exitflag, cost, output);
+    obj.display_results(exitflag, cost, output);
 end

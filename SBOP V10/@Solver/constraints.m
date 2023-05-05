@@ -13,11 +13,11 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x)
+function [c, ceq] = constraints(obj, Problem, B, tau, x)
     % Optimization variables
     L = Problem.DerDeg;                                                 % Maximum derivative degree
-    n = Problem.PolOrder;                                               % Order of the polynomial approximation
     m = Problem.StateDim;                                               % State dimension
+    
     StateCard = (max(n)+1) * m;                                         % Cardinal of the state modes
     P = reshape(x(1:StateCard), m, []);                                 % Control points
     t0 = x(StateCard+1);                                                % Initial independent variable value

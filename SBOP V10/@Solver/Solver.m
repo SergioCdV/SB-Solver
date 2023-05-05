@@ -41,40 +41,10 @@ classdef Solver
         end
 
         % Solve
-        [C, cost, u, t0, tf, t, exitflag, output] = solve(Problem);
+        [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem);
     end
 
     methods (Access = private)
-        [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0);
-        [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x);
-        [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x);
-        [C] = evaluate_state(P, B, n, L);
-        [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, basis, domain_mapping, tau);
-        [P, C] = initial_fitting(Problem, basis, tau, s);
-        [P_lb, P_ub] = opt_bounds(Problem, n, B);
-        [B, tau] = state_basis(n, L, basis, tau);
-        display_results(exitflag, cost, output);
-    end
-
-    methods (Static)
-        % Set graphics
-        function set_graphics()
-            % Set graphical properties
-            set(groot, 'defaultAxesTickLabelInterpreter', 'latex'); 
-            set(groot, 'defaultAxesFontSize', 11); 
-            set(groot, 'defaultAxesGridAlpha', 0.3); 
-            set(groot, 'defaultAxesLineWidth', 0.75);
-            set(groot, 'defaultAxesXMinorTick', 'on');
-            set(groot, 'defaultAxesYMinorTick', 'on');
-            set(groot, 'defaultFigureRenderer', 'painters');
-            set(groot, 'defaultLegendBox', 'off');
-            set(groot, 'defaultLegendInterpreter', 'latex');
-            set(groot, 'defaultLegendLocation', 'best');
-            set(groot, 'defaultLineLineWidth', 1); 
-            set(groot, 'defaultLineMarkerSize', 3);
-            set(groot, 'defaultTextInterpreter','latex');
-        end
-        
         % Check function 
         function [obj] = Check(obj)
             % Check the numerical solver 
@@ -117,6 +87,36 @@ classdef Solver
 
                 otherwise
             end
+        end
+        
+        [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0);
+        [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x);
+        [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x);
+        [C] = evaluate_state(P, B, n, L);
+        [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, basis, domain_mapping, tau);
+        [P, C] = initial_fitting(Problem, basis, tau, s);
+        [P_lb, P_ub] = opt_bounds(Problem, n, B);
+        [B, tau] = state_basis(n, L, basis, tau);
+        display_results(exitflag, cost, output);
+    end
+
+    methods (Static, Access = private)
+        % Set graphics
+        function set_graphics()
+            % Set graphical properties
+            set(groot, 'defaultAxesTickLabelInterpreter', 'latex'); 
+            set(groot, 'defaultAxesFontSize', 11); 
+            set(groot, 'defaultAxesGridAlpha', 0.3); 
+            set(groot, 'defaultAxesLineWidth', 0.75);
+            set(groot, 'defaultAxesXMinorTick', 'on');
+            set(groot, 'defaultAxesYMinorTick', 'on');
+            set(groot, 'defaultFigureRenderer', 'painters');
+            set(groot, 'defaultLegendBox', 'off');
+            set(groot, 'defaultLegendInterpreter', 'latex');
+            set(groot, 'defaultLegendLocation', 'best');
+            set(groot, 'defaultLineLineWidth', 1); 
+            set(groot, 'defaultLineMarkerSize', 3);
+            set(groot, 'defaultTextInterpreter','latex');
         end
     end
 end

@@ -17,13 +17,14 @@
 
 % Outputs: - array P, the updated boundary conditions control points, of dimensions size(x,1) x n+1 
 
-function [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0)
+function [P] = boundary_conditions(obj, Problem, beta, t0, tf, tau, B, P0)
     % Boundary conditions
-    [s0, sf] = feval(@(initial, final, beta, t0, tf)Problem.BoundaryConditions(initial, final, beta, t0, tf), Problem.initial, Problem.final, beta, t0, tf);
+    [s0, sf] = Problem.BoundaryConditions(Problem.initial, Problem.final, beta, t0, tf);
 
     % Constants 
     m = Problem.StateDim;       % State dimension
     L = Problem.DerDeg;         % Order of the dynamics (maximum derivative order)
+    n = obj.n;                  % Polynomial order
 
     if (size(s0,1) ~= L * m)
         error('Cauchy boundary conditions cannot be imposed. Dimensions of the final boundary conditions are not compatible with the dynamics.');
@@ -44,7 +45,7 @@ function [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0)
     end
 
     % Switch the polynomial basis to be used
-    switch (basis)
+    switch (obj.basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
             P(:,1) = s0(1:m);

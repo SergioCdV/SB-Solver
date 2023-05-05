@@ -19,9 +19,13 @@ classdef AbstractProblem
     end
 
     methods 
-        % Construction 
-        function [obj] = AbstractProblem()
-            obj = obj.Check();
+        function [obj] = AbstractProblem(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+            obj.initial = myInitial;                % Initial boundary conditions 
+            obj.final = myFinal;                    % Final boundary conditions
+            obj.DerDeg = myDerDeg;                  % Degree of the derivative              
+            obj.StateDim = myStateDim;              % State dimension 
+            obj.ControlDim = myControlDim;          % Control dimension
+            obj.Params = myParams;                  % Problem parameters
         end
 
         % Problem transcription
@@ -31,24 +35,11 @@ classdef AbstractProblem
         [A, b, Aeq, beq] = LinConstraints(beta, P);
         [c, ceq] = NlinConstraints(params, beta, t0, tf, tau, s, u);
         [beta, t0, tf] = InitialGuess(params, initial, final);
-    end
 
-    methods (Static)
-        % Problem transcription
-        [LB, UB] = BoundsFunction();
-
-        % Check object
         function [obj] = Check(obj)
             % Check the dimensionality of the dynamics 
             if (size(obj.initial,1) ~= obj.StateDim * (obj.DerDeg) || size(obj.final,1) ~= obj.StateDim * (obj.DerDeg)) 
                 error('Supplied boundary conditions are not of Cauchy type.');
-            end
-
-            if (length(obj.PolOrder) ~= obj.StateDim)
-                warning('The input polynomial order vector mismatches the state dimension...'); 
-                obj.PolOrder = [obj.PolOrder min(obj.PolOrder)*ones(1,obj.StateDim-length(obj.PolOrder))].';
-            elseif (size(obj.PolOrder,1) ~= obj.StateDim)
-                obj.PolOrder = obj.PolOrder.';
             end
 
             % Check the order of the dynamics 
@@ -58,4 +49,8 @@ classdef AbstractProblem
         end
     end
 
+    methods (Static)
+        % Problem transcription
+        [LB, UB] = BoundsFunction();
+    end
 end

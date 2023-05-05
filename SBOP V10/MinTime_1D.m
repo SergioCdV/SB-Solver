@@ -11,12 +11,23 @@ classdef MinTime_1D < Problems.AbstractProblem
 
     methods 
         % Constructor 
-        function [obj] = MinTime_1D(myInitial, myFinal, myDerDeg, myStateDim, myControlDim)
-            obj.initial = myInitial;                % Initial boundary conditions 
-            obj.final = myFinal;                    % Final boundary conditions
-            obj.DerDeg = myDerDeg;                  % Degree of the derivative              
-            obj.StateDim = myStateDim;              % State dimension 
-            obj.ControlDim = myControlDim;          % Control dimension 
+        function [obj] = MinTime_1D(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+            super_arguments{1} = myInitial;
+            super_arguments{2} = myFinal;
+            super_arguments{3} = myDerDeg;
+            super_arguments{4} = myStateDim;
+            super_arguments{5} = myControlDim;
+
+            if (exist('myParams', 'var'))
+                super_arguments{6} = myParams;
+            else
+                super_arguments{6} = [];
+            end
+
+            obj@Problems.AbstractProblem(super_arguments{:});
+
+            % Check the problem definition
+            obj = obj.Check();
         end
 
         % Problem transcription
@@ -26,6 +37,10 @@ classdef MinTime_1D < Problems.AbstractProblem
         [A, b, Aeq, beq] = LinConstraints(beta, P);
         [c, ceq] = NlinConstraints(params, beta, t0, tf, tau, s, u);
         [beta, t0, tf] = InitialGuess(params, initial, final);
+
+        function [obj] = Check(obj)
+            obj = Check@Problems.AbstractProblem(obj);
+        end
     end
 
     methods (Static)
