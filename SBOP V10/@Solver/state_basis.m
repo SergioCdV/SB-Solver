@@ -4,67 +4,59 @@
 %% State basis %%
 % Function to preallocate the state vector polynomial use of interest
 
-% Inputs: - scalar n, the maximum polynomial order of the approximation 
-%         - scalar L, the degree of the greatest derivative in the dynamics
+% Inputs: - scalar L, the degree of the greatest derivative in the dynamics
+%         - scalar n, the maximum polynomial order of the approximation
 %         - string basis, the polynomial basis to be used
 %         - vector tau, the control parameter vector 
 
 % Outputs: - cell array B, the state vector shape base basis
 
-function [B, tau] = state_basis(n, L, basis, tau)
-    % Preallocation of the Bernstein basis
+function [B, tau] = state_basis(obj, L, n, basis, tau)
+    % Extract the polynomial order 
+    if (~exist('n', 'var'))
+        n = obj.PolOrder;
+    end
+    
+    if (~exist('n', 'var'))
+        basis = obj.Basis;
+    end
+    
+    if (~exist('tau', 'var'))
+        tau = obj.gridding().tau;
+    end
+
+    % Preallocation of the polynomial state vector support
     B = cell(length(n),1);              
 
     switch (basis)
         % Finite-horizon polynomial basis
         case 'Bernstein'
-           for i = 1:length(n)
-                B{i} = bernstein_basis(n(i),tau);
-                for j = 1:L
-                    B{i} = [B{i}; bernstein_derivative(n(i),tau,j)];
-                end
-           end
+            P = PolynomialBases.Bezier();
+
         case 'Orthogonal Bernstein'
-            for i = 1:length(n)
-                B{i} = OB_basis(n(i),tau);
-                for j = 1:L
-                    B{i} = [B{i}; OB_derivative(n(i),tau,j)];
-                end
-            end
+            P = PolynomialBases.OBezier();
 
         case 'Chebyshev'
-            for i = 1:length(n)
-                B{i} = CH_basis('first', n(i), tau);
-                for j = 1:L
-                    B{i} = [B{i}; CH_derivative('first',n(i),tau,j)];
-                end
-            end
+            P = PolynomialBases.Chebyshev();
 
         case 'Legendre'
-             for i = 1:length(n)
-                B{i} = LG_basis(n(i), tau);
-                for j = 1:L
-                    B{i} = [B{i}; LG_derivative(n(i),tau,j)];
-                end
-             end
+            P = PolynomialBases.Legendre();
 
-        % Infinite-horizon polynomial basis
+        % Infinite-horizon polynomial basis (not currently supported)
         case 'Hermite'
-             for i = 1:length(n)
-                B{i} = HT_basis(n(i), tau);
-                for j = 1:L
-                    B{i} = [B{i}; HT_derivative(n(i),tau,j)];
-                end
-             end
+            P = PolynomialBases.Hermite();
              
         case 'Laguerre'
-             for i = 1:length(n)
-                B{i} = LR_basis(n(i), tau);
-                for j = 1:L
-                    B{i} = [B{i}; LR_derivative(n(i),tau,j)];
-                end
-             end
+            P = PolynomialBases.Laguerre();
+
         otherwise
             error('No valid functional polynomial basis has been selected');
+    end
+
+    for i = 1:length(n)
+        B{i} = P.basis(n(i),tau);
+        for j = 1:L
+            B{i} = [B{i}; P.derivative(n(i), tau, j)];
+        end
     end
 end

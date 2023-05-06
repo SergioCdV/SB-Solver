@@ -11,7 +11,7 @@
 %           n x length(t)
 
 % Iterative portion of De Casteljau's algorithm
-function [B] = basis(order, u)    
+function [B] = basis(obj, order, u)    
     % Find number of steps (time increments)
     steps = length(u);
     

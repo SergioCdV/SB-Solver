@@ -4,15 +4,15 @@
 %% Evaluate state %%
 % Function to compute the acceleration vector norm from cylindrical coordinates
 
-% Inputs: - array P, the set of control points to estimate the position vector 
-%         - array B, the polynomial basis in use in the approximation
-%         - vector n, with the degrees of approximation of each state
+% Inputs: - vector n, with the degrees of approximation of each state
 %           coordinate
 %         - scalar L, order of greatest derivative in the dynamics
+%         - array P, the set of control points to estimate the position vector 
+%         - array B, the polynomial basis in use in the approximation
 
 % Outputs: - array C, the length(n)*L x m state vector 
 
-function [C] = evaluate_state(P, B, n, L)
+function [C] = evaluate_state(n, L, P, B)
     % Preallocation
     N = size(P,1);                        % Number of state variables
     C = zeros((L+1)*N, size(B{1},2));     % State trajectory

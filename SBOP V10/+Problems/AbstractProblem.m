@@ -4,7 +4,7 @@
 %% Dynamics class %% 
 % Class implementation of an Optimal Problem function 
 
-classdef AbstractProblem 
+classdef (Abstract) AbstractProblem 
     % Fundamental definition of the problem
     properties  
         % State dynamics

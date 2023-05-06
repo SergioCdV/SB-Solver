@@ -1,9 +1,13 @@
+%% Project: Shape-based optimization for low-thrust transfers %%
+% Date: 07/02/2023
+
+%% Dynamics class %% 
+% Class implementation of an Optimal Problem function 
+
 classdef (Abstract) AbstractBasis
     
     methods 
-         [tau, w, D] = weights(N);
-         [Pn] = basis(order, u);
-         [B] = derivative(order, u, degree);
-         [y] = nodes(N);
+         [Pn] = basis(obj, order, u);
+         [B] = derivative(obj, order, u, degree);
     end
 end

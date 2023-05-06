@@ -10,7 +10,7 @@
 % Output: - Phi, an array of Bernstein polynomials in the form length(tvec) 
 %           degree x length(tvec)
 
-function [Phi] = basis(order, u)    
+function [Phi] = basis(obj, order, u)    
     % Find number of steps (time increments)
     steps = length(u);
     
@@ -24,7 +24,7 @@ function [Phi] = basis(order, u)
 
         for j = 0:i 
             % Compute the non-orthonomal basis 
-            B = bernstein_basis(order-j, u);
+            B = PolynomialBases.Bezier().basis(order-j, u);
 
             % Compute the scaling 
             num = nchoosek(2*order+1-j,i-j) * nchoosek(i,j);

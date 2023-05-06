@@ -22,37 +22,30 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
     if (length(obj.PolOrder) ~= Problem.StateDim)
         warning('The input polynomial order vector mismatches the state dimension...'); 
         obj.PolOrder = [obj.PolOrder min(obj.PolOrder)*ones(1,Problem.StateDim-length(obj.PolOrder))].';
-    elseif (size(obj.PolOrder,1) ~= obj.StateDim)
+    elseif (size(obj.PolOrder,1) ~= Problem.StateDim)
         obj.PolOrder = obj.PolOrder.';
     end 
 
     % Setup of the algorithm
     n = obj.PolOrder;                     % Order in the approximation of the state vector
     basis = obj.Basis;                    % Polynomial basis to be used 
-    sampling_distribution = obj.Grid;     % Sampling grid to be used
-    m = obj.NumNodes;                     % Number of nodes in the grid
     L = Problem.DerDeg;                   % Highest derivative in the dynamics
  
     % Initial guess for the boundary control points
     mapp = 300;   
-    [tapp, ~, ~, domain_mapping] = quadrature(n, mapp, sampling_distribution);
+    Grid = obj.gridding(mapp);
+    B = obj.state_basis(L, n, basis, Grid.tau);
 
-    if (~isempty(Problem.InitialGuess))
-        [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, basis, domain_mapping, tapp); 
-    else
-        t0app = 0; 
-        tfapp = 1; 
-        betapp = zeros(1,1000);
-    end
+    [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, B, Grid); 
     
     % Initial fitting for n+1 control points
-    [P0, ~] = obj.initial_fitting(Problem, basis, tapp, Capp);
+    [P0, ~] = obj.initial_fitting(Problem, Grid, Capp);
     
     % Quadrature definition
-    [tau, W, ~, domain_mapping] = quadrature(n, m, sampling_distribution);
+    Grid = obj.grid();
 
     % Final state basis
-    [B, tau] = obj.state_basis(n, L, basis, tau);
+    B = obj.state_basis(L, n, basis, Grid.tau);
 
     % Initial guess reshaping
     x0 = reshape(P0, size(P0,1) * size(P0,2), []);

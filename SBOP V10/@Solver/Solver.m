@@ -86,17 +86,21 @@ classdef Solver
                     end
 
                 otherwise
+                   error('The selected polynomial support is not currently supported.')
             end
         end
         
+        [Grid] = gridding(obj,m);
+        [B, tau] = state_basis(obj, L, n, basis, tau)
+        [beta, t0, tf, P, C] = initial_approximation(obj, Problem, B, Grid);
+        [P, C] = initial_fitting(obj, Problem, Grid, s);
+        [C] = evaluate_state(P, B, n, L);
+        [P_lb, P_ub] = opt_bounds(Problem, n, B);
         [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0);
         [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x);
         [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x);
-        [C] = evaluate_state(P, B, n, L);
-        [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, basis, domain_mapping, tau);
-        [P, C] = initial_fitting(Problem, basis, tau, s);
-        [P_lb, P_ub] = opt_bounds(Problem, n, B);
-        [B, tau] = state_basis(n, L, basis, tau);
+
+
         display_results(exitflag, cost, output);
     end
 

@@ -11,7 +11,7 @@
 
 % Outpus: - vector Pn, containing the evaluated Legendre polynomials 
 
-function [Pn] = basis(order, u)
+function [Pn] = basis(obj, order, u)
     % Preallocation of the polynomials 
     Pn = zeros(order+1,length(u)); 
 

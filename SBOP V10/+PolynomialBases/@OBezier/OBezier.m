@@ -1,7 +1,6 @@
 classdef OBezier < PolynomialBases.AbstractBasis
 
     properties 
-        kind
     end
 
     methods         

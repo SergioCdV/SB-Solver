@@ -4,10 +4,8 @@ classdef Legendre < PolynomialBases.AbstractBasis
     end
 
     methods         
-         [tau, w, D] = weights(N)
          [Pn] = basis(obj, order, u);
-         [B] = derivative(order, u, degree);
-         [y] = nodes(N);
+         [B] = derivative(obj, order, u, degree);
     end
     
 end

@@ -10,14 +10,12 @@
 
 % Outputs: - array B, the basis of the required tangent space, of size n+1 x length(tau)
 
-function [Phi] = derivative(degree, order, u)
+function [Phi] = derivative(obj, degree, order, u)
     % Find number of steps (time increments)
     steps = length(u);
 
     % Initialize variable for n-order curve
     Phi = zeros(degree+1,steps); 
-
-    Bezier = PolynomialBases.Bezier();
     
     % Calculation of the orthogonal Bernstein polynomials 
     for i = 0:degree
@@ -27,7 +25,7 @@ function [Phi] = derivative(degree, order, u)
         % compute the derivatives of the Bernstein basis
         for j = 0:i 
             % Switch the derivative order
-            B = Bezier.derivative(degree-j, u, order);
+            B = obj.derivative(degree-j, u, order);
 
             % Compute the scaling 
             num = nchoosek(2*degree+1-j,i-j) * nchoosek(i,j);

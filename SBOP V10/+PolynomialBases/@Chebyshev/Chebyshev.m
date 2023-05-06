@@ -14,10 +14,8 @@ classdef Chebyshev < PolynomialBases.AbstractBasis
 
         end
          
-         [tau, w, D] = weights(N)
          [Pn] = basis(obj, order, u);
-         [B] = derivative(kind, order, u, degree);
-         [y] = nodes(N);
+         [B] = derivative(obj, order, u, degree);
     end
     
 end

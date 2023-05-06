@@ -4,34 +4,26 @@
 %% Initial approximation %%
 % Function to estimate the initial time of flight, control points and curve approximation
 
-% Inputs: - class Problem, defining the problem of interest
-%         - string basis, specifying the polynomial collacation basis
-%         - vector tau, the collocation points to be used 
+% Inputs: - object Problem, defining the transcription of the problem of interest
+%         - cell array B, containing the polynomial support of the state
+%           vector
+%         - object Grid, the collocation points object to be used 
 
-% Outputs: - vector betaapp, the initial estimation of the optimization
-%            extra variables
-%          - scalar tfapp, the initial initial time 
-%          - scalar tfapp, the initial initial time of flight
-%          - array Papp, the initial estimation of the boundary control
-%            points
-%          - array Capp, the initial estimation of the spacecraft state vector
+% Outputs: - vector beta, the initial estimation of the optimization extra variables
+%          - scalar t0, the initial initial time 
+%          - scalar tf, the initial estimation of the final time of flight
+%          - array P, the initial estimation of the control points
+%          - array C, the initial estimation of the spacecraft state vector
 
-function [betaapp, t0app, tfapp, Papp, Capp] = initial_approximation(Problem, basis, domain_mapping, tau)
-    % Constants 
-    L = Problem.DerDeg;         % Order of the dynamics (maximum derivative order)
-
+function [beta, t0, tf, P, C] = initial_approximation(obj, Problem, B, Grid)
     % Initial guess 
-    [betaapp, t0app, tfapp] = Problem.InitialGuess(Problem.Params, Problem.initial, Problem.final);
+    [beta, t0, tf] = Problem.InitialGuess(Problem.Params, Problem.initial, Problem.final);
 
-    % Generate the polynomial basis
-    n_init = repmat(3, [1 Problem.StateDim]).';
-    Bapp = state_basis(n_init, L, basis, tau);
-
-    % Initial estimate of control points (using the non-orthonormal boundary conditions)
-    tapp = feval(domain_mapping, t0app, tfapp, tau);
-    Papp = zeros(Problem.StateDim, max(n_init)+1);  
-    Papp = boundary_conditions(Problem, betaapp, t0app, tfapp, tapp, Bapp, basis, n_init, Papp);
+    % Initial estimate of state points
+    tau = Grid.Domain(t0, tf, Grid.tau);
+    P = zeros(Problem.StateDim, max(n_init)+1);  
+    P = obj.boundary_conditions(Problem, beta, t0, tf, tau, B, P);
 
     % State vector approximation as a function of time
-    Capp = evaluate_state(Papp, Bapp, n_init, L);
+    C = obj.evaluate_state(n, L, P, B);
 end

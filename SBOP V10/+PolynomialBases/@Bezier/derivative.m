@@ -10,13 +10,13 @@
 
 % Outputs: - array B, the basis of the required tangent space, of size n+1 x length(tau)
 
-function [B] = bernstein_derivative(n, tau, order)
+function [B] = derivative(obj, order, u, degree)
     % Switch the derivative order
-    switch (order)
+    switch (degree)
         case 1
-            B = dbernstein(n, tau);
+            B = dbernstein(obj, order, u);
         case 2
-            B = ddbernstein(n, tau);
+            B = ddbernstein(obj, order, u);
         otherwise
             error('A higher-order Bernstein polynomial derivative is required, but has not been implemented')
     end
@@ -24,12 +24,12 @@ end
 
 %% Auxiliary functions 
 % First order basis of the Bernstein tangent space
-function [dB] = dbernstein(n, tau)
+function [dB] = dbernstein(obj, n, tau)
     % Preallocation for speed 
     dB = zeros(n+1,length(tau));
 
     if (n ~= 0)
-        B = bernstein_basis(n-1,tau);
+        B = obj.basis(n-1,tau);
     
         % Computation of the derivative basis 
         for i = 0:n
@@ -45,12 +45,12 @@ function [dB] = dbernstein(n, tau)
 end
 
 % Second order basis of the Bernstein tangent space 
-function [dB] = ddbernstein(n, tau)
+function [dB] = ddbernstein(obj, n, tau)
     % Preallocation for speed 
     dB = zeros(n+1,length(tau));
 
     if (n ~= 0)
-        B = dbernstein(n-1,tau);
+        B = dbernstein(obj, n-1,tau);
     
         % Computation of the derivative basis 
         for i = 0:n

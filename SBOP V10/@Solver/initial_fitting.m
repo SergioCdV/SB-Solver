@@ -4,23 +4,25 @@
 %% Initial fitting %%
 % Function to estimate the trajectory approximation
 
-% Inputs: - scalar n, the degree of the approximation 
-%         - vector tau, the control parameter vector 
-%         - C, the initial trajectory estimation
-%         - string basis, the Bernstein polynomial basis to be used
+% Inputs: - object Problem, defining the transcription of the problem of interest
+%         - cell array B, containing the polynomial support of the state
+%           vector
+%         - object Grid, the collocation points object to be used 
+%         - array s, the initial state vector trajectory
 
-% Outputs: - array P, the estimation of the boundary control points as a
-%            cell
-%          - array C, the initial estimation of the spacecraft state vector
+% Outputs: - array P, the estimation of the state points as an array
+%          - array C, the estimation of the problem state vector across the
+%            grid
 
-function [P, C] = initial_fitting(Problem, basis, tau, s)
+function [P, C] = initial_fitting(obj, Problem, Grid, s)
     % Constants 
-    n = Problem.PolOrder;       % Polynomial order for each state variable 
-    L = Problem.DerDeg;         % Order of the dynamics (maximum derivative order)
+    n = obj.PolOrder;       % Polynomial order for each state variable 
+    L = Problem.DerDeg;     % Order of the dynamics (maximum derivative order)
+    basis = obj.Basis;      % Basis to be used
     
     % Preallocation of the control points and the expansion polynomials
     P = zeros(length(n), max(n)+1); 
-    B = state_basis(n, L, basis, tau);
+    B = obj.state_basis(n, L, basis, Grid);
 
     % Compute the position control points leveraging the complete state vector
     if (L > 1)
@@ -39,5 +41,5 @@ function [P, C] = initial_fitting(Problem, basis, tau, s)
     end
     
     % Evaluate the state vector
-    C = evaluate_state(P, B, n, L);
+    C = obj.evaluate_state(n, L, P, B);
 end

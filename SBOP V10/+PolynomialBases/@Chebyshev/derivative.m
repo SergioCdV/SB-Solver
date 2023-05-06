@@ -15,13 +15,13 @@
 % Outpus: - vector Pn, containing the evaluated Chebyshev polynomials
 %           derivatives
 
-function [B] = derivative(order, u, degree)
+function [B] = derivative(obj, order, u, degree)
     % Switch the derivative order
     switch (degree)
         case 1
-            B = dchebyshev(obj.kind, order, u);
+            B = dchebyshev(obj, order, u);
         case 2
-            B = ddchebyshev(obj.kind, order, u);
+            B = ddchebyshev(obj, order, u);
         otherwise
             error('A higher-order Chebyshev polynomial derivative is required, but has not been implemented')
     end
@@ -29,13 +29,13 @@ end
 
 %% Auxiliary functions 
 % First order basis of the Chebyshev tangent space
-function [dPn] = dchebyshev(kind, order, u)
+function [dPn] = dchebyshev(obj, order, u)
     % Preallocation of the polynomials and its derivatives
-    Pn = CH_basis(kind,order,u);
+    Pn = obj.basis(order, u);
     dPn = zeros(order+1,length(u)); 
 
     % Main computation 
-    switch (kind)
+    switch (obj.kind)
         case 'first'
             dPn(1,:) = zeros(1,length(u));      % Initialization of the Chebyshev polynomials of the first kind
             dPn(2,:) = ones(1,length(u));       % Initialization of the Chebyshev polynomials of the first kind
@@ -57,7 +57,7 @@ end
 % Second order basis of the Chebyshev tangent space
 function [ddPn] = ddchebyshev(kind, order, u)
     % Preallocation of the polynomials
-    dPn = dchebyshev(kind, order, u);
+    dPn = dchebyshev(order, u);
     ddPn = zeros(order+1,length(u));  
 
     % Main computation 

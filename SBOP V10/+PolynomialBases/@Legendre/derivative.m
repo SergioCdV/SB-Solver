@@ -13,13 +13,13 @@
 % Outpus: - vector Pn, containing the evaluated Legendre polynomials
 %           derivatives
 
-function [B] = derivative(order, u, degree)
+function [B] = derivative(obj, order, u, degree)
     % Switch the derivative order
     switch (degree)
         case 1
-            B = dlegendre(order, u);
+            B = dlegendre(obj, order, u);
         case 2
-            B = ddlegendre(order, u);
+            B = ddlegendre(obj, order, u);
         otherwise
             error('A higher-order Legendre polynomial derivative is required, but has not been implemented')
     end
@@ -27,9 +27,9 @@ end
 
 %% Auxiliary functions 
 % First order basis of the Legendre tangent space
-function [dPn] = dlegendre(order, u)
+function [dPn] = dlegendre(obj, order, u)
     % Preallocation of the polynomials and its derivatives
-    Pn = LG_basis(order,u);
+    Pn = obj.basis(order,u);
     dPn = zeros(order+1,length(u)); 
 
     % Initialization of the polynomials 
@@ -44,9 +44,9 @@ function [dPn] = dlegendre(order, u)
 end
 
 % Second order basis of the Legendre tangent space
-function [ddPn] = ddlegendre(order, u)
+function [ddPn] = ddlegendre(obj, order, u)
     % Preallocation of the polynomials and its derivatives
-    dPn = LG_derivative(order,u,1); 
+    dPn = obj.derivative(order, u, 1); 
     ddPn = zeros(order+1,length(u));
 
     % Initialization of the polynomials 
