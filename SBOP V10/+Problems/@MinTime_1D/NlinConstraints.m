@@ -4,7 +4,7 @@
 %% Constraints function %% 
 % Function implementation of the path and boundary constraints functions
 
-function [c, ceq] = NlinConstraints(params, beta, t0, tf, tau, s, u)
+function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     % Inequality constraints
     c = dot(u,u,1)-params(1)^2; 
 

@@ -36,13 +36,15 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
     Grid = obj.gridding(mapp);
     B = obj.state_basis(L, n, basis, Grid.tau);
 
+    obj.PolOrder = 3 * ones(size(n));
     [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, B, Grid); 
-    
+    obj.PolOrder = n;
+
     % Initial fitting for n+1 control points
     [P0, ~] = obj.initial_fitting(Problem, Grid, Capp);
     
     % Quadrature definition
-    Grid = obj.grid();
+    Grid = obj.gridding();
 
     % Final state basis
     B = obj.state_basis(L, n, basis, Grid.tau);
@@ -52,10 +54,10 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
     x0 = [x0; t0app; tfapp; betaapp];
         
     % Objective function
-    objective = @(x)obj.cost_function(Problem, B, basis, domain_mapping, tau, W, x);
+    objective = @(x)obj.cost_function(Problem, B, Grid, x);
 
     % Non-linear constraints
-    nonlcon = @(x)obj.constraints(Problem, B, basis, domain_mapping, tau, x);
+    nonlcon = @(x)obj.constraints(Problem, B, Grid, x);
 
     % Upper and lower bounds 
     [P_lb, P_ub] = obj.opt_bounds(Problem, n, size(betaapp,1));
@@ -77,13 +79,13 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
     tf = sol(StateCard+2);                                                   % Final independent variable value
     beta = sol(StateCard+3:end);                                             % Extra optimization parameters
 
-    t = feval(domain_mapping, t0, tf, tau);                                  % True domain
+    [t(1,:), t(2,:)] = Grid.Domain(t0, tf, Grid.tau);                        % Original time independent variable
     
     % Final control points imposing boundary conditions
-    P = obj.boundary_conditions(Problem, beta, t0, tf, t, B, basis, n, P);
-    
+    P = obj.boundary_conditions(Problem, beta, t0, tf, t, B, P);
+
     % Final state evolution
-    C = obj.evaluate_state(P, B, n, L);
+    C = obj.evaluate_state(n, L, P, B);
 
     % Normalization with respect to the independent variable
     m = Problem.StateDim;

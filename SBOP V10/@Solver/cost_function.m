@@ -17,11 +17,11 @@
 
 % Outputs: - scalar r, the cost index to be optimized
 
-function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
+function [r] = cost_function(obj, Problem, B, Grid, x)
     % Optimization variables
     L = Problem.DerDeg;                                                 % Maximum derivative degree
-    n = Problem.PolOrder;                                               % Order of the polynomial approximation
     m = Problem.StateDim;                                               % State dimension
+    n = obj.PolOrder;                                                   % Order of the polynomial approximation
     StateCard = (max(n)+1) * m;                                         % Cardinal of the state modes
     P = reshape(x(1:StateCard), m, []);                                 % Control points
     t0 = x(StateCard+1);                                                % Initial independent variable value
@@ -29,9 +29,9 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     beta = x(StateCard+3:end);                                          % Extra optimization parameters
     
     % Evaluate the boundary conditions
-    t = feval(domain_mapping, t0, tf, tau);                             % Original time independent variable
-    P = boundary_conditions(Problem, beta, t0, tf, t, B, basis, n, P);  % Boundary conditions control points
-    s = evaluate_state(P, B, n, L);                                     % State evolution
+    [t(1,:), t(2,:)] = Grid.Domain(t0, tf, Grid.tau);                   % Original time independent variable
+    P = obj.boundary_conditions(Problem, beta, t0, tf, t, B, P);        % Boundary conditions control points
+    s = obj.evaluate_state(n, L, P, B);                                 % State evolution
 
     % Normalization
     for i = 1:L
@@ -43,9 +43,9 @@ function [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x)
     % Evaluate the cost function (Lagrange and Mayer terms)
     [M, L] = Problem.CostFunction(Problem.Params, beta, t0, tf, s, u); 
 
-    if (isempty(W))
-        r = M + trapz(t(2,:).*tau,L);
+    if (isempty(Grid.W))
+        r = M + trapz(t(2,:).*Grid.tau, L);
     else
-        r = M + dot(t(2,:).*W,L);
+        r = M + dot(t(2,:).*Grid.W, L);
     end
 end

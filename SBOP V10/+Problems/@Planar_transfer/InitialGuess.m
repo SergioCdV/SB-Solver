@@ -4,7 +4,7 @@
 %% Initial guess function %% 
 % Function implementation of the a warming up initial guess if available
 
-function [beta, t0, tf] = InitialGuess(params, initial, final)
+function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
     % Constants
     mu = params(1); 
     T = params(2); 

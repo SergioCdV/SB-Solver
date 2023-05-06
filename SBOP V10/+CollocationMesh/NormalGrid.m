@@ -39,7 +39,7 @@ classdef NormalGrid < CollocationMesh.AbstractGrid
             obj.W = [];
         end
 
-        function [t, dt] = Domain(t0, tf, tau)
+        function [t, dt] = Domain(obj, t0, tf, tau)
             t  = (tf-t0) * obj.J * tau; 
             dt = (tf-t0) * obj.J * ones(1,length(tau));
         end

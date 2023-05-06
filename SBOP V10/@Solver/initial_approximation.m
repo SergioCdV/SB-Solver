@@ -20,10 +20,10 @@ function [beta, t0, tf, P, C] = initial_approximation(obj, Problem, B, Grid)
     [beta, t0, tf] = Problem.InitialGuess(Problem.Params, Problem.initial, Problem.final);
 
     % Initial estimate of state points
-    tau = Grid.Domain(t0, tf, Grid.tau);
-    P = zeros(Problem.StateDim, max(n_init)+1);  
-    P = obj.boundary_conditions(Problem, beta, t0, tf, tau, B, P);
+    [t(1,:), t(2,:)] = Grid.Domain(t0, tf, Grid.tau);
+    P = zeros(Problem.StateDim, max(obj.PolOrder)+1);  
+    P = obj.boundary_conditions(Problem, beta, t0, tf, t, B, P);
 
     % State vector approximation as a function of time
-    C = obj.evaluate_state(n, L, P, B);
+    C = obj.evaluate_state(obj.PolOrder, Problem.DerDeg, P, B);
 end

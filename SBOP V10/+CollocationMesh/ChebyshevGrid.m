@@ -54,8 +54,8 @@ classdef ChebyshevGrid < CollocationMesh.AbstractGrid
 
         function [obj] = QuadWeights(obj)
            % Constants 
-           N = obj.N+1;
-           n = obj.N-1; 
+           N = obj.NumberPoints+1;
+           n = N-1; 
 
            % FFT preallocation of the CC weights and nodes
            c = zeros(N,2);

@@ -50,10 +50,10 @@ classdef NewtonCotesGrid < CollocationMesh.AbstractGrid
                 w(i) = (-1)^(N-(i-1))/(factorial(N-(i-1))*factorial((i-1)))*trapz(dumb,func);
             end
 
-            obj.W = w;
+            obj.W = w.';
         end
 
-        function [t, dt] = Domain(t0, tf, tau)
+        function [t, dt] = Domain(obj, t0, tf, tau)
             t  = (tf-t0) * obj.J * tau; 
             dt = (tf-t0) * obj.J * ones(1,length(tau));
         end

@@ -29,13 +29,14 @@ classdef (Abstract) AbstractProblem
         end
 
         % Problem transcription
-        [s0, sf] = BoundaryConditions(initial, final, beta, t0, tf);
-        [u] = ControlFunction(params, beta, t0, tf, t, s);
-        [M, L] = CostFunction(params, beta, t0, tf, s, u);
-        [A, b, Aeq, beq] = LinConstraints(beta, P);
-        [c, ceq] = NlinConstraints(params, beta, t0, tf, tau, s, u);
-        [beta, t0, tf] = InitialGuess(params, initial, final);
-
+        [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf);
+        [u] = ControlFunction(obj, params, beta, t0, tf, t, s);
+        [M, L] = CostFunction(obj, params, beta, t0, tf, s, u);
+        [A, b, Aeq, beq] = LinConstraints(obj, beta, P);
+        [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u);
+        [beta, t0, tf] = InitialGuess(obj, params, initial, final);
+        [LB, UB] = BoundsFunction(obj);
+        
         function [obj] = Check(obj)
             % Check the dimensionality of the dynamics 
             if (size(obj.initial,1) ~= obj.StateDim * (obj.DerDeg) || size(obj.final,1) ~= obj.StateDim * (obj.DerDeg)) 
@@ -47,10 +48,5 @@ classdef (Abstract) AbstractProblem
                 error('The problem dynamics are not well-modelled. ODE up to 2 order are supported.');
             end
         end
-    end
-
-    methods (Static)
-        % Problem transcription
-        [LB, UB] = BoundsFunction();
     end
 end

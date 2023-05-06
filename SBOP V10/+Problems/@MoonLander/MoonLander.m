@@ -31,19 +31,16 @@ classdef MoonLander < Problems.AbstractProblem
         end
 
         % Problem transcription
-        [s0, sf] = BoundaryConditions(initial, final, beta, t0, tf);
-        [u] = ControlFunction(params, beta, t0, tf, t, s);
-        [M, L] = CostFunction(params, beta, t0, tf, s, u);
-        [A, b, Aeq, beq] = LinConstraints(beta, P);
-        [c, ceq] = NlinConstraints(params, beta, t0, tf, tau, s, u);
-        [beta, t0, tf] = InitialGuess(params, initial, final);
+        [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf);
+        [u] = ControlFunction(obj, params, beta, t0, tf, t, s);
+        [M, L] = CostFunction(obj, params, beta, t0, tf, s, u);
+        [A, b, Aeq, beq] = LinConstraints(obj, beta, P);
+        [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u);
+        [beta, t0, tf] = InitialGuess(obj, params, initial, final);
+        [LB, UB] = BoundsFunction(obj);
 
         function [obj] = Check(obj)
             obj = Check@Problems.AbstractProblem(obj);
         end
-    end
-
-    methods (Static)
-        [LB, UB] = BoundsFunction();
     end
 end

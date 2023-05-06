@@ -7,8 +7,8 @@ close all
 
 %% Problem definition 
 % Numerical solver definition 
-time_distribution = 'Legendre';        % Distribution of time intervals
-basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Chebyshev';        % Distribution of time intervals
+basis = 'Chebyshev';                    % Polynomial basis to be use
 n = 10;                                 % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 L = 2;                                  % Degree of the dynamics 

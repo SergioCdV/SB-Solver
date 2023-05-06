@@ -55,13 +55,13 @@ function [dPn] = dchebyshev(obj, order, u)
 end
 
 % Second order basis of the Chebyshev tangent space
-function [ddPn] = ddchebyshev(kind, order, u)
+function [ddPn] = ddchebyshev(obj, order, u)
     % Preallocation of the polynomials
-    dPn = dchebyshev(order, u);
+    dPn = dchebyshev(obj, order, u);
     ddPn = zeros(order+1,length(u));  
 
     % Main computation 
-    switch (kind)
+    switch (obj.kind)
         case 'first'
             ddPn(1,:) = zeros(1,length(u));                    % Initialization of the Chebyshev polynomials of the first kind
             ddPn(2,:) = zeros(1,length(u));                    % Initialization of the Chebyshev polynomials of the first kind

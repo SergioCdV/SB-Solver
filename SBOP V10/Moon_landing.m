@@ -9,8 +9,8 @@ close all
 clear
 
 %% Numerical solver definition 
-basis = 'Legendre';                    % Polynomial basis to be use
-time_distribution = 'Legendre';        % Distribution of time intervals
+basis = 'Chebyshev';                   % Polynomial basis to be use. Alternatively: Legendre, Bernestein, Orthogonal Bernstein
+time_distribution = 'Chebyshev';       % Distribution of time intervals. Alternatively: Bernstein, Orthogonal Bernstein, Chebsyhev, Legendre, Linear, Newton-Cotes, Normal, Random, Trapezoidal
 n = 10;                                % Polynomial order in the state vector expansion
 m = 100;                               % Number of sampling points
  
@@ -32,7 +32,7 @@ g = 1.6;                        % Maximum acceleration [m/s^2]
 problem_params = [g; T];
 
 % Create the problem
-OptProblem = Problems.MinTime_1D(S0, SF, L, StateDimension, ControlDimension, problem_params);
+OptProblem = Problems.MoonLander(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    

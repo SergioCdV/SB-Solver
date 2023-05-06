@@ -22,7 +22,7 @@ function [P, C] = initial_fitting(obj, Problem, Grid, s)
     
     % Preallocation of the control points and the expansion polynomials
     P = zeros(length(n), max(n)+1); 
-    B = obj.state_basis(n, L, basis, Grid);
+    B = obj.state_basis(L, n, basis, Grid.tau);
 
     % Compute the position control points leveraging the complete state vector
     if (L > 1)

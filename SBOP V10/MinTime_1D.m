@@ -1,37 +1,53 @@
-%% Project: Shape-based optimization for low-thrust transfers %%
+%% Project: SBOPT %%
 % Date: 01/08/22
 
-%% Set up
-set_graphics(); 
+%% Minimum time 1D %% 
+% This script provides a main interface to solve the 1D minimum time problem %
+
+%% Set up 
 close all
+clear
+
+%% Numerical solver definition 
+basis = 'Legendre';                   % Polynomial basis to be use
+time_distribution = 'Legendre';       % Distribution of time intervals
+n = 30;                               % Polynomial order in the state vector expansion
+m = 100;                              % Number of sampling points
+ 
+solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
-% Numerical solver definition 
-time_distribution = 'Bernstein';       % Distribution of time intervals
-basis = 'Bernstein';                   % Polynomial basis to be use
-n = 30;                                % Polynomial order in the state vector expansion
-m = 300;                                % Number of sampling points
-T = 1;                                 % Degree of the dynamics 
-
-OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 1, 2); 
+L = 2;                          % Degree of the dynamics (maximum derivative order of the ODE system)
+StateDimension = 1;             % Dimension of the configuration vector. Note the difference with the state vector
+ControlDimension = 1;           % Dimension of the control vector
 
 % Add boundary conditions
-S0 = [0 0].';
-SF = [1 0].';
-OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters(T);
+S0 = [0 0].';                   % Initial conditions
+SF = [1 0].';                   % Final conditions
 
-% Add functions 
-OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditions_minT(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunction_minT(params, beta, t0, tf, tau, s), ...
-                                     @(params, beta, t0, tf, s, u)CostFunction_minT(params, beta, t0, tf, s, u), @(beta, P)LinConstraints_minT(beta, P), ...
-                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints_minT(params, beta, t0, tf, tau, s, u), ...
-                                     @BoundsFunction_minT, ...
-                                     @(params, initial, final)InitialGuess_minT(params, initial, final));
+% Problem parameters 
+T = 1;                          % Maximum acceleration
+
+% Create the problem
+OptProblem = Problems.MinTime_1D(S0, SF, L, StateDimension, ControlDimension, T);
 
 %% Optimization
 % Simple solution    
 tic
-[C, cost, u, t0, tf(1), tau, exitflag, output] = sb_solver(OptProblem);
+[C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
 toc 
+
+% Average results 
+iter = 0; 
+time = zeros(1,iter);
+setup.resultsFlag = false; 
+for i = 1:iter
+    tic 
+    [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
+    time(i) = toc;
+end
+
+time = mean(time);
 
 %% Analytical solution 
 % Analytical solution
@@ -83,6 +99,7 @@ grid on;
 figure_propulsion = figure;
 hold on
 plot(tau, u, 'LineWidth', 0.3)
+plot(tau, uopt, 'LineWidth', 0.3)
 xlabel('$t$')
 ylabel('$\mathbf{u}$')
 grid on;

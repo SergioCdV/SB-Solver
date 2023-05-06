@@ -1,37 +1,53 @@
-%% Project: Shape-based optimization for low-thrust transfers %%
+%% Project: SBOPT %%
 % Date: 01/08/22
 
-%% Set up
-set_graphics(); 
+%% LQRC 1D %% 
+% This script provides a main interface to solve a constrained 1D LQR problem %
+
+%% Set up 
 close all
+clear
+
+%% Numerical solver definition 
+basis = 'Bernstein';                    % Polynomial basis to be use
+time_distribution = 'Bernstein';        % Distribution of time intervals
+n = 80;                                % Polynomial order in the state vector expansion
+m = 300;                               % Number of sampling points
+ 
+solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
-% Numerical solver definition 
-time_distribution = 'Legendre';        % Distribution of time intervals
-basis = 'Legendre';                    % Polynomial basis to be use
-n = 80;                                % Polynomial order in the state vector expansion
-m = 300;                                % Number of sampling points
-L = 2;                                 % Degree of the dynamics 
-
-OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(length(n), 1, L); 
+L = 2;                          % Degree of the dynamics (maximum derivative order of the ODE system)
+StateDimension = 1;             % Dimension of the configuration vector. Note the difference with the state vector
+ControlDimension = 1;           % Dimension of the control vector
 
 % Add boundary conditions
-S0 = [0 1].';
-SF = [0 -1].';
-OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters(1/6);
+S0 = [0 1].';                   % Initial conditions
+SF = [0 -1].';                  % Final conditions
 
-% Add functions 
-OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditions_LQRC(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunction_LQRC(params, beta, t0, tf, tau, s), ...
-                                     @(params, beta, t0, tf, s, u)CostFunction_LQRC(params, beta, t0, tf, s, u), @(beta, P)LinConstraints_LQRC(beta, P), ...
-                                     @(params, beta, t0, tf, tau, s, u)NlinConstraints_LQRC(params, beta, t0, tf, tau, s, u), ...
-                                     @BoundsFunction_LQRC, ...
-                                     @(params, initial, final)InitialGuess_LQRC(params, initial, final));
+% Problem parameters 
+A = 1/6;
+
+% Create the problem
+OptProblem = Problems.LQRC_1D(S0, SF, L, StateDimension, ControlDimension, A);
 
 %% Optimization
 % Simple solution    
 tic
-[C, cost, u, t0, tf, tau, exitflag, output] = sb_solver(OptProblem);
+[C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
 toc 
+
+% Average results 
+iter = 0; 
+time = zeros(1,iter);
+setup.resultsFlag = false; 
+for i = 1:iter
+    tic 
+    [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
+    time(i) = toc;
+end
+
+time = mean(time);
 
 %% Plots
 % State representation

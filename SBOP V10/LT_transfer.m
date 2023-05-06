@@ -1,38 +1,38 @@
-%% Project: Shape-based optimization for low-thrust transfers %%
+%% Project: SBOPT %%
 % Date: 01/08/22
 
-%% Set up
-set_graphics(); 
+%% 3D low-thrust transfer %% 
+% This script provides a main interface to solve 3D low-thrust transfers in polar coordinates %
+
+%% Set up 
 close all
+clear
+
+%% Numerical solver definition 
+basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Legendre';        % Distribution of time intervals
+n = 15;                                % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
+ 
+solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
-% Numerical solver definition 
-time_distribution = 'Bernstein';       % Distribution of time intervals. 
-basis = 'Bernstein';                   % Polynomial basis to be use
-n = 7;                                % Polynomial order in the state vector expansion
-m = 100;                               % Number of sampling points
-L = 2;                                 % Degree of the dynamics 
-
-n = 15; 
-
-OptProblem = Problem().DefineSolver(n, basis, m, time_distribution).AddDynamics(1, 1, L); 
+L = 2;                          % Degree of the dynamics (maximum derivative order of the ODE system)
+StateDimension = 3;             % Dimension of the configuration vector. Note the difference with the state vector
+ControlDimension = 3;           % Dimension of the control vector
 
 % Boundary conditions
-S0 = [100; 20];
-SF = [0; 0];
+S0 = [1; 0; 0; 1];              % Initial conditions
+SF = [1.1; 0; 0; sqrt(1/1.1)];  % Final conditions
 
-T = 1;              % Maximum acceleration 
-g = 4;              % Acceleration
+% Problem parameters 
+T = 1e-1;              % Maximum acceleration 
+mu = 1;                % Gravitational parameter
 
-% Add boundary conditions
-OptProblem = OptProblem.AddBoundaryConditions(S0, SF).AddParameters([g; T]);
+problem_params = [mu; T];
 
-% Add functions 
-OptProblem = OptProblem.AddFunctions(@(initial, final, beta, t0, tf)BoundaryConditionsML(initial, final, beta, t0, tf), @(params, beta, t0, tf, tau, s)ControlFunctionML(params, beta, t0, tf, tau, s), ...
-                                     @(params, beta, t0, tf, s, u)CostFunctionML(params, beta, t0, tf, s, u), @(beta, P)LinConstraintsML(beta, P), ...
-                                     @(params, beta, t0, tf, tau, s, u)NlinConstraintsML(params, beta, t0, tf, tau, s, u), ...
-                                     @BoundsFunctionML, ...
-                                     @(params, initial, final)InitialGuessML(params, initial, final));
+% Create the problem
+OptProblem = Problems.Planar_transfer(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    

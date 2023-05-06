@@ -12,7 +12,7 @@
 
 % Outputs: - array C, the length(n)*L x m state vector 
 
-function [C] = evaluate_state(n, L, P, B)
+function [C] = evaluate_state(obj, n, L, P, B)
     % Preallocation
     N = size(P,1);                        % Number of state variables
     C = zeros((L+1)*N, size(B{1},2));     % State trajectory

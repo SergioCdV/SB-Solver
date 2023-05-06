@@ -42,7 +42,7 @@ function [Grid] = gridding(obj, m)
             Grid = CollocationMesh.BezierGrid(m);
 
         case 'Orthogonal Bernstein'
-            Grid = CollocationMesh.BezierGrid(m);
+            Grid = CollocationMesh.OBezierGrid(m);
 
         otherwise
             error('No valid quadrature was selected');

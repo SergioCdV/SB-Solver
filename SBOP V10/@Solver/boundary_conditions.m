@@ -24,7 +24,7 @@ function [P] = boundary_conditions(obj, Problem, beta, t0, tf, tau, B, P0)
     % Constants 
     m = Problem.StateDim;       % State dimension
     L = Problem.DerDeg;         % Order of the dynamics (maximum derivative order)
-    n = obj.n;                  % Polynomial order
+    n = obj.PolOrder;           % Polynomial order
 
     if (size(s0,1) ~= L * m)
         error('Cauchy boundary conditions cannot be imposed. Dimensions of the final boundary conditions are not compatible with the dynamics.');
@@ -45,7 +45,7 @@ function [P] = boundary_conditions(obj, Problem, beta, t0, tf, tau, B, P0)
     end
 
     % Switch the polynomial basis to be used
-    switch (obj.basis)
+    switch (obj.Basis)
         case 'Bernstein'                
             % Control points for a nonorthogonal Bézier curve
             P(:,1) = s0(1:m);

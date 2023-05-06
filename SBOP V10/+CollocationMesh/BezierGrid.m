@@ -29,6 +29,7 @@ classdef BezierGrid < CollocationMesh.AbstractGrid
 
         % Particular methods
         function [obj] = CollocationGrid(obj)
+            N = obj.NumberPoints;
             beta = .5./sqrt(1-(2*(1:N)).^(-2));         % 3-term recurrence coeffs
             T = diag(beta,1) + diag(beta,-1);           % Jacobi matrix
             [~,D] = eig(T);                             % Eigenvalue decomposition
@@ -46,7 +47,7 @@ classdef BezierGrid < CollocationMesh.AbstractGrid
             for i = 0:N 
                 for j = 0:N
                     if (i ~= j)
-                        D(i+1,j+1) = (L(end,i+1)/L(end,j+1))/(tau(i+1)-tau(j+1));
+                        D(i+1,j+1) = (L(end,i+1)/L(end,j+1))/(obj.tau(i+1)-obj.tau(j+1));
                     elseif (i == j && j == N)
                         D(i+1,j+1) = (N*(N+1)/4);
                     elseif (i == j && j == 0)
@@ -62,7 +63,8 @@ classdef BezierGrid < CollocationMesh.AbstractGrid
 
         function [obj] = QuadWeights(obj)
             % Truncation + 1
-            N1 = obj.NumberPoints + 1;
+            N = obj.NumberPoints;
+            N1 = N + 1;
         
             % CGL nodes
             tau = cos(pi*(0:N)/N)';
@@ -88,7 +90,7 @@ classdef BezierGrid < CollocationMesh.AbstractGrid
         
             % Legendre basis 
             obj.tau = flip(tau).';
-            L = PolynomialBases.Legendre().basis(N, tau);
+            L = PolynomialBases.Legendre().basis(N, tau.');
         
             % Quadrature weights
             obj.W = 2./(N*N1*L(end,:).^2);

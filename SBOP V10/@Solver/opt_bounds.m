@@ -12,12 +12,12 @@
 % Outputs: - vector P_lb, vector of lower bounds
 %          - vector P_ub, vector of upper bounds
 
-function [P_lb, P_ub] = opt_bounds(Problem, n, B)
+function [P_lb, P_ub] = opt_bounds(obj, Problem, n, B)
     % Constants 
     StateDim = Problem.StateDim; 
 
     % Upper and lower bounds
-    [LB, UB] = Problem.Bounds(); 
+    [LB, UB] = Problem.BoundsFunction(); 
 
     if (isempty(LB))
         P_lb = -Inf * ones(1,2 + (max(n)+1) + B).';

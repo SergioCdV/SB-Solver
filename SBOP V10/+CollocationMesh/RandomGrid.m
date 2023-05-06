@@ -25,7 +25,7 @@ classdef RandomGrid < CollocationMesh.AbstractGrid
 
         % Particular methods
         function [obj] = CollocationGrid(obj)
-            tau = rand(0, 1, 1, obj.NumberPoints - 2);
+            tau = rand(1, obj.NumberPoints - 2);
             tau = sort(tau);
             tau = (tau-min(tau))/(max(tau)-min(tau));
             obj.tau = [0 tau 1];
@@ -39,7 +39,7 @@ classdef RandomGrid < CollocationMesh.AbstractGrid
             obj.W = [];
         end
 
-        function [t, dt] = Domain(t0, tf, tau)
+        function [t, dt] = Domain(obj, t0, tf, tau)
             t  = (tf-t0) * obj.J * tau; 
             dt = (tf-t0) * obj.J * ones(1,length(tau));
         end

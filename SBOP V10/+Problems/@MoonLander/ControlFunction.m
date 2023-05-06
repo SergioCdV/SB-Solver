@@ -4,7 +4,7 @@
 %% Control function %% 
 % Function implementation of the control function as a dynamics residual
 
-function [u] = ControlFunction(params, beta, t0, tf, t, s)
+function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     % Constants 
     g = params(1); 
   

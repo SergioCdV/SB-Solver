@@ -94,14 +94,11 @@ classdef Solver
         [B, tau] = state_basis(obj, L, n, basis, tau)
         [beta, t0, tf, P, C] = initial_approximation(obj, Problem, B, Grid);
         [P, C] = initial_fitting(obj, Problem, Grid, s);
-        [C] = evaluate_state(P, B, n, L);
-        [P_lb, P_ub] = opt_bounds(Problem, n, B);
-        [P] = boundary_conditions(Problem, beta, t0, tf, tau, B, basis, n, P0);
-        [c, ceq] = constraints(Problem, B, basis, domain_mapping, tau, x);
-        [r] = cost_function(Problem, B, basis, domain_mapping, tau, W, x);
-
-
-        display_results(exitflag, cost, output);
+        [C] = evaluate_state(obj, P, B, n, L);
+        [P_lb, P_ub] = opt_bounds(obj, Problem, n, B);
+        [P] = boundary_conditions(obj, Problem, beta, t0, tf, tau, B, basis, n, P0);
+        [c, ceq] = constraints(obj, Problem, B, Grid, x);
+        [r] = cost_function(obj, Problem, B, Grid, x);
     end
 
     methods (Static, Access = private)
@@ -122,5 +119,7 @@ classdef Solver
             set(groot, 'defaultLineMarkerSize', 3);
             set(groot, 'defaultTextInterpreter','latex');
         end
+
+        display_results(exitflag, cost, output);
     end
 end

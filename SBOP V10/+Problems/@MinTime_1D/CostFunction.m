@@ -4,7 +4,7 @@
 %% Cost function %% 
 % Function implementation of a cost function 
 
-function [M, L] = CostFunction(params, beta, t0, tf, s, u)
+function [M, L] = CostFunction(obj, params, beta, t0, tf, s, u)
     M = 0; 
     L = abs(u);
 end
