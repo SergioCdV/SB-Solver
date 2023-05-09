@@ -9,10 +9,10 @@ close all
 clear
 
 %% Numerical solver definition 
-basis = 'Chebyshev';                   % Polynomial basis to be use. Alternatively: Legendre, Bernestein, Orthogonal Bernstein
-time_distribution = 'Chebyshev';       % Distribution of time intervals. Alternatively: Bernstein, Orthogonal Bernstein, Chebsyhev, Legendre, Linear, Newton-Cotes, Normal, Random, Trapezoidal
-n = 10;                                % Polynomial order in the state vector expansion
-m = 300;                               % Number of sampling points
+basis = 'Bernstein';                   % Polynomial basis to be use. Alternatively: Legendre, Bernestein, Orthogonal Bernstein
+time_distribution = 'Linear';       % Distribution of time intervals. Alternatively: Bernstein, Orthogonal Bernstein, Chebsyhev, Legendre, Linear, Newton-Cotes, Normal, Random, Trapezoidal
+n = 30;                                % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -22,7 +22,7 @@ StateDimension = 2;             % Dimension of the configuration vector. Note th
 ControlDimension = 2;           % Dimension of the control vector
 
 % Boundary conditions
-S0 = [0; 0; 0; 0];              % Initial conditions
+S0 = [1; 0; 0; 0];              % Initial conditions
 SF = [0; 5; 45; 0];             % Final conditions
 
 % Problem parameters 
@@ -78,9 +78,15 @@ grid on;
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau, a * sqrt(dot(u,u,1)), 'LineWidth', 0.3)
-plot(tau, a * u, 'LineWidth', 0.3)
+plot(tau, u, 'LineWidth', 0.3)
 yline(a, '--')
 xlabel('Flight time')
 ylabel('$\mathbf{u}$')
+grid on;
+
+figure_propulsion = figure;
+hold on
+plot(tau, atan2(u(2,:),u(1,:)), 'LineWidth', 0.3)
+xlabel('Flight time')
+ylabel('$\alpha$')
 grid on;

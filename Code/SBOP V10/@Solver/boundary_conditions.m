@@ -131,12 +131,13 @@ function [P] = boundary_conditions(obj, Problem, beta, t0, tf, tau, B, P0)
             
             % Control points 
             for i = 1:length(n)
-                index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
-                A = B{i}(index,[1,end]);
-
                 if (L > 1)
+                    index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
+                    A = B{i}(index,[1,end]);
                     A = [A(1:4,:) A(5:8,:)];
                 else
+                    index = [1 2 n(i) n(i)+1];
+                    A = B{i}(index,[1,end]);
                     A = A(1:4,:);
                 end
 

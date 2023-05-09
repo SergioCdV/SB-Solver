@@ -59,6 +59,8 @@ function [P] = boundary_conditions(tfapp, n, x0, xf, N, P0, B, basis)
             % Control points for an orthogonal Bézier curve
             for i = 1:length(n)
                 index = [1 2 n(i) n(i)+1 n(i)+2 n(i)+3 2*n(i)+1 2*(n(i)+1)];
+
+
                 A = B{i}(index,[1,end]);
                 A = [A(1:4,:) A(5:8,:)];
                 P(i,[1 2 n(i) n(i)+1]) = C(i,:)*A^(-1);

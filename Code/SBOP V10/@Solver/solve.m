@@ -34,9 +34,9 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
     % Initial guess for the boundary control points
     mapp = 300;   
     Grid = obj.gridding(mapp);
-    B = obj.state_basis(L, n, basis, Grid.tau);
 
     obj.PolOrder = 3 * ones(size(n));
+    B = obj.state_basis(L, obj.PolOrder, basis, Grid.tau);
     [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, B, Grid); 
     obj.PolOrder = n;
 

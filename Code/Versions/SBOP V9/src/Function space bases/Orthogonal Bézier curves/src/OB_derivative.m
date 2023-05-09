@@ -10,7 +10,9 @@
 
 % Outputs: - array B, the basis of the required tangent space, of size n+1 x length(tau)
 
-function [Phi] = OB_derivative(degree, tvec, order)
+Phi = OBC_derivative(10, linspace(0,1,10), 1)-PolynomialBases.OBezier().derivative(10, linspace(0,1,10), 1);
+
+function [Phi] = OBC_derivative(degree, tvec, order)
     % Find number of steps (time increments)
     steps = length(tvec);
 

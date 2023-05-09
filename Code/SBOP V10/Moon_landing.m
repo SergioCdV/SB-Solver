@@ -9,8 +9,8 @@ close all
 clear
 
 %% Numerical solver definition 
-basis = 'Chebyshev';                   % Polynomial basis to be use. Alternatively: Legendre, Bernestein, Orthogonal Bernstein
-time_distribution = 'Chebyshev';       % Distribution of time intervals. Alternatively: Bernstein, Orthogonal Bernstein, Chebsyhev, Legendre, Linear, Newton-Cotes, Normal, Random, Trapezoidal
+basis = 'Bernstein';                   % Polynomial basis to be use. Alternatively: Legendre, Bernestein, Orthogonal Bernstein
+time_distribution = 'Bernstein';       % Distribution of time intervals. Alternatively: Bernstein, Orthogonal Bernstein, Chebsyhev, Legendre, Linear, Newton-Cotes, Normal, Random, Trapezoidal
 n = 10;                                % Polynomial order in the state vector expansion
 m = 100;                               % Number of sampling points
  

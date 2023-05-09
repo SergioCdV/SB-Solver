@@ -6,5 +6,5 @@
 
 function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     % Compute the control vector as a dynamics residual
-    u = s(5:6,:)/params(1);
+    u = s(5:6,:);
 end

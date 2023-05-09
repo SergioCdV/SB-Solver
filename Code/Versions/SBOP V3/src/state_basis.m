@@ -21,9 +21,11 @@ function [B, tau] = state_basis(n, tau, basis)
                 B{i} = [bernstein_basis(n(i),tau); bernstein_derivative(n(i),tau,1); bernstein_derivative(n(i),tau,2)];
            end
         case 'Orthogonal Bernstein'
+
             for i = 1:length(n)
                 B{i} = [OB_basis(n(i),tau); OB_derivative(n(i),tau,1); OB_derivative(n(i),tau,2)];
             end
+            B = Solver().state_basis(2,n,basis,tau);
 
         case 'Chebyshev'
             for i = 1:length(n)
