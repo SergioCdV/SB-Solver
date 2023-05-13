@@ -1,17 +1,17 @@
 %% SBOPT %%
 % Date: 05/05/2023
 
-%% Hyper sensitive %% 
-% Implementation of the Bryson Hyper sensitive problem transcription, https://www.gpops2.com/Examples/HyperSensitive.html
+%% Detumbling RW%% 
+% Implementation of a detumbling problem transcription
 
-classdef HyperSensitive < Problems.AbstractProblem 
+classdef DetumblingRW < Problems.AbstractProblem 
     % Fundamental definition of the problem
     properties  
     end
 
     methods 
         % Constructor 
-        function [obj] = HyperSensitive(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+        function [obj] = DetumblingRW(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
             super_arguments{1} = myInitial;
             super_arguments{2} = myFinal;
             super_arguments{3} = myDerDeg;
@@ -33,7 +33,7 @@ classdef HyperSensitive < Problems.AbstractProblem
         % Problem transcription
         [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf);
         [u] = ControlFunction(obj, params, beta, t0, tf, t, s);
-        [M, L] = CostFunction(obj, params, beta, t0, tf, s, u);
+        [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u);
         [A, b, Aeq, beq] = LinConstraints(obj, beta, P);
         [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u);
         [beta, t0, tf] = InitialGuess(obj, params, initial, final);

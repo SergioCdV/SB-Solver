@@ -41,7 +41,7 @@ function [r] = cost_function(obj, Problem, B, Grid, x)
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
         
     % Evaluate the cost function (Lagrange and Mayer terms)
-    [M, L] = Problem.CostFunction(Problem.Params, beta, t0, tf, s, u); 
+    [M, L] = Problem.CostFunction(Problem.Params, beta, t0, tf, Grid.tau, s, u); 
 
     if (isempty(Grid.W))
         r = M + trapz(t(2,:).*Grid.tau, L);

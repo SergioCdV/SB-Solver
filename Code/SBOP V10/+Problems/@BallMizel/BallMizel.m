@@ -1,17 +1,17 @@
 %% SBOPT %%
-% Date: 05/05/2023
+% Date: 12/05/2023
 
-%% 1D constrained LQR %% 
-% Implementation of the 1D constrained LQR transcription
+%% Ball-Mizel %% 
+% Implementation of the Ball-Mizel problem transcription, as described in Ross 2008
 
-classdef LQRC_1D < Problems.AbstractProblem 
+classdef BallMizel < Problems.AbstractProblem 
     % Fundamental definition of the problem
     properties  
     end
 
     methods 
         % Constructor 
-        function [obj] = LQRC_1D(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+        function [obj] = BallMizel(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
             super_arguments{1} = myInitial;
             super_arguments{2} = myFinal;
             super_arguments{3} = myDerDeg;

@@ -1,8 +1,8 @@
 %% Project: SBOPT %%
-% Date: 05/05/23
+% Date: 12/05/23
 
-%% Zermelos %% 
-% This script provides a main interface to solve Zermelo's problem %
+%% Kang %% 
+% This script provides a main interface to solve Kang's problem %
 
 %% Set up
 close all
@@ -11,28 +11,26 @@ clear
 %% Numerical solver definition 
 basis = 'Bernstein';                   % Polynomial basis to be use. Alternatively: Legendre, Bernestein, Orthogonal Bernstein
 time_distribution = 'Bernstein';       % Distribution of time intervals. Alternatively: Bernstein, Orthogonal Bernstein, Chebsyhev, Legendre, Linear, Newton-Cotes, Normal, Random, Trapezoidal
-n = [10 10];                           % Polynomial order in the state vector expansion
+n = 50;                           % Polynomial order in the state vector expansion
 m = 200;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
 L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 2;             % Dimension of the configuration vector. Note the difference with the state vector
-ControlDimension = 2;           % Dimension of the control vector
+StateDimension = 1;             % Dimension of the configuration vector. Note the difference with the state vector
+ControlDimension = 1;           % Dimension of the control vector
 
 % Boundary conditions
-S0 = [0; 0];                    % Initial conditions
-SF = [2; 2];                    % Final conditions
+k = 1;
+S0 = [0];                    % Initial conditions
+SF = [k];                    % Final conditions
 
-% Problem parameters 
-V = 3;                          % River speed [m/s]
-T = 1e-3;                          % Maximum control speed [m/s]
-
-problem_params = [V; T];
+% Parameter of the problem 
+epsilon = (k/3)^(12) * (1-k^3) * (13*k^3-7);
 
 % Create the problem
-OptProblem = Problems.Zermelos(S0, SF, L, StateDimension, ControlDimension, problem_params);
+OptProblem = Problems.BallMizel(S0, SF, L, StateDimension, ControlDimension, epsilon);
     
 %% Optimization
 % Simple solution    
@@ -57,8 +55,10 @@ time = mean(time);
 figure;
 hold on
 plot(tau, C(1,:))
+plot(tau, k*tau.^(2/3))
 xlabel('Flight time')
 ylabel('$X$ coordinate')
+legend('Numerical', 'Analytical')
 hold off
 grid on; 
 
@@ -70,21 +70,10 @@ ylabel('$Y$ coordinate')
 hold off
 grid on;
 
-figure_orbits = figure;
-hold on
-plot(C(1,:), C(2,:))
-xlabel('$X$ coordinate')
-ylabel('$Y$ coordinate')
-hold on
-grid on;
-
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau, sqrt(dot(u,u,1)), 'k','LineWidth',1)
 plot(tau, u, 'LineWidth', 0.3)
-yline(T, '--k')
 xlabel('Flight time')
-ylabel('$\mathbf{a}$')
-legend('$\|u\|$','u', '$T_{max}$')
+ylabel('$\mathbf{u}$')
 grid on;
