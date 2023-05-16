@@ -9,7 +9,7 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq    
 
-function [A, b, Aeq, beq] = LinConstraints(obj, beta, P)
+function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     % Constants 
     Dim = 2+size(beta,1)+size(P,1)*size(P,2);    % Total dimension of the optimization variables
 

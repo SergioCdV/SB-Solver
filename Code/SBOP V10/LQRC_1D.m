@@ -29,7 +29,7 @@ SF = [0 -1].';                  % Final conditions
 A = 1/6;
 
 % Create the problem
-OptProblem = Problems.LQRC_1D(S0, SF, L, StateDimension, ControlDimension, A);
+OptProblem = Problems.Breakwell(S0, SF, L, StateDimension, ControlDimension, A);
 
 %% Optimization
 % Simple solution    

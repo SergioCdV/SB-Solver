@@ -34,7 +34,7 @@ classdef DetumblingRW < Problems.AbstractProblem
         [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf);
         [u] = ControlFunction(obj, params, beta, t0, tf, t, s);
         [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u);
-        [A, b, Aeq, beq] = LinConstraints(obj, beta, P);
+        [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P);
         [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u);
         [beta, t0, tf] = InitialGuess(obj, params, initial, final);
         [LB, UB] = BoundsFunction(obj);
