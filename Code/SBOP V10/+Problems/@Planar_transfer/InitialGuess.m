@@ -31,6 +31,6 @@ function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
 %     end 
 %     
 %     % New initial TOF
-    tf = 10;%tf*Napp;
+    tf = 2;%tf*Napp;
     beta = final(2)+2*pi*2;
 end

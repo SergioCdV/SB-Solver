@@ -11,28 +11,30 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = [15; 15];                                % Polynomial order in the state vector expansion
-m = 200;                               % Number of sampling points
+n = [10; 10];                                % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
-L = 2;                          % Degree of the dynamics (maximum derivative order of the ODE system)
+L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 2;             % Dimension of the configuration vector. Note the difference with the state vector
-ControlDimension = 2;           % Dimension of the control vector
+ControlDimension = 1;           % Dimension of the control vector
 
 % Boundary conditions
-S0 = [1; 0; 0; 1];              % Initial conditions
-SF = [1.1; 0; 0; sqrt(1/1.1)];  % Final conditions
+S0 = [1; 1];                % Initial conditions
+SF = [0; 0];                    % Final conditions
 
 % Problem parameters 
-T = 1e-3;              % Maximum acceleration 
-mu = 1;                % Gravitational parameter
+Tf = 10;              % Planning horizon
+Msell = 1;            % Minimum sell price
+Mbuy = 20;            % Maximum buy price
+R = 0;                % Constant interest rate
 
-problem_params = [mu; T];
+problem_params = [Tf; Msell; Mbuy; R];
 
 % Create the problem
-OptProblem = Problems.Planar_transfer(S0, SF, L, StateDimension, ControlDimension, problem_params);
+OptProblem = Problems.WheatTrading(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    
@@ -54,24 +56,17 @@ time = mean(time);
 
 %% Plots
 % Radial plot 
-polarplot(C(2,:), C(1,:)) 
+hold on
+plot(tau, C(1:2,:), 'LineWidth', 0.3)
+xlabel('Flight time')
+ylabel('$\mathbf{s}$')
+grid on;
 
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau, T * sqrt(dot(u,u,1)), 'k','LineWidth',1)
-plot(tau, T * u, 'LineWidth', 0.3)
-yline(T, '--k')
+plot(tau, u, 'LineWidth', 0.3)
 xlabel('Flight time')
 ylabel('$\mathbf{a}$')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
 grid on;
-
-figure 
-hold on
-plot(tau, rad2deg(atan2(u(2,:),u(1,:)))); 
-hold off 
-grid on;
-xlabel('Time')
-ylabel('$\theta$')
-title('Thrust in-plane angle')

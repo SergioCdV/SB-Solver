@@ -9,7 +9,7 @@ close all
 clear
 
 %% Numerical solver definition 
-basis = 'Orthogonal Bernstein';                    % Polynomial basis to be use
+basis = 'Bernstein';                    % Polynomial basis to be use
 time_distribution = 'Bernstein';        % Distribution of time intervals
 n = [15 15 15];                         % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
