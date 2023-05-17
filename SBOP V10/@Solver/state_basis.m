@@ -54,9 +54,11 @@ function [B, tau] = state_basis(obj, L, n, basis, tau)
     end
 
     for i = 1:length(n)
-        B{i} = P.basis(n(i),tau);
+        base = P.basis(n(i),tau);
+        derivative = zeros(L * (n(i)+1),length(tau));
         for j = 1:L
-            B{i} = [B{i}; P.derivative(n(i), tau, j)];
+            derivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:) = P.derivative(n(i), tau, j);
         end
+        B{i} = [base; derivative];
     end
 end

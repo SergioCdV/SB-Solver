@@ -42,6 +42,7 @@ classdef Solver
 
         % Solve
         [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem);
+        [B, tau] = state_basis(obj, L, n, basis, tau);
     end
 
     methods (Access = private)
@@ -91,7 +92,7 @@ classdef Solver
         end
         
         [Grid] = gridding(obj,m);
-        [B, tau] = state_basis(obj, L, n, basis, tau)
+
         [beta, t0, tf, P, C] = initial_approximation(obj, Problem, B, Grid);
         [P, C] = initial_fitting(obj, Problem, Grid, s);
         [C] = evaluate_state(obj, P, B, n, L);

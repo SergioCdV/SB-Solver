@@ -34,9 +34,9 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
     % Initial guess for the boundary control points
     mapp = 300;   
     Grid = obj.gridding(mapp);
-    B = obj.state_basis(L, n, basis, Grid.tau);
 
     obj.PolOrder = 3 * ones(size(n));
+    B = obj.state_basis(L, obj.PolOrder, basis, Grid.tau);
     [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, B, Grid); 
     obj.PolOrder = n;
 
@@ -63,7 +63,7 @@ function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
     [P_lb, P_ub] = obj.opt_bounds(Problem, n, size(betaapp,1));
 
     % Linear constraints
-    [A, b, Aeq, beq] = Problem.LinConstraints(betaapp, P0);
+    [A, b, Aeq, beq] = Problem.LinConstraints(Problem.Params, betaapp, P0);
 
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
     options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
