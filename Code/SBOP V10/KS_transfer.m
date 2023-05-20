@@ -11,7 +11,7 @@ clear
 %% Numerical solver definition 
 basis = 'Bernstein';                    % Polynomial basis to be use
 time_distribution = 'Bernstein';        % Distribution of time intervals
-n = [10 10 10 10 10];                   % Polynomial order in the state vector expansion
+n = [8 8 8 8 8];                   % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
