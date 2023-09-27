@@ -24,4 +24,19 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 
     % Equality constraints
     ceq = [cos(tf)-cos(params(3)); sin(tf)-sin(params(3))];     % Satisfaction of the boundary conditions
+
+    % Inequalities
+    c = [u(1,:).^2+u(2,:).^2+u(3,:).^2-(tf*repmat(T,1,size(u,2))).^2 -diff(C(6,:))];
+
+    % Kinematic constraint 
+    w = 1+C(2,:).*cos(C(6,:))+C(3,:).*sin(C(6,:));
+    res = tf*sqrt(mu*C(1,:)).*(w./C(1,:)).^2;
+    for i = 1:size(C,2)
+        B = control_input(mu, C(:,i)); 
+        res(i) = res(i)+B(6,3)*u(3,i);
+    end
+
+
+    % Equalities
+    ceq = [cos(C(6,end))-cos(final(6)) sin(C(6,end))-sin(final(6))];
 end

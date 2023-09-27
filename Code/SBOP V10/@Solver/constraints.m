@@ -38,4 +38,10 @@ function [c, ceq] = constraints(obj, Problem, B, Grid, x)
 
     % Equalities 
     [c, ceq] = Problem.NlinConstraints(Problem.Params, beta, t0, tf, Grid.tau, s, u);
+
+    % Relaxation 
+    N = length(Grid.tau);
+    delta = (N-1)^(1/2-L);
+    c = [c - delta; -c - delta; ceq - delta; -ceq - delta];
+    ceq = [];
 end

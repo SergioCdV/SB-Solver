@@ -4,17 +4,33 @@
 %% Control function %% 
 % Function implementation of the control function as a dynamics residual
 
-function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
-    % Constants 
-    mu = params(1); 
-    
-    % Compute the radius vector
-    r = sqrt(s(1,:).^2+s(3,:).^2);
+function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
+    % Compute the auxiliary variables
+    w = 1+S(2,:).*cos(S(6,:))+S(3,:).*sin(S(6,:));
+    s = 1+S(4,:).^2+S(5,:).^2;
 
     % Linear terms of the equations of motion
-    f = -[mu.*s(1,:)./r.^3; zeros(1,size(s,2)); mu.*s(3,:)./r.^3];                  % Acceleration vector
-    a = [s(7,:)-s(1,:).*s(5,:).^2; s(1,:).*s(8,:)+2*s(4,:).*s(5,:); s(9,:)];        % Inertial acceleration field
+    f = tf*[zeros(5,size(S,2)); sqrt(mu.*S(1,:)).*(w./S(1,:)).^2];                  % Acceleration vector
+    a = S(7:12,:);                                                                  % Inertial acceleration field
+    dv = S(7:12,:);                                                                 % Inertial velocity field
 
     % Compute the control vector as a dynamics residual
-    u = a-f;
+    u = zeros(3,size(S,2));
+
+    % Tangential component
+    alpha = 2*S(1,:)./w.*sqrt(S(1,:)/mu); 
+    u(2,:) = (a(1,:)-f(1,:))./alpha;
+
+    % Normal component
+    beta = sqrt(S(1,:)/mu).*S./(2*w);
+    u(3,:) = sqrt(a(4,:).^2+a(5,:).^2)./beta;
+    u(3,:) = u(3,:).*sign(a(4,:))./sign(cos(S(6,:)));
+
+    % Radial component
+    delta = sqrt(S(1,:)/mu);
+    for i = 1:size(S,2)
+        B = OrbitalDynamics.MEE_matrix(mu, S(:,i));
+        u(1,i) = (a(2,i)-B(2,2:3)*u(2:3,i))^2+(a(3,i)-B(3,2:3)*u(2:3,i))^2;
+    end
+    u(1,:) = sqrt(u(1,:))./delta;
 end
