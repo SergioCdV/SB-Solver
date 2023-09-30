@@ -37,7 +37,7 @@ function [c, ceq] = constraints(obj, Problem, B, Grid, x)
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function
 
     % Equalities 
-    [c, ceq] = Problem.NlinConstraints(Problem.Params, beta, t0, tf, Grid.tau, s, u);
+    [c, ceq] = Problem.NlinConstraints(Problem.Params, beta, t0, tf, t(1,:), s, u);
 
     % Relaxation 
     N = length(Grid.tau);

@@ -11,14 +11,14 @@ clear
 %% Numerical solver definition 
 basis = 'Bernstein';                    % Polynomial basis to be use
 time_distribution = 'Bernstein';        % Distribution of time intervals
-n = [16 16 16 16 16 16];                % Polynomial order in the state vector expansion
+n = 10;                                 % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
 L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 6;             % Dimension of the configuration vector. Note the difference with the state vector
+StateDimension = 5;             % Dimension of the configuration vector. Note the difference with the state vector
 ControlDimension = 3;           % Dimension of the control vector
 
 % System data 
@@ -34,17 +34,24 @@ gamma = r0/t0^2;                % Characteristic acceleration
 initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)]; 
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
+initial_coe(1) = initial_coe(1) / r0;
+S0 = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
+S0(end) = 0;                                                     % Sundman transformation
 
 % Mars' orbital elements 
-final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)]; 
+final_coe = [1.10*r0 1e-3 deg2rad(0) deg2rad(1) deg2rad(0)]; 
 thetaf = deg2rad(100);
-final_coe = [final_coe thetaf]; 
+final_coe = [final_coe thetaf];
+final_coe(1) = final_coe(1) / r0;
+SF = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
 
 % Spacecraft parameters 
-T = 0.5e-3;              % Maximum acceleration 
+T = 0.5e-4;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T; SF(6)];
+problem_params = [mu; T; SF(6); S0(6)];
+S0 = S0(1:5);
+SF = SF(1:5);
 
 % Create the problem
 OptProblem = Problems.LowThrustMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
@@ -69,7 +76,8 @@ time = mean(time);
 
 %% Plots
 % Main plots 
-[S] = cylindrical2cartesian(C(1:3,:),true);
+C = [C(1:5,:); tau; C(6:end,:)];
+[S] = OrbitalDynamics.equinoctial2ECI(mu, C, true);
 x = S(1,:);
 y = S(2,:); 
 z = S(3,:);
