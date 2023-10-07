@@ -1,17 +1,17 @@
 %% SBOPT %%
-% Date: 05/05/2023
+% Date: 07/10/2023
 
-%% Low-thurst MEE problem %% 
-% Implementation of optimal low-thrust 3D orbital transfers in MEE coodinates
+%% DROMO problem %% 
+% Implementation of optimal low-thrust 3D orbital transfers in DROMO formulation
 
-classdef LowThrustMEE < Problems.AbstractProblem 
+classdef DROMO < Problems.AbstractProblem 
     % Fundamental definition of the problem
     properties  
     end
 
     methods 
         % Constructor 
-        function [obj] = LowThrustMEE(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+        function [obj] = DROMO(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
             super_arguments{1} = myInitial;
             super_arguments{2} = myFinal;
             super_arguments{3} = myDerDeg;

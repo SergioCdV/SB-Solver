@@ -7,6 +7,6 @@
 function [beta, t0, tf] = InitialGuess(obj, params, initial, final)    
     % Initial guess
     t0 = 0;
-    tf = 30;
-    beta = [];
+    tf = params(1);
+    beta = [100 100 100 0 0 0].';
 end

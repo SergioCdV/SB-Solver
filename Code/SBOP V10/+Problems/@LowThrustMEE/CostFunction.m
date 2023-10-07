@@ -12,9 +12,8 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     M = 0; 
 
     w = 1+s(2,:).*cos(t)+s(3,:).*sin(t);
-    res = sqrt(mu*s(1,:)).*(w./s(1,:)).^2 +sqrt(s(1,:)/mu)./w.*(s(4,:).*sin(t) + s(5,:).*cos(t)) .* u(3,:);
-    a = 1./res;
-    L = a;
+    gamma = sqrt(mu*s(1,:)).*(w./s(1,:)).^2 + sqrt(s(1,:)/mu)./w.*(s(4,:).*sin(t) + s(5,:).*cos(t)) .* u(3,:);
+    L = dot(u,u,1)./gamma;
 end
 
 %% Auxiliary code 

@@ -2,7 +2,7 @@
 % Date: 01/08/22
 
 %% 3D low-thrust transfer %% 
-% This script provides a main interface to solve 3D low-thrust transfers in MEE coordinates %
+% This script provides a main interface to solve 3D low-thrust transfers in DROMO %
 
 %% Set up 
 close all
@@ -11,7 +11,7 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
+n = 15;                                 % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
@@ -38,7 +38,7 @@ initial_coe(1) = initial_coe(1) / r0;
 S0 = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
 
 % Mars' orbital elements 
-final_coe = [1.1*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)]; 
+final_coe = [7*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf];
 final_coe(1) = final_coe(1) / r0;
@@ -84,15 +84,15 @@ z = S(3,:);
 % Earth's orbit
 thetaE = linspace(0, 2*pi, size(C,2));
 
-s = OrbitalDynamics.coe2state(mu, initial_coe);
-initial = OrbitalDynamics.cylindrical2cartesian(s, false).';
+s = coe2state(mu, initial_coe);
+initial = cylindrical2cartesian(s, false).';
 
-s = OrbitalDynamics.coe2state(mu, final_coe);
-final = OrbitalDynamics.cylindrical2cartesian(s, false).';
+s = coe2state(mu, final_coe);
+final = cylindrical2cartesian(s, false).';
     
 s = zeros(6,length(thetaE));
 for i = 1:length(thetaE)
-    s(:,i) = OrbitalDynamics.coe2state(mu, [initial_coe(1:end-1) initial(2)+thetaE(i)]);
+    s(:,i) = coe2state(mu, [initial_coe(1:end-1) initial(2)+thetaE(i)]);
 end
 xE = s(1,:);
 yE = s(2,:);
@@ -100,7 +100,7 @@ zE = s(3,:);
     
 % Mars's orbit
 for i = 1:length(thetaE)
-    s(:,i) = OrbitalDynamics.coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
+    s(:,i) = coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
 end
 xM = s(1,:);
 yM = s(2,:);

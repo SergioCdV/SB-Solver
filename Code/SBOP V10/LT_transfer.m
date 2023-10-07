@@ -11,7 +11,7 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = [20 20 20];                         % Polynomial order in the state vector expansion
+n = [15 15 15];                         % Polynomial order in the state vector expansion
 m = 200;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
@@ -37,15 +37,15 @@ initial_coe = [initial_coe theta0];
 initial_coe(1) = initial_coe(1) / r0;
 R = OrbitalDynamics.coe2state(mu, initial_coe);
 S0 = OrbitalDynamics.cylindrical2cartesian(R, false);
-final_coe = [1.1*r0 1e-3 deg2rad(2) deg2rad(0) deg2rad(5)];   % Mars' orbital elements 
-thetaf = deg2rad(120);
+final_coe = [1.05*r0 1e-3 deg2rad(00) deg2rad(50) deg2rad(0)];   % Mars' orbital elements 
+thetaf = deg2rad(90);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
 R = OrbitalDynamics.coe2state(mu, final_coe);
 SF = OrbitalDynamics.cylindrical2cartesian(R, false);
 
 % Spacecraft parameters 
-T = 0.5e-5;              % Maximum acceleration 
+T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
 problem_params = [mu; T; SF(2)];

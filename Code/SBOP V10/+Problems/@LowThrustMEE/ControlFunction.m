@@ -36,4 +36,6 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
         u(1,i) = (a(2,i)-B(2,2:3)*u(2:3,i))^2+(a(3,i)-B(3,2:3)*u(2:3,i))^2;
     end
     u(1,:) = sqrt(u(1,:))./delta;
+
+    u = u .* gamma;
 end
