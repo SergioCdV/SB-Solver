@@ -6,7 +6,7 @@
 
 function [beta, t0, tf] = InitialGuess(obj, params, initial, final)    
     % Initial guess
-    t0 = 0;
-    tf = params(1);
+    t0 = params(26);                    % Initial true anomaly [rad]
+    tf = params(27);                    % Final true anomaly [rad]
     beta = [100 100 100 0 0 0].';
 end

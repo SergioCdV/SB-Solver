@@ -30,4 +30,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
 
     % Normal acceleration
     u(3,:) = sqrt(dot(omega, omega, 1)) .* sign( s(11,:) ./ omega(1,:) );
+
+    % Dimensioning 
+    u = u .* (s(3,:).^4 * S.^3);
 end

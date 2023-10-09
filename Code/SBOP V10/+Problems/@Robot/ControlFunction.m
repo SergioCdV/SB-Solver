@@ -5,8 +5,10 @@
 % Function implementation of the control function as a dynamics residual
 
 function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
-    % Compute the control vector as a dynamics residual (linear acceleration)
-    u(1:3,:) = s(15:17,:);
+    % Compute the control vector as a dynamics residual (linear acceleration, TH relative motion model)
+    Omega = params(23)^2 / params(25)^3;                                    % True orbit mean motion
+    rho = 1 + params(24) * cos(tau(1,:));                                   % Transformation parameter
+    u(1:3,:) = s(15:17,:) - [2 * s(3,:); -s(2,:); 2*s(3,:)./rho-2*s(1,:)];
 
     % Compute the angular velocity
     I = reshape(params(13:21), 3, 3);      % Inertia tensor of the chaser
@@ -24,4 +26,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     for i = 1:length(tau)
         u(4:6,i) = I * alpha(:,i) + cross(omega(:,i), I*omega(:,i));           % Euler equations
     end
+
+    % Dimensionalization
+    u = u .* (Omega.*rho).^2;
 end

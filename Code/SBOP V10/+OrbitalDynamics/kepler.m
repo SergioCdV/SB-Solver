@@ -23,7 +23,7 @@ function [theta] = kepler(elements)
     E(iter) = (M0*(1-sin(u))+u*sin(M0))/(1+sin(M0)-sin(u));     % Initial guess for the eccentric anomaly
     
     % Main computation 
-    while ((GoOn) && (iter < iterMax))
+    while (GoOn && iter < iterMax)
         % Laguerre-Conway iterations
         f = E(iter)-e*sin(E(iter))-M0; 
         df = 1-e*cos(E(iter));
@@ -43,4 +43,5 @@ function [theta] = kepler(elements)
     sin_E = sqrt(1-e^2)*sin(E(end))/(1-e*cos(E(end)));
     cos_E = (cos(E(end))-e)/(1-e*cos(E(end)));
     theta = atan2(sin_E, cos_E);
+    theta = mod(theta, 2*pi);
 end
