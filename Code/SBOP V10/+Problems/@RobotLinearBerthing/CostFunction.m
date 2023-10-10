@@ -6,11 +6,10 @@
 
 function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     % Differential time law 
-    omega = params(23)^2 / params(25)^3;       % True orbit mean motion
-    k = 1 + params(24) * cos(t(1,:));          % Transformation parameter
-    dnu = omega .* k;                          % Differential time law (Kepler's second law)
+    rho = 1 + params(5) * cos(t(1,:));                    % Transformation parameter
+    Omega = params(4)^2/params(6)^3 .* rho.^2;            % True anomaly angular velocity [rad/s]
 
     % Mayer and Lagrange terms
     M = 0; 
-    L = dot(u, u, 1) ./ dnu;
+    L = dot(u, u, 1) .* Omega;
 end

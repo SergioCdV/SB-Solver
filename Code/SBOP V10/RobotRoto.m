@@ -11,14 +11,15 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 12;                                % Polynomial order in the state vector expansion
+n = 12;                                 % Polynomial order in the state vector expansion
 m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 Lc = 1;                         % Characteristic length [m]
-Tc = 100;                       % Characteristic time [s]
-Fmax = 0.5e-1;                  % Maximum available acceleration [m/s^2]
+Tc = 3600 * 4;                  % Characteristic time [s]
+Fmax = 0.5e-2;                  % Maximum available acceleration [m/s^2]
+Tmax = 10;                      % Maximum available torque [Nm]
 
 %% Problem definition 
 % Target orbital elements
@@ -37,8 +38,10 @@ h = sqrt(mu * Orbit_t(1) * (1-Orbit_t(2)^2));                   % Target angular
 
 % Add linear boundary conditions
 r_0 = 10 * rand(1,3);                                           % Initial dimensional position vector [m]
-v_0 = 0.1 * rand(1,3);                                          % Initial dimensional velocity vector [m/s]
-S0 = [r_0.'; v_0.'];                                            % Initial conditions
+v_0 = 0.1 * rand(1,3);                                            % Initial dimensional velocity vector [m/s]
+sigma_0 = [zeros(3,1); 1];                                      % Initial relative MRP
+omega_0 = zeros(4,1);                                           % Initial relative angular velocity of the chaser [rad/s]
+S0 = [r_0.'; sigma_0; v_0.'; omega_0];                          % Initial conditions
 
 %% Final boundary conditions
 % TH space transformation 
@@ -46,17 +49,24 @@ omega = mu^2 / h^3;                                             % True anomaly a
 k = 1 + Orbit_t(2) * cos(nu_0);                                 % Transformation parameter
 kp =  - Orbit_t(2) * sin(nu_0);                                 % Derivative of the transformation
 L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];      % TH transformation matrix
-S0 = L * S0;                                                    % TH initial boundary conditions
+S0([1:3 8:10]) = L * S0([1:3 8:10]);                            % TH initial boundary conditions
 
 Phi0 = OrbitalDynamics.YA_Phi(mu, h, Orbit_t(2), 0, nu_0);      % Initial fundamental matrix
 invPhi0 = (Phi0\eye(6));                                        % Inverse of the initial fundamental matrix
 phi = OrbitalDynamics.YA_Phi(mu, h, Orbit_t(2), Tc, nu_f);      % Final fundamental matrix
 Phi = phi * invPhi0;                                            % YA STM
-r_f = Phi(1:3,:) * S0;                                          % Final dimensional position vector [m]
-v_f = Phi(4:6,:) * S0;                                          % Initial dimensional velocity vector [m/s]
+r_f = Phi(1:3,:) * S0([1:3 8:10]);                              % Final dimensional position vector [m]
+v_f = Phi(4:6,:) * S0([1:3 8:10]);                              % Initial dimensional velocity vector [m/s]
+
+% Add attitude boundary conditions
+sigma_f = [0;0;0;1];                                            % Final relative quaternion (null)
+omega_f = zeros(4,1);                                           % Final relative angular velocity [rad/s]
 
 % Assemble the state vector
-SF = [r_f; zeros(3,1)];                                         % Final conditions
+SF = [r_f; sigma_f; zeros(3,1); omega_f];                              % Final conditions
+
+S0 = S0([1:3 8:10]);
+SF = SF([1:3 8:10]);
 
 %% Create the problem
 % Linear problem data
@@ -71,13 +81,18 @@ params(7) = nu_0;                % Initial true anomaly [rad]
 params(8) = nu_f;                % Final true anomaly [rad]
 
 params(9:11) = [1 1 1].';        % Final target's docking port position in the target's body frame
-params(12:14) = [1 1 1].';       % Final chaser's docking port position in the chaser's body frame // TODO: input
+params(12:14) = [1 1 1].';       % Final chaser's docking port position in the chaser's body frame
+
+% params(13:21) = diag([1 2 3]);   % Inertia tensor of the chaser [kg m^2]
+% params(22) = Tmax;               % Maximum torque [Nm]
+% params(7:9) = [0.5 0.5 0.5].';   % Final target's docking port attitude MRP to the LVLH frame 
+% params(10:12) = [5 5 10].';      % Final target's angular velocity in the target's frame [rad/s]
 
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 3;              % Dimension of the configuration vector. Note the difference with the state vector
 ControlDimension = 3;            % Dimension of the control vector
 
-OptProblem = Problems.RobotLinearBerthing(S0, SF, L, StateDimension, ControlDimension, params);
+OptProblem = Problems.Robot(S0, SF, L, StateDimension, ControlDimension, params);
 
 %% Optimization
 % Simple solution    
@@ -103,7 +118,7 @@ for i = 1:length(tau)
     k = 1 + Orbit_t(2) * cos(tau(i));                              % Transformation
     kp =  - Orbit_t(2) * sin(tau(i));                              % Derivative of the transformation
     L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];     % TH transformation matrix
-    C(1:6,i) = L \ C(1:6,i);                                       % Physical space
+    C(1:6,i) = L \ C(1:6,i);                                           % Physical space
 end
 
 % Dimensions
@@ -134,6 +149,24 @@ legend('off')
 grid on;
 xlim([0 tau(end)])
 
+% figure
+% hold on
+% xlabel('$\nu$')
+% ylabel('$\mathbf{q}$')
+% plot(tau, C(4:7,:));
+% legend('$q_1$', '$q_2$', '$q_3$')
+% hold off
+% legend('off')
+% grid on;
+% xlim([0 tau(end)])
+% 
+% figure
+% hold on
+% xlabel('$\nu$')
+% ylabel('$\mathbf{\omega}$')
+% plot(tau, C(11:13,:));
+% legend('$\omega_x$', '$\omega_y$', '$\omega_z$')
+% hold off
 legend('off')
 grid on;
 xlim([0 tau(end)])
@@ -149,6 +182,17 @@ ylabel('$\mathbf{a}$')
 legend('$a_x$', '$a_y$', '$a_z$', '$\|\mathbf{a}\|_2$', '$a_{max}$');
 grid on;
 xlim([0 tau(end)])
+
+% figure;
+% hold on
+% plot(tau, u(1:3,:), 'LineWidth', 0.3)
+% plot(tau, sqrt(dot(u(4:6,:),u(4:6,:),1)), 'k');
+% yline(Tmax, 'k--')
+% xlabel('$\nu$')
+% ylabel('$\mathbf{\tau}$')
+% legend('$\tau_x$', '$\tau_y$', '$\tau_z$', '$\|\mathbf{\tau}\|_2$', '$\tau_{max}$');
+% grid on;
+% xlim([0 tau(end)])
 
 figure
 view(3)
