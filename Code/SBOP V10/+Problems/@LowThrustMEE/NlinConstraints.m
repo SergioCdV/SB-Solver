@@ -16,7 +16,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
     ct = dot(u,u,1)-(params(2)).^2;                 % Thrust modulation
 
     % Equalities (Sundman transformation)
-    ceq = [cos(t(end))-cos(params(3)) sin(t(end))-sin(params(3))].';
+    ceq = [cos(t(end))-cos(params(4)) sin(t(end))-sin(params(4))].';
     % ceq = [];
     c = [-1./gamma.'; ct.'];
 end

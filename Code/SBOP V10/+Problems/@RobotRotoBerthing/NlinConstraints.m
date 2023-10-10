@@ -15,10 +15,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     % Inequality constraints
     R = dot(params(9:11).'-SF(1:3)-params(12:14).', params(9:11).'-SF(1:3)-params(12:14).', 1)-params(2)^2; 
 
-    c = [dot(u(1:3,:),u(1:3,:),1)-params(3)^2 ...                          % Constraint on the force magnitude (second order cone)
-         -k.^2 * omega ...                                                 % Monotony of the time law
-         R];                                                               % Graspling constraint
-%          dot(u(4:6,:),u(4:6,:),1)-params(22)^2 ...                       % Constraint on the torque magnitude (second order cone];                                                    
+    c = [dot(u(4:6,:),u(4:6,:),1)-params(22)^2];                       % Constraint on the torque magnitude (second order cone];                                                    
 % 
 %     omega_f = 2 * [s(4,end).*s(11,end)+s(3,end).*s(12,end)-s(2,end).*s(13,end)-s(1,end).*s(14,end); ...
 %                 -s(3,end).*s(11,end)+s(4,end).*s(12,end)+s(1,end).*s(13,end)-s(2,end).*s(14,end); ...

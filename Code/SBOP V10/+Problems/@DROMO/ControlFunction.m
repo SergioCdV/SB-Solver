@@ -21,7 +21,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     sigma = [zeros(2, size(t,2)); sin(t(1,:)/2); cos(t(1,:)/2)];
     epsilon = sigma; 
     for i = 1:size(t,2)
-        epsilon(:,i) = QuaternionAlgebra.QuatProduct(sigma(:,i), s(4:7,i));
+        epsilon(:,i) = QuaternionAlgebra.right_isoclinic(sigma(:,i)) * s(4:7,i);
     end
 
     omega = 2 * [epsilon(4,:).*s(11,:)+epsilon(3,:).*s(12,:)-epsilon(2,:).*s(13,:)-epsilon(1,:).*s(14,:); ...
@@ -32,5 +32,5 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     u(3,:) = sqrt(dot(omega, omega, 1)) .* sign( s(11,:) ./ omega(1,:) );
 
     % Dimensioning 
-    u = u .* (s(3,:).^4 * S.^3);
+    u = u .* (s(3,:).^4 .* S.^3);
 end

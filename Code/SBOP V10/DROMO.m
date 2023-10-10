@@ -11,14 +11,14 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 15;                                 % Polynomial order in the state vector expansion
+n = 10;                                 % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
 L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 5;             % Dimension of the configuration vector. Note the difference with the state vector
+StateDimension = 7;             % Dimension of the configuration vector. Note the difference with the state vector
 ControlDimension = 3;           % Dimension of the control vector
 
 % System data 
@@ -35,25 +35,27 @@ initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)];
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 initial_coe(1) = initial_coe(1) / r0;
-S0 = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
+S0 = OrbitalDynamics.coe2state(mu, initial_coe);         % Initial Cartesian state vector
+S0 = OrbitalDynamics.state2dromo(S0);                    % Initial DROMO
 
 % Mars' orbital elements 
-final_coe = [7*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)]; 
+final_coe = [1.1*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf];
 final_coe(1) = final_coe(1) / r0;
-SF = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
+SF = OrbitalDynamics.coe2state(mu, final_coe);           % Final Cartesian state vector
+SF = OrbitalDynamics.state2dromo(SF);                    % Final DROMO
 
 % Spacecraft parameters 
 T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T; S0(6); SF(6)];
-S0 = S0(1:5);
-SF = SF(1:5);
+problem_params = [mu; T; S0(8); SF(8)];
+S0 = S0(1:7);
+SF = SF(1:7);
 
 % Create the problem
-OptProblem = Problems.LowThrustMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
+OptProblem = Problems.DROMO(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    
@@ -76,7 +78,13 @@ time = mean(time);
 %% Plots
 % Main plots 
 C = [C(1:5,:); tau; C(6:end,:)];
-[S] = OrbitalDynamics.equinoctial2ECI(mu, C, true);
+
+S = zeros(6,length(tau));
+for i = 1:legnth(tau)
+    aux = OrbitalDynamics.dromo2coe(C);
+    S(:,i) = OrbitalDynamics.coe2state(mu, aux);
+end
+
 x = S(1,:);
 y = S(2,:); 
 z = S(3,:);
