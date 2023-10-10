@@ -23,5 +23,4 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     Aeq = zeros(Dim);
     Aeq(1,end-size(beta,1)-1) = 1;      % Initial and final anomaly constraints
     beq = zeros(Dim,1);
-    beq(1,1) = params(7);
 end
