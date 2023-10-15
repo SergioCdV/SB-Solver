@@ -5,14 +5,16 @@
 % Function implementation of the path and boundary constraints functions
 
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)    
-    % Sundman transformation
-    S = 1+s(1,:).*cos(t)+s(2,:).*sin(t);
-    gamma = s(3,:).^3.*S.^2;
-
     % Inequality constraints
     ct = dot(u,u,1)-params(2).^2;   % Thrust modulation
 
     % Equalities (Sundman transformation)
-    ceq = [cos(t(end))-cos(params(4)) sin(t(end))-sin(params(4)) dot(s(4:7,:),s(4:7,:),1)-1].';
-    c = [-gamma ct -s(3,:)].';
+    rvd_cns = OrbitalDynamics.dromo2coe([s(1:7,end); t(end)]);
+    ceq = [dot(s(4:7,:),s(4:7,:),1)-1 ...
+           rvd_cns(2)-params(4) ...
+           cos(rvd_cns(end))-cos(params(5)) ...
+           sin(rvd_cns(end))-sin(params(5))
+           ].';
+
+    c = [-s(3,:) ct].';
 end

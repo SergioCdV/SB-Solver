@@ -41,7 +41,7 @@ classdef Solver
         end
 
         % Solve
-        [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem);
+        [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem);
         [B, tau] = state_basis(obj, L, n, basis, tau);
         [Grid] = gridding(obj,m);
         [C] = evaluate_state(obj, P, B, n, L);

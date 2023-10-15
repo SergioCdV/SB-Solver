@@ -11,8 +11,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 10;                                 % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+n = 15;                                 % Polynomial order in the state vector expansion
+m = 200;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
@@ -39,7 +39,7 @@ S0 = OrbitalDynamics.coe2state(mu, initial_coe);         % Initial Cartesian sta
 S0 = OrbitalDynamics.state2dromo(S0);                    % Initial DROMO
 
 % Mars' orbital elements 
-final_coe = [1.1*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)]; 
+final_coe = [2*r0 1e-3 deg2rad(0) deg2rad(0) deg2rad(0)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf];
 final_coe(1) = final_coe(1) / r0;
@@ -50,9 +50,12 @@ SF = OrbitalDynamics.state2dromo(SF);                    % Final DROMO
 T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T; S0(8); SF(8)];
+problem_params = [mu; T; S0(8); final_coe(2); OrbitalDynamics.kepler(final_coe)];
 S0 = S0(1:7);
 SF = SF(1:7);
+
+S0(4:6) = -S0(4:6);
+SF(4:6) = -SF(4:6);
 
 % Create the problem
 OptProblem = Problems.DROMO(S0, SF, L, StateDimension, ControlDimension, problem_params);
@@ -77,12 +80,11 @@ time = mean(time);
 
 %% Plots
 % Main plots 
-C = [C(1:5,:); tau; C(6:end,:)];
+C = [C(1:7,:); tau; C(8:end,:)];
 
 S = zeros(6,length(tau));
-for i = 1:legnth(tau)
-    aux = OrbitalDynamics.dromo2coe(C);
-    S(:,i) = OrbitalDynamics.coe2state(mu, aux);
+for i = 1:length(tau)
+    S(:,i) = OrbitalDynamics.dromo2state(C(1:8,i));
 end
 
 x = S(1,:);
@@ -92,15 +94,15 @@ z = S(3,:);
 % Earth's orbit
 thetaE = linspace(0, 2*pi, size(C,2));
 
-s = coe2state(mu, initial_coe);
-initial = cylindrical2cartesian(s, false).';
+s = OrbitalDynamics.coe2state(mu, initial_coe);
+initial = OrbitalDynamics.cylindrical2cartesian(s, false).';
 
-s = coe2state(mu, final_coe);
-final = cylindrical2cartesian(s, false).';
+s = OrbitalDynamics.coe2state(mu, final_coe);
+final = OrbitalDynamics.cylindrical2cartesian(s, false).';
     
 s = zeros(6,length(thetaE));
 for i = 1:length(thetaE)
-    s(:,i) = coe2state(mu, [initial_coe(1:end-1) initial(2)+thetaE(i)]);
+    s(:,i) = OrbitalDynamics.coe2state(mu, [initial_coe(1:end-1) initial(2)+thetaE(i)]);
 end
 xE = s(1,:);
 yE = s(2,:);
@@ -108,7 +110,7 @@ zE = s(3,:);
     
 % Mars's orbit
 for i = 1:length(thetaE)
-    s(:,i) = coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
+    s(:,i) = OrbitalDynamics.coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
 end
 xM = s(1,:);
 yM = s(2,:);

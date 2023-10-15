@@ -17,7 +17,7 @@
 %          - structure output, containing information on the final state of
 %            the optimization process
 
-function [C, cost, u, t0, tf, t, exitflag, output] = solve(obj, Problem)
+function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     % Last checks 
     if (length(obj.PolOrder) ~= Problem.StateDim)
         warning('The input polynomial order vector mismatches the state dimension...'); 

@@ -5,8 +5,8 @@
 % Function implementation of the a warming up initial guess if available
 
 function [beta, t0, tf] = InitialGuess(obj, params, initial, final)    
-    % New initial TOF (anomaly)
-    t0 = 0;
-    tf = params(4) + 2 * pi * 6;
-    beta = final(2);
+    % Initial guess
+    t0 = params(1);            % Initial clock
+    tf = params(2);            % Final clock
+    beta = initial;            % Initial guess for the final boundary condition
 end

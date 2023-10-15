@@ -17,7 +17,7 @@ function [s] = dromo2coe(elements)
     p = 2 * atan2(elements(6), elements(7));             % RAAN + AoP
     r = 2 * atan2(elements(5), elements(4));             % RAAN - AoP
     
-    Omega = (p + r)/2;                                   % RAAN
+    Omega = p + r;                                       % RAAN
     omega_tilde = Omega - r;
     omega = beta + omega_tilde;                          % AoP
     

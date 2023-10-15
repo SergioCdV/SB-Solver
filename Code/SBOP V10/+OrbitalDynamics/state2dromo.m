@@ -26,13 +26,12 @@ function [d] = state2dromo(s)
 
         diff = (Omega-omega)/2;
         plus = (Omega+omega)/2;
-        cos_i = cos(inc);
 
         % Attitude quaternion
-        q(1,1) = sin(acos(cos_i)/2) * cos(diff);
-        q(2,1) = sin(acos(cos_i)/2) * sin(diff);
-        q(3,1) = cos(acos(cos_i)/2) * sin(plus);
-        q(4,1) = cos(acos(cos_i)/2) * cos(plus);
+        q(1,1) = sin(inc/2) * cos(diff);
+        q(2,1) = sin(inc/2) * sin(diff);
+        q(3,1) = cos(inc/2) * sin(plus);
+        q(4,1) = cos(inc/2) * cos(plus);
     
         sin_sigma = dot(-j, u_1);                       % Sine of the initial perifocal angle
         cos_sigma = dot(i, u_1);                        % Cosine of the initial perifocal angle

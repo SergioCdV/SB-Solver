@@ -17,6 +17,6 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
 
     % Equalities (Sundman transformation)
     ceq = [cos(t(end))-cos(params(4)) sin(t(end))-sin(params(4))].';
-    % ceq = [];
+    ceq = [];
     c = [-1./gamma.'; ct.'];
 end
