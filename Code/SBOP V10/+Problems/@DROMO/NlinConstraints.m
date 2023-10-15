@@ -7,14 +7,16 @@
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)    
     % Inequality constraints
     ct = dot(u,u,1)-params(2).^2;   % Thrust modulation
+    hpos = -s(3,:);                 % Positive definiteness of the angular momentum
+    c = [hpos ct].';
 
-    % Equalities (Sundman transformation)
-    rvd_cns = OrbitalDynamics.dromo2coe([s(1:7,end); t(end)]);
-    ceq = [dot(s(4:7,:),s(4:7,:),1)-1 ...
-           rvd_cns(2)-params(4) ...
-           cos(rvd_cns(end))-cos(params(5)) ...
-           sin(rvd_cns(end))-sin(params(5))
+    % Equalities 
+    beta = atan2(s(4,end), s(5,end));
+    theta_f = t(1,end) - beta;
+
+    ceq = [dot(s(4:7,:),s(4:7,:),1)-1 ...                       % Quaternion norm constraint
+           dot(s(1:2,end),s(1:2,end),1)-params(3)^2 ...         % Final eccentricity
+%            cos(theta_f)-cos(params(5)) ...                      % Sundman transformation
+%            sin(theta_f)-sin(params(5))                          % Sundman transformation
            ].';
-
-    c = [-s(3,:) ct].';
 end

@@ -25,8 +25,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
                  epsilon(2,:).*s(11,:)-epsilon(1,:).*s(12,:)+epsilon(4,:).*s(13,:)-epsilon(3,:).*s(14,:)];
 
     % Normal acceleration
-%     u(3,:) = sqrt(dot(omega, omega, 1)) .* sign( s(11,:) ./ cos(t(1,:)) );
-    u(3,:) = omega(1,:) ./ cos(t(1,:));
+    u(3,:) = sqrt(dot(omega, omega, 1)) .* sign( s(11,:) ./ cos(t(1,:)) );
 
     % Dimensioning 
     u([1 3],:) = u([1 3],:) .* (s(3,:).^4 .* S.^3);

@@ -11,8 +11,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 15;                                 % Polynomial order in the state vector expansion
-m = 200;                                % Number of sampling points
+n = 7;                                 % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
@@ -39,7 +39,7 @@ S0 = OrbitalDynamics.coe2state(mu, initial_coe);         % Initial Cartesian sta
 S0 = OrbitalDynamics.state2dromo(S0);                    % Initial DROMO
 
 % Mars' orbital elements 
-final_coe = [2*r0 1e-3 deg2rad(0) deg2rad(0) deg2rad(0)]; 
+final_coe = [1*r0 1e-3 deg2rad(0) deg2rad(50) deg2rad(0)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf];
 final_coe(1) = final_coe(1) / r0;
@@ -50,12 +50,9 @@ SF = OrbitalDynamics.state2dromo(SF);                    % Final DROMO
 T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T; S0(8); final_coe(2); OrbitalDynamics.kepler(final_coe)];
+problem_params = [mu; T; final_coe(2); S0(8); OrbitalDynamics.kepler(final_coe)];
 S0 = S0(1:7);
 SF = SF(1:7);
-
-S0(4:6) = -S0(4:6);
-SF(4:6) = -SF(4:6);
 
 % Create the problem
 OptProblem = Problems.DROMO(S0, SF, L, StateDimension, ControlDimension, problem_params);

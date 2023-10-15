@@ -19,7 +19,7 @@ function [d] = state2dromo(s)
         u_2 = cross(k, u_1);                            % Perifocal departure frame
         j = cross(k,i);                                 % Inertial j unit vector
 
-        Q = [u_1, u_2, k];                              % Initial rotation matrix of the ideal frame
+        Q = [u_1, u_2, k].';                            % Initial rotation matrix of the ideal frame
         Omega = atan2(Q(3,1),-Q(3,2));                  % RAAN
         omega = atan2(Q(1,3),Q(2,3));                   % Argument of perigee
         inc = acos(Q(3,3));                             % Inclination of the orbit
