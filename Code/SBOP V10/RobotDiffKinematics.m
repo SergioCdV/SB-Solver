@@ -39,6 +39,7 @@ s_ref = zeros((L+1) * StateDimension, m+1);
 params(1) = 0;                   % TOF 
 params(2) = 10;                  % Maximum length
 params(3) = Tmax;                % Maximum control authority 
+params(4:9) = zeros(6,1);        % All joints are revolute
 
 % Reference trajectory polynomial
 params(4:4+size(s_ref,1)*size(s_ref,2)-1) = reshape(s_ref, 1, []);  

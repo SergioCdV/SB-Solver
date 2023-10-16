@@ -13,7 +13,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
 
     % Compute the Jacobian
     for i = 1:length(tau)
-        J = eye(6);
+        J = Kinematics(obj.StateDim, params(4:4+obj.StateDim-1), @(i,s)UR13_dkinematics(i,s), s(:,i));
         invJ = pinv(J);
 %         A = eye(size(J,2)) - invJ * J;
     

@@ -11,14 +11,14 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 10;                                 % Polynomial order in the state vector expansion
-m = 200;                                % Number of sampling points
+n = 7;                                 % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
 L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 7;             % Dimension of the configuration vector. Note the difference with the state vector
+StateDimension = 6;             % Dimension of the configuration vector. Note the difference with the state vector
 ControlDimension = 3;           % Dimension of the control vector
 
 % System data 
@@ -38,22 +38,33 @@ initial_coe(1) = initial_coe(1) / r0;
 S0 = OrbitalDynamics.coe2dromo(mu, initial_coe);                  % Initial DROMO
 
 % Mars' orbital elements 
-final_coe = [2*r0 1e-3 deg2rad(0) deg2rad(0) deg2rad(0)]; 
+final_coe = [1.1*r0 1e-3 deg2rad(15) deg2rad(10) deg2rad(-30)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf];
 final_coe(1) = final_coe(1) / r0;
 SF = OrbitalDynamics.coe2dromo(mu, final_coe);                    % Final DROMO
 
 % Spacecraft parameters 
-T = 0.5e-3;              % Maximum acceleration 
+T = 0.5e-1;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
 problem_params = [mu; T; final_coe(2); S0(8); OrbitalDynamics.kepler(final_coe)];
 S0 = S0(1:7);
 SF = SF(1:7);
 
+S0 = [S0(1:3); QuaternionAlgebra.MPR2Quat(1, 1, S0(4:7), false)];
+SF = [SF(1:3); QuaternionAlgebra.MPR2Quat(1, 1, SF(4:7), false)];
+
+if (norm(S0(4:6)) >= 1)
+    S0(4:6) = - S0(4:6) / dot(S0(4:6), S0(4:6));
+end
+
+if (norm(SF(4:6)) >= 1)
+    SF(4:6) = - SF(4:6) / dot(SF(4:6), SF(4:6));
+end
+
 % Create the problem
-OptProblem = Problems.DROMO(S0, SF, L, StateDimension, ControlDimension, problem_params);
+OptProblem = Problems.DROMOR(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    
@@ -75,11 +86,15 @@ time = mean(time);
 
 %% Plots
 % Main plots 
-C = [C(1:7,:); tau; C(8:end,:)];
+C = [C(1:6,:); tau; C(7:end,:)];
 
 S = zeros(6,length(tau));
 for i = 1:length(tau)
-    S(:,i) = OrbitalDynamics.dromo2state(C(1:8,i));
+    if (norm(C(4:6,i)) > 1)
+        C(4:6,i) = -C(4:6,i) / dot(C(4:6,i),C(4:6,i));
+    end
+    aux = [C(1:3,i); QuaternionAlgebra.MPR2Quat(1,1,C(4:6,i),true); tau(i)]
+    S(:,i) = OrbitalDynamics.dromo2state(aux);
 end
 
 x = S(1,:);
