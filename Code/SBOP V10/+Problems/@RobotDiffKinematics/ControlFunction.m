@@ -9,15 +9,26 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     u = zeros(6, size(tau,2));
 
     % Evaluate the reference control law
-    s_ref = reshape(params(4:end), [], size(tau,2));
+    s_ref = reshape(params(43:end), [], size(tau,2));
+
+    base = params(4:6).'; 
+    theta = params(7:12).';
+    alpha = params(13:18).';
+    offset = params(19:24).';
+    a = params(25:30).';
+    d = params(31:36).';
+    type = params(37:42).';        % All joints are revolute
 
     % Compute the Jacobian
     for i = 1:length(tau)
-        J = Kinematics(obj.StateDim, params(4:4+obj.StateDim-1), @(i,s)UR13_dkinematics(i,s), s(:,i));
+        [~, J] = Problems.RobotDiffKinematics.Kinematics(obj.StateDim, type, ...
+                                                        @(i,s)Problems.RobotDiffKinematics.ur3_dkinematics(obj, base, theta, alpha, offset, a, d, type, i, s), ...
+                                                        s(:,i));
+
+        % Jacobian pseudoinverse
         invJ = pinv(J);
-%         A = eye(size(J,2)) - invJ * J;
     
         % Compute the control vector
-        u(:,i) = s(7:12,i) - invJ * s_ref(7:12,i);
+        u(:,i) = invJ * s_ref(8:13,i);
     end
 end

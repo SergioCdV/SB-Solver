@@ -6,7 +6,7 @@
 
 %% Set up 
 close all
-clear
+% clear
 
 %% Numerical solver definition 
 basis = 'Bernstein';                    % Polynomial basis to be use

@@ -18,23 +18,23 @@ function [T, J] = Kinematics(n, type, transformation, s)
     P = zeros(4, n);        % Third column of the homogeneous Euclidean transformation
     Z = zeros(3, n);        % Third column of the rotation matrix of step n
     J = zeros(6, n);        % Vector of n vectors of dimension 6 x 1 
-    T = eye(4);             % DH parameters matrix
     
     % Compute the z and p vectors  
     Z(:,1) = [0;0;1];
     P(:,1) = [0;0;0;1];
 
-    for i = 1:n-1
+    for i = 1:n
         % Compute the transformation matrix of the n joint 
-        [R, A] = feval(transformation, i, s);
-        T = A * T;
+        [A, R] = transformation(i, s);
 
         % Perform the transformation 
         Z(:,i+1) = R * Z(:,i);
         P(:,i+1) = A * P(:,i);
     end
 
-    % Assembel the Jacobian
+    T = A;
+
+    % Assemble the Jacobian
     for i = 1:n
         % Compute the state variable 
         z = Z(:,i);

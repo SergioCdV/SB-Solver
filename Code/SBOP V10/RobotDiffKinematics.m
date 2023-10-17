@@ -8,17 +8,26 @@
 close all
 clear
 
+%% Compute some reference (optimal) linear and angular trajectories
+% Linear evolution
+Robot
+s_ref = C(1:6,:);  
+
+% Attitude evolution 
+RobotRoto
+s_ref = [s_ref(1:3,:); C(1:4,:); s_ref(4:6,:); omega];
+
 %% Numerical solver definition 
-basis = 'Bernstein';                    % Polynomial basis to be use
-time_distribution = 'Bernstein';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
+basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Legendre';        % Distribution of time intervals
+n = 7;                                % Polynomial order in the state vector expansion
 m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 Lc = 1;                         % Characteristic length [m]
-Tc = 300;                  % Characteristic time [s]
-Tmax = 0.004;                      % Maximum available torque [Nm]
+Tc = 300;                       % Characteristic time [s]
+Tmax = 4;                       % Maximum available torque [Nm]
 
 %% Problem definition 
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
@@ -31,18 +40,33 @@ S0 = zeros(L * StateDimension, 1);
 % Final boundary conditions (free)
 SF = zeros(L * StateDimension, 1);
 
-% Compute the reference trajectory 
-s_ref = zeros((L+1) * StateDimension, m+1);
+% % Compute the reference trajectory 
+% s_ref = zeros((L+1) * StateDimension, m+1);
 
 %% Create the problem
 % Linear problem data
 params(1) = 0;                   % TOF 
-params(2) = 10;                  % Maximum length
+params(2) = 3600;                % Maximum length
 params(3) = Tmax;                % Maximum control authority 
-params(4:9) = zeros(6,1);        % All joints are revolute
+
+% DH parameters of the robot
+base = [0; 0; 0];
+theta = [0 0 0 0 0 0];
+alpha = [pi/2 0 0 pi/2 -pi/2 0];
+offset = [0 0 0 0 0 0];
+a = [0 -0.24355 -0.2132 0 0 0];
+d = [0.15185 0 0 0.13105 0.08535 0.0921];
+
+params(4:6) = base; 
+params(7:12) = theta;
+params(13:18) = alpha;
+params(19:24) = offset;
+params(25:30) = a;
+params(31:36) = d;
+params(37:42) = ones(6,1);        % All joints are revolute
 
 % Reference trajectory polynomial
-params(4:4+size(s_ref,1)*size(s_ref,2)-1) = reshape(s_ref, 1, []);  
+params(43:43+size(s_ref,1)*size(s_ref,2)-1) = reshape(s_ref, 1, []);  
 
 OptProblem = Problems.RobotDiffKinematics(S0, SF, L, StateDimension, ControlDimension, params);
 
@@ -57,9 +81,12 @@ detJ = zeros(1,length(tau));
 
 for i = 1:length(tau)
     % Compute the Jacobian 
+    [~, J] = Problems.RobotDiffKinematics.Kinematics(OptProblem.StateDim, params(37:42), ...
+                                                     @(i,s)Problems.RobotDiffKinematics.ur3_dkinematics(obj, base, theta, alpha, offset, a, d, type, i, s), ...
+                                                     C(:,i));
 
     % Compute the determinant of the Jacobian
-    detJ(i) = 1;
+    detJ(i) = det(J);
 end
 
 % Dimensions
