@@ -13,37 +13,39 @@
 % Outputs: - matrix T, the end-effector to base homogeneous transformation matrix
 %          - matrix J, the differential kinematics Jacobian 
 
-function [T, J] = Kinematics(n, type, transformation, s)    
+function [T, J] = Kinematics(n, transformation, s)    
     % Preallocation 
-    P = zeros(4, n);        % Third column of the homogeneous Euclidean transformation
+    d = zeros(3, n+1);      % Third column of the homogeneous Euclidean transformation
     Z = zeros(3, n);        % Third column of the rotation matrix of step n
     J = zeros(6, n);        % Vector of n vectors of dimension 6 x 1 
     
     % Compute the z and p vectors  
     Z(:,1) = [0;0;1];
-    P(:,1) = [0;0;0;1];
+
+    T = zeros(4, (n+1)*4);
+    T(1:4,1:4) = eye(4);
 
     for i = 1:n
         % Compute the transformation matrix of the n joint 
-        [A, R] = transformation(i, s);
-
-        % Perform the transformation 
-        Z(:,i+1) = R * Z(:,i);
-        P(:,i+1) = A * P(:,i);
+        [A] = transformation(i, s(i));
+        T(:, 1+4*i:4*(i+1)) = T(:, 1+4*(i-1):4*i) * A;
     end
 
-    T = A;
+    for i = 1:n
+        % Perform the transformation 
+        Z(:,i) = T(1:3,1+4*(i-1):3+4*(i-1)) * [0; 0; 1];
+        d(:,i+1) = T(1:3,4*i);
+    end
 
     % Assemble the Jacobian
     for i = 1:n
         % Compute the state variable 
         z = Z(:,i);
-        pe = P(1:3,end);
-        pm = P(1:3,i);
+        D = d(:,n+1)-d(:,i);
 
         % Assemble the column vector
-        if (type == 1)
-            J(:,i) = [cross(z, pe-pm); z];
+        if (1)
+            J(:,i) = [cross(z, D); z];
         else
             J(:,i) = [z; zeros(3,1)];
         end

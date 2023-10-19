@@ -45,7 +45,7 @@ classdef RobotDiffKinematics < Problems.AbstractProblem
     end
 
     methods (Static)
-        [T, J] = Kinematics(obj, n, type, transformation, s);
-        [T, R] = ur3_dkinematics(obj, base, theta, alpha, offset, a, d, type, n, q);
+        [T, J] = Kinematics(obj, n, transformation, s);
+        [T, R] = ur3_dkinematics(obj, i, q);
     end
 end
