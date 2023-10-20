@@ -26,7 +26,7 @@ m = 100;                               % Number of sampling points
 solver = Solver(basis, n, time_distribution, m);
 
 Lc = 1;                         % Characteristic length [m]
-Tc = 30;                       % Characteristic time [s]
+Tc = 300;                       % Characteristic time [s]
 Omega_max = [pi; 2*pi];         % Maximum angular velocity [rad/s]
 
 %% Problem definition 
@@ -44,7 +44,7 @@ S0 = [0 -pi/2 0 -pi/2 pi/2 0].';
 SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 0].';
 
 % Reference trajectory polynomial
-params(43:43+size(s_ref,1)*size(s_ref,2)-1) = reshape(s_ref, 1, []);  
+params(5:5+size(s_ref,1)-1) = reshape(s_ref(:,end), 1, []);  
 
 OptProblem = Problems.RobotDiffKinematics(S0, SF, L, StateDimension, ControlDimension, params);
 

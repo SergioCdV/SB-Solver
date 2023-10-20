@@ -8,5 +8,5 @@ function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
     % Initial guess
     t0 = params(1);            % Initial clock
     tf = params(2);            % Final clock
-    beta = [];            % Initial guess for the final boundary condition
+    beta = initial;            % Initial guess for the final boundary condition
 end

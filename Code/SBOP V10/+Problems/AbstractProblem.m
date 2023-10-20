@@ -15,7 +15,7 @@ classdef (Abstract) AbstractProblem
         ControlDim;     % Control dimension
 
         % General parameters 
-        Params;         % General parameters
+        Params;             % General parameters
     end
 
     methods 

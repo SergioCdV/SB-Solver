@@ -5,6 +5,10 @@ classdef Solver
         NumNodes;       % Number of nodes in the independent variable grid
         Basis;          % Polynomial basis 
         Grid;           % Define the independent variable grid to be used
+
+        % Initial guess 
+        InitialGuessFlag = false;   % Flag to indicate an initial guess is supplied
+        P0;                         % Parameters initial guess
     end
 
     methods 

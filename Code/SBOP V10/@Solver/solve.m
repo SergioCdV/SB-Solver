@@ -32,16 +32,20 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     L = Problem.DerDeg;                   % Highest derivative in the dynamics
  
     % Initial guess for the boundary control points
-    mapp = 300;   
-    Grid = obj.gridding(mapp);
-
-    obj.PolOrder = 3 * ones(size(n));
-    B = obj.state_basis(L, obj.PolOrder, basis, Grid.tau);
-    [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, B, Grid); 
-    obj.PolOrder = n;
-
-    % Initial fitting for n+1 control points
-    [P0, ~] = obj.initial_fitting(Problem, Grid, Capp);
+    if (obj.InitialGuessFlag)
+        P0 = obj.P0;
+    else
+        mapp = 300;   
+        Grid = obj.gridding(mapp);
+    
+        obj.PolOrder = 3 * ones(size(n));
+        B = obj.state_basis(L, obj.PolOrder, basis, Grid.tau);
+        [betaapp, t0app, tfapp, ~, Capp] = obj.initial_approximation(Problem, B, Grid); 
+        obj.PolOrder = n;
+    
+        % Initial fitting for n+1 control points
+        [P0, ~] = obj.initial_fitting(Problem, Grid, Capp);
+    end
     
     % Quadrature definition
     Grid = obj.gridding();
