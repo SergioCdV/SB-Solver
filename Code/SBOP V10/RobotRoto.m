@@ -17,8 +17,9 @@ m = 100;                               % Number of sampling points
 solver = Solver(basis, n, time_distribution, m);
 
 Lc = 1;                         % Characteristic length [m]
-Tc = 300;                  % Characteristic time [s]
-Tmax = 0.004;                      % Maximum available torque [Nm]
+Tc = 300;                       % Characteristic time [s]
+Tmax = 0.004;                   % Maximum available torque [Nm]
+omega_max = 0.1;                % Maximum angular velocity [rad/s]
 
 %% Problem definition 
 % Target orbital elements
@@ -43,7 +44,7 @@ omega_0 = zeros(4,1);                                                   % Initia
 omega_0 = 0.5 * QuaternionAlgebra.right_isoclinic(sigma_0) * omega_0;   % Quaternion kinematics
 S0 = [sigma_0; omega_0];                                                % Initial conditions
 
-sigma_f = [0.5;0.5;0.5;0.5];                                                    % Final relative quaternion (null)
+sigma_f = [0.5;0.5;0.5;0.5];                                            % Final relative quaternion (null)
 omega_f = zeros(4,1);                                                   % Final relative angular velocity [rad/s]
 omega_0 = 0.5 * QuaternionAlgebra.right_isoclinic(sigma_f) * omega_f;   % Quaternion kinematics
 SF = [sigma_f; omega_f];                                                % Final conditions
@@ -53,16 +54,17 @@ SF = [sigma_f; omega_f];                                                % Final 
 params(1) = Tc;                  % TOF 
 params(2) = Lc;                  % Maximum length
 params(3) = Tmax;                % Maximum control authority 
+params(4) = omega_max;           % Maximum rotational speed
 
-params(4) = mu;                  % Gauss constant
-params(5) = Orbit_t(2);          % Target orbital eccentricity
-params(6) = h;                   % Angular momentum magnitude
-params(7) = nu_0;                % Initial true anomaly [rad]
-params(8) = nu_f;                % Final true anomaly [rad]
+% params(4) = mu;                  % Gauss constant
+% params(5) = Orbit_t(2);          % Target orbital eccentricity
+% params(6) = h;                   % Angular momentum magnitude
+% params(7) = nu_0;                % Initial true anomaly [rad]
+% params(8) = nu_f;                % Final true anomaly [rad]
 
-params(9:17) = diag([0.001 0.06 0.06]);    % Inertia tensor of the chaser [kg m^2]
+params(5:13) = diag([0.001 0.06 0.06]);    % Inertia tensor of the chaser [kg m^2]
 
-params = [params nu];            % Final parameter vector
+params = [params];            % Final parameter vector
 
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 4;              % Dimension of the configuration vector. Note the difference with the state vector

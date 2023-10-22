@@ -57,15 +57,15 @@ toc
 % Check for singularities 
 detJ = zeros(1,length(tau)); 
 
-% for i = 1:length(tau)
-%     % Compute the Jacobian 
-%     [T] = Problems.RobotDiffKinematics.Kinematics(OptProblem.StateDim, ...
-%                                                      @(i,s)Problems.RobotDiffKinematics.ur3_dkinematics(OptProblem, i, s), ...
-%                                                      C(:,i));
-% 
-%     % Compute the determinant of the Jacobian
-%     detJ(i) = det(J);
-% end
+for i = 1:length(tau)
+    % Compute the Jacobian 
+    [T, J] = Problems.RobotDiffKinematics.Kinematics(OptProblem.StateDim, ...
+                                                     @(i,s)Problems.RobotDiffKinematics.ur3_dkinematics(OptProblem, i, s), ...
+                                                     C(:,i));
+
+    % Compute the determinant of the Jacobian
+    detJ(i) = det(J);
+end
 
 % Dimensions
 % C(1:3,:) = C(1:3,:) * Lc;
