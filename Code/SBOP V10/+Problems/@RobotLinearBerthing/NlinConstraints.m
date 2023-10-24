@@ -17,10 +17,12 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 
     c = [dot(u(1:3,:),u(1:3,:),1)-params(3)^2 ...                          % Constraint on the force magnitude (second order cone)
          -k.^2 * omega ...                                                 % Monotony of the time law
-         R];                                                               % Graspling constraint
+         %R                                                                % Graspling constraint
+        ];                                                               
 
     % Equality constraints
-    ceq = [cos(tau(1,end))-cos(params(7)); ...                             % Multi-revolution anomaly constraint
-           sin(tau(1,end))-sin(params(7)); ...                             % Multi-revolution anomaly constraint
+    ceq = [
+           % cos(tau(1,end))-cos(params(7)); ...                             % Multi-revolution anomaly constraint
+           % sin(tau(1,end))-sin(params(7)); ...                             % Multi-revolution anomaly constraint
           ];
 end
