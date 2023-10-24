@@ -16,41 +16,40 @@ m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
-Lc = 1;                         % Characteristic length [m]
-Tc = 100;                       % Characteristic time [s]
-Fmax = 0.5e-1;                  % Maximum available acceleration [m/s^2]
+Lc = 1;                                % Characteristic length [m]
+Tc = 100;                              % Characteristic time [s]
+Fmax = 0.5e-1;                         % Maximum available acceleration [m/s^2]
 
 %% Problem definition 
 % Target orbital elements
-Orbit_t = [7011e3 0.05 deg2rad(190) deg2rad(98) 0 0];
+COE = [7011e3 0.05 deg2rad(190) deg2rad(98) 0 0];
 
-mu = 3.986e14;                  % Gravitational parameter of the Earth
-n = sqrt(mu/Orbit_t(1)^3);      % Mean motion
-K = floor(Tc/(2*pi/n));         % Number of complete revolutions
-dt = Tc - K * (2*pi/n);         % Elapsed time in the last revolution [s]
+mu = 3.986e14;                          % Gravitational parameter of the Earth
+n = sqrt(mu/COE(1)^3);                  % Mean motion [rad/s]
+h = sqrt(mu * COE(1) * (1-COE(2)^2));   % Target angular momentum
+K = floor(Tc/(2*pi/n));                 % Number of complete revolutions
+dt = Tc - K * (2*pi/n);                 % Elapsed time in the last revolution [s]
 
-elements = Orbit_t; 
-nu_0 = OrbitalDynamics.kepler(elements);                        % Initial true anomaly [rad]
-elements(6) = elements(6) + n * dt;                             % Final mean anomaly
-nu_f = 2*pi*K + OrbitalDynamics.kepler(elements);               % Final true anomaly [rad]
-h = sqrt(mu * Orbit_t(1) * (1-Orbit_t(2)^2));                   % Target angular momentum
+nu_0 = OrbitalDynamics.kepler(COE);                % Initial true anomaly [rad]
+COE(6) = COE(6) + n * dt;                          % Final mean anomaly [rad]
+nu_f = 2*pi*K + OrbitalDynamics.kepler(COE);       % Final true anomaly [rad]
 
 % Add linear boundary conditions
-r_0 = 10 * rand(1,3);                                           % Initial dimensional position vector [m]
-v_0 = 0.1 * rand(1,3);                                          % Initial dimensional velocity vector [m/s]
-S0 = [r_0.'; v_0.'];                                            % Initial conditions
+r_0 = 10 * rand(1,3);                              % Initial dimensional position vector [m]
+v_0 = 0.1 * rand(1,3);                             % Initial dimensional velocity vector [m/s]
+S0 = [r_0.'; v_0.'];                               % Initial conditions
 
 %% Final boundary conditions
 % TH space transformation 
 omega = mu^2 / h^3;                                             % True anomaly angular velocity
-k = 1 + Orbit_t(2) * cos(nu_0);                                 % Transformation parameter
-kp =  - Orbit_t(2) * sin(nu_0);                                 % Derivative of the transformation
+k = 1 + COE(2) * cos(nu_0);                                     % Transformation parameter
+kp =  - COE(2) * sin(nu_0);                                     % Derivative of the transformation
 L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];      % TH transformation matrix
 S0 = L * S0;                                                    % TH initial boundary conditions
 
-Phi0 = OrbitalDynamics.YA_Phi(mu, h, Orbit_t(2), 0, nu_0);      % Initial fundamental matrix
+Phi0 = OrbitalDynamics.YA_Phi(mu, h, COE(2), 0, nu_0);          % Initial fundamental matrix
 invPhi0 = (Phi0\eye(6));                                        % Inverse of the initial fundamental matrix
-phi = OrbitalDynamics.YA_Phi(mu, h, Orbit_t(2), Tc, nu_f);      % Final fundamental matrix
+phi = OrbitalDynamics.YA_Phi(mu, h, COE(2), Tc, nu_f);          % Final fundamental matrix
 Phi = phi * invPhi0;                                            % YA STM
 r_f = Phi(1:3,:) * S0;                                          % Final dimensional position vector [m]
 v_f = Phi(4:6,:) * S0;                                          % Initial dimensional velocity vector [m/s]
@@ -65,13 +64,10 @@ params(2) = Lc;                  % Maximum length
 params(3) = Fmax;                % Maximum control authority 
 
 params(4) = mu;                  % Gauss constant
-params(5) = Orbit_t(2);          % Target orbital eccentricity
+params(5) = COE(2);              % Target orbital eccentricity
 params(6) = h;                   % Angular momentum magnitude
 params(7) = nu_0;                % Initial true anomaly [rad]
 params(8) = nu_f;                % Final true anomaly [rad]
-
-params(9:11) = [1 1 1].';        % Final target's docking port position in the target's body frame
-params(12:14) = [1 1 1].';       % Final chaser's docking port position in the chaser's body frame // TODO: input
 
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 3;              % Dimension of the configuration vector. Note the difference with the state vector
@@ -100,15 +96,11 @@ time = mean(time);
 % Dimensional space 
 for i = 1:length(tau) 
     omega = mu^2 / h^3;                                            % True anomaly angular velocity
-    k = 1 + Orbit_t(2) * cos(tau(i));                              % Transformation
-    kp =  - Orbit_t(2) * sin(tau(i));                              % Derivative of the transformation
+    k = 1 + COE(2) * cos(tau(i));                                  % Transformation
+    kp =  - COE(2) * sin(tau(i));                                  % Derivative of the transformation
     L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];     % TH transformation matrix
     C(1:6,i) = L \ C(1:6,i);                                       % Physical space
 end
-
-% Dimensions
-% C(1:3,:) = C(1:3,:) * Lc;
-% tau = tau * 1000;
 
 %% Plots
 % State representation
@@ -160,6 +152,3 @@ plot3(C(1,:), C(2,:), C(3,:));
 hold off
 legend('off')
 grid on;
-
-%% Matlab CSV
-csvwrite("test_1.csv", [C; tau])

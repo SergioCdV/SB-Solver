@@ -1,8 +1,8 @@
 %% Project: SBOPT %%
 % Date: 24/10/23
 
-%% 6-DoF optimization of the chaser motion %% 
-% This script provides a main interface to solve the general 6-DoF problem for the robot %
+%% 3-DoF optimization of the chaser motion %% 
+% This script provides a main interface to solve the general 3-DoF linear problem for the robot %
 
 % Inputs: - n, the vector of polynomial degrees
 %         - m, the number of independent points in the grid
@@ -10,7 +10,7 @@
 
 % Output: - C, the optimal trajectory 
 %         - P, the polynomial coefficients 
-%          -u, the control trajectory
+%         - u, the control trajectory
 
 function [C, P, u] = linear_command(n, m, S0)
     % Numerical solver definition 
@@ -68,7 +68,9 @@ function [C, P, u] = linear_command(n, m, S0)
     OptProblem = Problems.RobotLinearBerthing(S0, SF, L, StateDimension, ControlDimension, params);
     
     % Optimization    
-    [C, u, ~, ~, ~, tau, ~, ~, P] = solver.solve(OptProblem);
+    tic
+    [C, ~, u, ~, ~, tau, ~, ~, P] = solver.solve(OptProblem);
+    toc
     
     % Dimensional space 
     for i = 1:length(tau) 
@@ -80,5 +82,5 @@ function [C, P, u] = linear_command(n, m, S0)
     end
     
      % Final trajectory
-     C = [tau; C(1:6,2:end)];
+     C = [tau; C(1:6,:)];
 end

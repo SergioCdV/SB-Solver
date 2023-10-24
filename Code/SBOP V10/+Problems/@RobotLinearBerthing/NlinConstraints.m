@@ -13,7 +13,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     SF = L \ s(1:6,end);                                                   % Physical boundary conditions
 
     % Inequality constraints
-    R = dot(params(9:11).'-SF(1:3)-params(12:14).', params(9:11).'-SF(1:3)-params(12:14).', 1)-params(2)^2; 
+    % R = dot(params(9:11).'-SF(1:3)-params(12:14).', params(9:11).'-SF(1:3)-params(12:14).', 1)-params(2)^2; 
 
     c = [dot(u(1:3,:),u(1:3,:),1)-params(3)^2 ...                          % Constraint on the force magnitude (second order cone)
          -k.^2 * omega ...                                                 % Monotony of the time law
