@@ -19,6 +19,11 @@
 
 function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     % Last checks 
+    if ((obj.NumNodes + 1) * (Problem.StateDim + Problem.ControlDim) < Problem.StateDim * (max(obj.PolOrder) + 1))
+        warning('The problem is over-constrained. Refining the grid...');
+        obj.NumNodes = Problem.StateDim * (max(obj.PolOrder) + 1) / (Problem.StateDim + Problem.ControlDim) - 1; 
+    end
+
     if (length(obj.PolOrder) ~= Problem.StateDim)
         warning('The input polynomial order vector mismatches the state dimension...'); 
         obj.PolOrder = [obj.PolOrder min(obj.PolOrder)*ones(1,Problem.StateDim-length(obj.PolOrder))].';

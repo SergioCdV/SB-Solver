@@ -12,7 +12,7 @@ clear
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
 n = 12;                                % Polynomial order in the state vector expansion
-m = 100;                               % Number of sampling points
+m = 20;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
