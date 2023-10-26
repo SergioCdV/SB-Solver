@@ -33,7 +33,7 @@ function [C, P, u] = linear_command(n, m, S0)
     dt = TOF - K * (2*pi/n);                               % Elapsed time in the last revolution [s]
 
     nu_0 = OrbitalDynamics.kepler(COE);                    % Initial true anomaly [rad]
-    COE(6) = elements(6) + n * dt;                         % Final mean anomaly [rad]
+    COE(6) = COE(6) + n * dt;                              % Final mean anomaly [rad]
     nu_f = 2*pi*K + OrbitalDynamics.kepler(COE);           % Final true anomaly [rad]
     
     % Final boundary conditions 
@@ -41,7 +41,7 @@ function [C, P, u] = linear_command(n, m, S0)
     k = 1 + COE(2) * cos(nu_0);                                     % Transformation parameter
     kp =  - COE(2) * sin(nu_0);                                     % Derivative of the transformation
     L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];      % TH transformation matrix
-    S0 = L * S0;                                                    % TH initial boundary conditions
+    S0 = L * S0.';                                                  % TH initial boundary conditions
         
     % Assemble the state vector
     SF = [0.38; -0.1306; 0.408; zeros(3,1)];                        % Final conditions [m] [m/s]
@@ -80,6 +80,15 @@ function [C, P, u] = linear_command(n, m, S0)
         L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];     % TH transformation matrix
         C(1:6,i) = L \ C(1:6,i);                                       % Physical space
     end
+
+     % Compute the elapsed time 
+     cos_theta = cos(tau);
+     sin_theta = sin(tau); 
+     cos_E = (COE(2) + cos_theta) ./ (1 + COE(2) * cos_theta);
+     sin_E = sqrt(1 - COE(2)^2) * sin_theta ./ (1 + COE(2) * cos_theta);
+     E = atan2(sin_E, cos_E); 
+     M = E - COE(2) * sin(E);
+     tau = (M - M(1)) / n;
     
      % Final trajectory
      C = [tau; C(1:6,:)];

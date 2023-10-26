@@ -8,15 +8,6 @@
 close all
 clear
 
-%% Compute some reference (optimal) linear and angular trajectories
-% Linear evolution
-Robot
-s_ref = C(1:6,:);  
-
-% Attitude evolution 
-RobotRoto
-s_ref = [s_ref(1:3,:); C(1:4,:); s_ref(4:6,:); omega];
-
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
@@ -42,6 +33,8 @@ params(3:4) = Omega_max;        % Maximum control authority
 % DH parameters of the robot
 S0 = [0 -pi/2 0 -pi/2 pi/2 0].';
 SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 0].';
+
+s_ref = [0.38 -0.1306 0.408 zeros(1,3) 1 zeros(1,6)].';
 
 % Reference trajectory polynomial
 params(5:5+size(s_ref,1)-1) = reshape(s_ref(:,end), 1, []);  
