@@ -1,8 +1,8 @@
 %% Project: 
 % Date: 30/10/23
 
-%% Legendre modal projection %%
-% This function allows to project the trajectory onto the basis of Legendre polynomials. 
+%% Chebyshev modal projection %%
+% This function allows to project the trajectory onto the basis of Chebyshev polynomials. 
 
 % Inputs: - array S, the trajectory to be projected
 
@@ -13,14 +13,14 @@ function [C] = modal_projection(obj, S)
     n = size(S,2);      % Dimension of the projection
 
     % Compute the nodes and the polynomials
-    grid = CollocationMesh.LegendreGrid(n-1);
-    P = obj.basis(n-1, grid.tau);
+    tau = cos(pi * ((0:n-1)+0.5) / n);
+    P = obj.basis(n-1, tau);
     
     % Compute the coefficients 
     C = zeros(size(S));
 
     for i = 1:n
-        C(:,i) = ( i + 0.5) .* sum(grid.W .* P(i,:) .* S, 2); 
+        C(:,i) = (2 - (i == n)) / n .* sum(P(i,:) .* S, 2); 
     end
 end
 
