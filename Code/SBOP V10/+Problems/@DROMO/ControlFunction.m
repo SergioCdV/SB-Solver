@@ -14,7 +14,11 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
 
     for i = 1:size(t,2)
         u(1,i) = (s(8,i)-(s(1,i)+(1+S(i))*cos(t(1,i))) * u(2,i))^2 + (s(9,i)-(s(2,i)+(1+S(i))*sin(t(1,i))) * u(2,i))^2;
-        u(1,i) = sqrt(u(1,i) / S(i)^2) * sign( (s(8,i)-(s(1,i)+(1+S(i))*cos(t(1,i)) )*u(2,i)) / (S(i) * sin(t(1,i))) );
+        
+        div = S(i) * sin(t(1,i));
+        if (div ~= 0)
+            u(1,i) = sqrt(u(1,i) / S(i)^2) * sign( (s(8,i)-(s(1,i)+(1+S(i))*cos(t(1,i)) )*u(2,i)) / div );
+        end
     end
 
     % Compute the complete osculating LVLH quaternion and angular velocity

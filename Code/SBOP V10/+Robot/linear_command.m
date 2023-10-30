@@ -8,16 +8,28 @@
 %         - m, the number of independent points in the grid
 %         - S0, vector of initial conditions of the linear state 
 
-% Output: - C, the optimal trajectory 
-%         - P, the polynomial coefficients 
+% Output: - P, the optimal trajectory 
+%         - C,  the polynomial coefficients
+%         - Cl, the polynomial coefficients in the physical space
 %         - u, the control trajectory
+%         - maxIter, maximum number of iterations in the optimization
+%         - P0, initial guess for the coefficientes
 
-function [C, P, u] = linear_command(n, m, S0)
+function [P, C, Cl, u] = linear_command(n, m, S0, maxIter, P0)
     % Numerical solver definition 
     basis = 'Legendre';                                    % Polynomial basis to be use
     time_distribution = 'Legendre';                        % Distribution of time intervals
 
     solver = Solver(basis, n, time_distribution, m);
+
+    if (exist('P0', 'var'))
+        solver.P0 = P0;
+        solver.InitialGuessFlag = true;
+    end
+
+    if (exist('maxIter', 'var'))
+        solver.maxIter = maxIter;
+    end
              
     % Problem definition
     mu = 3.986e14;                                         % Gravitational parameter of the Earth
@@ -69,7 +81,7 @@ function [C, P, u] = linear_command(n, m, S0)
     
     % Optimization    
     tic
-    [C, ~, u, ~, ~, tau, ~, ~, P] = solver.solve(OptProblem);
+    [P, ~, u, ~, ~, tau, ~, ~, C] = solver.solve(OptProblem);
     toc
     
     % Dimensional space 
@@ -78,7 +90,7 @@ function [C, P, u] = linear_command(n, m, S0)
         k = 1 + COE(2) * cos(tau(i));                                  % Transformation
         kp =  - COE(2) * sin(tau(i));                                  % Derivative of the transformation
         L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];     % TH transformation matrix
-        C(1:6,i) = L \ C(1:6,i);                                       % Physical space
+        P(1:6,i) = L \ P(1:6,i);                                       % Physical space
     end
 
      % Compute the elapsed time 
@@ -91,5 +103,9 @@ function [C, P, u] = linear_command(n, m, S0)
      tau = (M - M(1)) / n;
     
      % Final trajectory
-     C = [tau; C(1:6,:)];
+     P = [tau; P(1:6,:)];
+
+     % Compute the coefficients for the physical position trajectory
+     [Cl] = PolynomialBases.Legendre().modal_projection(P(2:4,:));
+     Cl = Cl(:,1:size(C,2));
 end

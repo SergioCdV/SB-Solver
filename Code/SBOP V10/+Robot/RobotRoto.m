@@ -25,12 +25,12 @@ omega_max = 0.1;                % Maximum angular velocity [rad/s]
 % Add attitude boundary conditions
 q0 = [zeros(3,1); 1];                                              % Initial relative quaternion
 omega_0 = zeros(4,1);                                              % Initial relative angular velocity of the chaser [rad/s]
-omega_0 = 0.5 * QuaternionAlgebra.right_isoclinic(q0) * omega_0;   % Quaternion kinematics
+omega_0 = 0.5 * QuaternionAlgebra.right_isoclinic(omega_0) * q0;   % Quaternion kinematics
 S0 = [q0; omega_0];                                                % Initial conditions
 
 qf = [0.5;0.5;0.5;0.5];                                            % Final relative quaternion (null)
 omega_f = zeros(4,1);                                              % Final relative angular velocity [rad/s]
-omega_0 = 0.5 * QuaternionAlgebra.right_isoclinic(qf) * omega_f;   % Quaternion kinematics
+omega_f = 0.5 * QuaternionAlgebra.right_isoclinic(omega_f) * qf;   % Quaternion kinematics
 SF = [qf; omega_f];                                                % Final conditions
 
 %% Create the problem
@@ -52,7 +52,7 @@ OptProblem = Problems.RobotRotoBerthing(S0, SF, L, StateDimension, ControlDimens
 %% Optimization
 % Simple solution    
 tic
-[C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
+[C, dV, u, t0, tf, tau, exitflag, output, P0] = solver.solve(OptProblem);
 toc 
 
 % Average results 

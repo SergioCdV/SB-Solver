@@ -14,18 +14,24 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
 
     for i = 1:size(t,2)
         u(1,i) = (s(7,i)-(s(1,i)+(1+S(i))*cos(t(1,i))) * u(2,i))^2 + (s(8,i)-(s(2,i)+(1+S(i))*sin(t(1,i))) * u(2,i))^2;
-        u(1,i) = sqrt(u(1,i) / S(i)^2) * sign( (s(7,i)-(s(1,i)+(1+S(i))*cos(t(1,i)) )*u(2,i)) / (S(i) * sin(t(1,i))) );
+
+        div = S(i) * sin(t(1,i));
+        if (div ~= 0)
+            u(1,i) = sqrt(u(1,i) / S(i)^2) * sign( (s(7,i)-(s(1,i)+(1+S(i))*cos(t(1,i)) )*u(2,i)) / div );
+        end
     end
 
     % Compute the complete osculating LVLH quaternion and angular velocity
     omega = zeros(3,size(t,2));
 
     for i = 1:size(t,2)
-        if (norm(s(4:6,i)) > 1)
-            s(4:6,i) = -s(4:6,i) / dot(s(4:6,i),s(4:6,i));
+        norm_squared = dot(s(4:6,i),s(4:6,i));
+        if (norm_squared * norm_squared >= 1)
+            s(4:6,i) = -s(4:6,i) / norm_squared;
+            norm_squared = dot(s(4:6,i),s(4:6,i));
         end
         B = QuaternionAlgebra.Quat2Matrix([s(4:6,i); -1]);
-        omega(:,i) = 4 * (B \ s(10:12,i));
+        omega(:,i) = 4 * B.' * s(10:12,i) / (1 + norm_squared)^2;
     end
 
     % Normal acceleration
