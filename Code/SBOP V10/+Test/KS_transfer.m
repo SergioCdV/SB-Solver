@@ -11,7 +11,7 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 8;                                  % Polynomial order in the state vector expansion
+n = 10;                                  % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
@@ -31,7 +31,7 @@ mu = 1;                         % Normalized parameter
 gamma = r0/t0^2;                % Characteristic acceleration
 
 % Boundary conditions
-initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)];                % Earth's orbital elements
+initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)];               % Earth's orbital elements
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 initial_coe(1) = initial_coe(1) / r0;
@@ -50,8 +50,6 @@ EF = [-mu/(2 * final_coe(1)); 0];
 T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T];
-
 % Create the problem
 S0 = Problems.KSTransfer.state_mapping(S0(1:6), true); 
 S0 = [S0(1:4); E0(1); S0(5:8); E0(1)];
@@ -60,6 +58,8 @@ SF = [SF(1:4); EF(1); SF(5:8); EF(1)];
 
 S0 = S0([1:4 6:9]);
 SF = SF([1:4 6:9]);
+
+problem_params = [mu; T; SF];
 
 OptProblem = Problems.KSTransfer(S0, SF, L, StateDimension, ControlDimension, problem_params);
 

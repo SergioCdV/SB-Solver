@@ -8,5 +8,5 @@ function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
     % New initial TOF
     t0 = 0;
     tf = 10;
-    beta = [];
+    beta = [final; 0];
 end
