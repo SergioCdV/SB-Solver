@@ -5,6 +5,10 @@
 % Function implementation of a cost function 
 
 function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
-    M = 0; 
-    L = dot(s(1:4,:),s(1:4,:),1);
+    % Sundman transformation
+    dtheta = dot(s(1:4,:), s(1:4,:), 1);  
+
+    % Cost function
+    M = 0;              % Mayer term
+    L = dtheta;         % Minimum time transfer
 end

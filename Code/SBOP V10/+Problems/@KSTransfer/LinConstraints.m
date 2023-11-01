@@ -22,6 +22,6 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
 
     % Linear constraints
     Aeq = zeros(1,Dim);
-    Aeq(1,end-size(beta,1)-1) = 1;               % The initial time will be 0
+    Aeq(1,end-size(beta,1)-1) = 1;               % The initial regularized time will be 0
     beq = zeros(1,1);
 end

@@ -9,22 +9,22 @@ close all
 clear
 
 %% Numerical solver definition 
-basis = 'Bernstein';                    % Polynomial basis to be use
-time_distribution = 'Bernstein';        % Distribution of time intervals
-n = [8 8 8 8 8];                   % Polynomial order in the state vector expansion
+basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Legendre';        % Distribution of time intervals
+n = 8;                                  % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
 L = 2;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 5;             % Dimension of the configuration vector. Note the difference with the state vector
+StateDimension = 4;             % Dimension of the configuration vector. Note the difference with the state vector
 ControlDimension = 4;           % Dimension of the control vector
 
 % System data 
 r0 = 149597870700;              % 1 AU [m]
 mu = 1.32712440042e+20;         % Gavitational parameter of the Sun [m^3 s^−2] 
-t0 = sqrt(r0^3/mu);             % Fundamental time unit 
+t0 = sqrt(mu);             % Fundamental time unit 
 Vc = r0/t0;                     % Characteristic velocity
 
 mu = 1;                         % Normalized parameter
@@ -39,14 +39,12 @@ S0 = coe2state(mu, initial_coe);
 E0 = [-mu/(2 * initial_coe(1)); 0];
 
 % S0 = cylindrical2cartesian(R, false);
-final_coe = [1.05*r0 1e-3 deg2rad(2) deg2rad(10) deg2rad(5)];   % Mars' orbital elements 
+final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(0) deg2rad(0)];   % Mars' orbital elements 
 thetaf = deg2rad(120);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
 SF = coe2state(mu, final_coe);
 EF = [-mu/(2 * final_coe(1)); 0];
-
-% SF = cylindrical2cartesian(R, false);
 
 % Spacecraft parameters 
 T = 0.5e-3;              % Maximum acceleration 
@@ -55,11 +53,13 @@ T = T/gamma;             % Normalized acceleration
 problem_params = [mu; T];
 
 % Create the problem
-OptProblem = Problems.KSTransfer(zeros(10,1), zeros(10,1), L, StateDimension, ControlDimension, problem_params);
-S0 = OptProblem.state_mapping(S0(1:6), true); 
-S0 = [S0(1:4); E0(1); S0(5:8); E0(2)];
-SF = OptProblem.state_mapping(SF(1:6), true); 
-SF = [SF(1:4); EF(1); SF(5:8); EF(2)];
+S0 = Problems.KSTransfer.state_mapping(S0(1:6), true); 
+S0 = [S0(1:4); E0(1); S0(5:8); E0(1)];
+SF = Problems.KSTransfer.state_mapping(SF(1:6), true);
+SF = [SF(1:4); EF(1); SF(5:8); EF(1)];
+
+S0 = S0([1:4 6:9]);
+SF = SF([1:4 6:9]);
 
 OptProblem = Problems.KSTransfer(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
@@ -87,15 +87,8 @@ dV = dV * Vc;
 % Compute teh true trajectory in Cartesian space 
 S = zeros(6,size(C,2));
 for i = 1:size(C,2)
-    S(:,i) = OptProblem.state_mapping(C([1:4 6:9],i), false);
+    S(:,i) = OptProblem.state_mapping(C([1:4 5:8],i), false);
 end
-
-% Compute the true control function 
-U = u; 
-for i = 1:size(u,2)
-    U(:,i) = OptProblem.KS_matrix(C(1:4,i)) * u(:,i);
-end
-u = U(1:3,:);
 
 % Main plots 
 x = S(1,:);
@@ -149,9 +142,9 @@ grid on;
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau, sqrt(dot(u,u,1))*gamma, 'k','LineWidth',1)
-plot(tau, u, 'LineWidth', 0.3)
-yline(T, '--k')
+plot(tau, sqrt(dot(u,u,1)) * gamma, 'k','LineWidth',1)
+plot(tau, u * gamma, 'LineWidth', 0.3)
+yline(T * gamma, '--k')
 xlabel('Flight time')
 ylabel('$\mathbf{a}$')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
