@@ -56,7 +56,7 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     Grid = obj.gridding();
 
     % Final state basis
-    B = obj.state_basis(L, n, basis, Grid.tau);
+    [B, CB] = obj.state_basis(L, n, basis, Grid.tau);
 
     % Initial guess reshaping
     x0 = reshape(P0, size(P0,1) * size(P0,2), []);
@@ -66,7 +66,7 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     objective = @(x)obj.cost_function(Problem, B, Grid, x);
 
     % Non-linear constraints
-    nonlcon = @(x)obj.constraints(Problem, B, Grid, x);
+    nonlcon = @(x)obj.constraints(Problem, B, CB, Grid, x);
 
     % Upper and lower bounds 
     [P_lb, P_ub] = obj.opt_bounds(Problem, n, size(betaapp,1));

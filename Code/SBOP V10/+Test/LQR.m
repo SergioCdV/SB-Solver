@@ -31,14 +31,14 @@ A = rand(3,6);
 problem_params = [tf; reshape(A, [], 1)];
 
 %% Optimization
-n_problems = 1e3;    
+n_problems = 1;    
 k = 1;
 
 % Sampling of the initial conditions
 Sigma = eye(6);
 r0 = mvnrnd(zeros(6,1), Sigma, n_problems).';
 TOF = 20 + 80 * rand(1,n_problems);
-
+%%
 tic
 for i = 1:n_problems
     % Create the problem
@@ -47,7 +47,7 @@ for i = 1:n_problems
     OptProblem = Problems.LQR(S0, SF, L, StateDimension, ControlDimension, problem_params);
     
     tic
-    [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
+    [C, dV, u, t0, tf, tau, exitflag, output, P] = solver.solve(OptProblem);
     toc 
 
     % Save the solution
@@ -61,9 +61,9 @@ end
 toc
 
 % Create the .mat file 
-if (exist('State', 'var'))
+% if (exist('State', 'var'))
 %     save LQR_set State control time;
-end
+% end
 
 % Average results 
 iter = 0; 
@@ -71,7 +71,7 @@ time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter
     tic 
-    [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
+    [C, dV, u, t0, tf, tau, exitflag, output, P] = solver.solve(OptProblem);
     time(i) = toc;
 end
 
@@ -80,7 +80,8 @@ time = mean(time);
 %% Plots
 figure;
 hold on
-plot(tau, C(1:6,:))
+plot(tau, C(1:3,:))
+plot(tau, C2(1:3,:), '--k')
 xlabel('$t$')
 ylabel('$\mathbf{s}$')
 hold on

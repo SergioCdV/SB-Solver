@@ -1,4 +1,4 @@
-classdef Bezier < PolynomialBases.AbstractBasis
+classdef ShiftedLegendre < PolynomialBases.AbstractBasis
 
     properties 
     end
@@ -6,7 +6,5 @@ classdef Bezier < PolynomialBases.AbstractBasis
     methods         
          [Pn] = basis(obj, order, u);
          [B] = derivative(obj, order, u, degree);
-         [M] = LB_tmatrix(obj, n);
     end
-
 end

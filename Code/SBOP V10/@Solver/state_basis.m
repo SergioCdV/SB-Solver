@@ -10,8 +10,10 @@
 %         - vector tau, the control parameter vector 
 
 % Outputs: - cell array B, the state vector shape base basis
+%          - cell array C, the state vector shape base basis to be used to
+%            evaluate constraints
 
-function [B, tau] = state_basis(obj, L, n, basis, tau)
+function [B, C, tau] = state_basis(obj, L, n, basis, tau)
     % Extract the polynomial order 
     if (~exist('n', 'var'))
         n = obj.PolOrder;
@@ -26,7 +28,15 @@ function [B, tau] = state_basis(obj, L, n, basis, tau)
     end
 
     % Preallocation of the polynomial state vector support
-    B = cell(length(n),1);              
+    B = cell(length(n),1);   
+    C = cell(length(n),1); 
+
+    switch (basis)
+        case 'Legendre'
+            ctau = 0.5 * (tau + 1);
+        otherwise
+            ctau = tau;
+    end
 
     switch (basis)
         % Finite-horizon polynomial basis
@@ -55,10 +65,32 @@ function [B, tau] = state_basis(obj, L, n, basis, tau)
 
     for i = 1:length(n)
         base = P.basis(n(i),tau);
+
         derivative = zeros(L * (n(i)+1),length(tau));
+        cderivative = zeros(L * (n(i)+1),length(ctau));
+        
+        switch (basis)
+            case 'Legendre'
+                M = PolynomialBases.Bezier().LB_tmatrix(n(i));
+                cbase = M.' * PolynomialBases.Bezier().basis(n(i), ctau);
+            otherwise
+                cbase = base;
+        end
+
         for j = 1:L
             derivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:) = P.derivative(n(i), tau, j);
+
+            switch (basis)
+                case 'Legendre'
+                    cderivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:) = M.' * PolynomialBases.Bezier().derivative(n(i), ctau, j);
+                otherwise
+                    cderivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:) = derivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:);
+            end
         end
+
         B{i} = [base; derivative];
+%         C{i} = [cbase; cderivative];
+        C{i} = B{i};
+ 
     end
 end

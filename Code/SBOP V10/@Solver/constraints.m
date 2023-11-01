@@ -13,7 +13,7 @@
 % Outputs: - inequality constraint residual vector c
 %          - equality constraint residual vector ceq
 
-function [c, ceq] = constraints(obj, Problem, B, Grid, x)
+function [c, ceq] = constraints(obj, Problem, B, CB, Grid, x)
     % Optimization variables
     L = Problem.DerDeg;                                                 % Maximum derivative degree
     m = Problem.StateDim;                                               % State dimension
@@ -27,7 +27,7 @@ function [c, ceq] = constraints(obj, Problem, B, Grid, x)
     % Evaluate the boundary conditions and the state evolution
     [t(1,:), t(2,:)] = Grid.Domain(t0, tf, Grid.tau);                   % Original time independent variable
     P = obj.boundary_conditions(Problem, beta, t0, tf, t, B, P);        % Boundary conditions control points
-    s = obj.evaluate_state(n, L, P, B);                                 % State evolution
+    s = obj.evaluate_state(n, L, P, CB);                                % State evolution
     
     % Normalization
     for i = 1:L
