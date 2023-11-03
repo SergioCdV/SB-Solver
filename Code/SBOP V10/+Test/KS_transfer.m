@@ -24,7 +24,7 @@ ControlDimension = 4;           % Dimension of the control vector
 % System data 
 r0 = 149597870700;              % 1 AU [m]
 mu = 1.32712440042e+20;         % Gavitational parameter of the Sun [m^3 s^−2] 
-t0 = sqrt(mu);             % Fundamental time unit 
+t0 = sqrt(r0^3/mu);             % Fundamental time unit 
 Vc = r0/t0;                     % Characteristic velocity
 
 mu = 1;                         % Normalized parameter
@@ -39,7 +39,7 @@ S0 = coe2state(mu, initial_coe);
 E0 = [-mu/(2 * initial_coe(1)); 0];
 
 % S0 = cylindrical2cartesian(R, false);
-final_coe = [1.05*r0 1e-3 deg2rad(0) deg2rad(0) deg2rad(0)];   % Mars' orbital elements 
+final_coe = [2.05*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)];   % Mars' orbital elements 
 thetaf = deg2rad(120);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
@@ -68,6 +68,8 @@ OptProblem = Problems.KSTransfer(S0, SF, L, StateDimension, ControlDimension, pr
 tic
 [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
 toc 
+u = u./ dot(C(1:4,:), C(1:4,:), 1).^2; 
+u = u(1:3,:);
 
 % Average results 
 iter = 0; 

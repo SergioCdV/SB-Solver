@@ -7,6 +7,7 @@ classdef Bezier < PolynomialBases.AbstractBasis
          [Pn] = basis(obj, order, u);
          [B] = derivative(obj, order, u, degree);
          [M] = LB_tmatrix(obj, n);
+         [M] = DLB_tmatrix(obj, n);
     end
 
 end

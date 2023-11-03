@@ -77,6 +77,17 @@ end
 
 time = mean(time);
 
+M1 = PolynomialBases.Bezier().LB_tmatrix(7);
+M2 = PolynomialBases.Bezier().DLB_tmatrix(7);
+
+B =  M1 * PolynomialBases.Bezier().basis(7, tau/tf);
+
+L = PolynomialBases.Legendre().derivative(7, 2 * tau/tf-1, 1);
+dB = M2 * PolynomialBases.Bezier().derivative(7, tau/tf, 1);
+
+C2(1:3,:) = P * B; 
+C2(4:6,:) = P * dB; 
+
 %% Plots
 figure;
 hold on
@@ -92,6 +103,7 @@ yticklabels(strrep(yticklabels, '-', '$-$'));
 figure_orbits = figure;
 hold on
 plot(tau, C(4:6,:))
+plot(tau, C2(4:6,:), '--k')
 xlabel('Flight time')
 ylabel('$\dot{\mathbf{r}}$')
 hold on

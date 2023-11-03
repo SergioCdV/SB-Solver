@@ -12,8 +12,8 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     r = dot(s(1:4,:), s(1:4,:), 1);     % Radius of the trajectory
 
     % Compute the energy 
-    E = (4 * dot(s(5:8,:), s(5:8,:), 1) - 2 * mu) ./ r;
-    
+    E = (2 * dot(s(5:8,:), s(5:8,:), 1) - mu) ./ r;
+
     % Linear terms of the equations of motion
     a = s(9:12,:);                                 % Inertial acceleration field
 
