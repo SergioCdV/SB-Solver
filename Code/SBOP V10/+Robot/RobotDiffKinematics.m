@@ -31,13 +31,14 @@ params(2) = Tc;                 % Final time [s]
 params(3:4) = Omega_max;        % Maximum control authority 
 
 % DH parameters of the robot
-S0 = [0 -pi/2 0 -pi/2 pi/2 0].';
+S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 0].';
 SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 0].';
 
-s_ref = [0.38 -0.1306 0.408 zeros(1,3) 1 zeros(1,6)].';
+s_ref = [0.38 -0.1306 0.408 zeros(1,3) 1 1e-3 * rand(1,6)].';
 
 % Reference trajectory polynomial
-params(5:5+size(s_ref,1)-1) = reshape(s_ref(:,end), 1, []);  
+epsilon = 1e-3^2;                                                 % Numerical tolerance for the Jacobian determinant
+params(6:6+size(s_ref,1)-1) = reshape(s_ref(:,end), 1, []);  
 
 OptProblem = Problems.RobotDiffKinematics(S0, SF, L, StateDimension, ControlDimension, params);
 
@@ -101,14 +102,13 @@ xlim([0 tau(end)])
 % Propulsive acceleration plot
 figure;
 hold on
-plot(tau, u(1:6,:), 'LineWidth', 0.3)
-plot(tau, max(abs(u(1:3,:)), [], 1), 'k');
-plot(tau, max(abs(u(4:6,:)), [], 1), 'k');
-yline(Omega_max(1), 'k--')
-yline(Omega_max(2), 'k--')
+plot(tau, max(abs(u(1:3,:)), [], 1), 'r');
+plot(tau, max(abs(u(4:6,:)), [], 1), 'b');
+yline(Omega_max(1), 'r--')
+yline(Omega_max(2), 'b--')
 xlabel('$t$')
-ylabel('$\mathbf{\tau}$')
-legend('$\tau_x$', '$\tau_y$', '$\tau_z$', '$\|\mathbf{\tau}\|_\infty$', '$\tau_{max,1}$', '$\tau_{max,2}$');
+ylabel('$\mathbf{\omega}$')
+legend('$\|\omega^{1:3}\|_{\infty}$', '$\|\omega^{4:6}\|_{\infty}$', '$\tau_{max,1}$', '$\tau_{max,2}$');
 grid on;
 xlim([0 tau(end)])
 

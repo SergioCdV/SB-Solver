@@ -72,7 +72,7 @@ function [B, C, tau] = state_basis(obj, L, n, basis, tau)
         switch (basis)
             case 'Legendre'
                 M = PolynomialBases.Bezier().LB_tmatrix(n(i));
-                cbase = M.' * PolynomialBases.Bezier().basis(n(i), ctau);
+                cbase = M * PolynomialBases.Bezier().basis(n(i), ctau);
             otherwise
                 cbase = base;
         end
@@ -82,14 +82,14 @@ function [B, C, tau] = state_basis(obj, L, n, basis, tau)
 
             switch (basis)
                 case 'Legendre'
-                    cderivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:) = M.' * PolynomialBases.Bezier().derivative(n(i), ctau, j);
+                    cderivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:) = derivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:); %M.' * PolynomialBases.Bezier().derivative(n(i), ctau, j);
                 otherwise
                     cderivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:) = derivative(1+(n(i)+1)*(j-1):(n(i)+1)*j,:);
             end
         end
 
         B{i} = [base; derivative];
-%         C{i} = [cbase; cderivative];
+        C{i} = [cbase; cderivative];
         C{i} = B{i};
  
     end

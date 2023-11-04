@@ -38,7 +38,7 @@ initial_coe(1) = initial_coe(1) / r0;
 S0 = OrbitalDynamics.coe2dromo(mu, initial_coe);                  % Initial DROMO
 
 % Mars' orbital elements 
-final_coe = [2*r0 1e-3 deg2rad(10) deg2rad(10) deg2rad(90)]; 
+final_coe = [2*r0 1e-3 deg2rad(0) deg2rad(0) deg2rad(0)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf];
 final_coe(1) = final_coe(1) / r0;

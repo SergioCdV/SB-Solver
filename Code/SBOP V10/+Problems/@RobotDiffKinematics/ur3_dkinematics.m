@@ -4,8 +4,8 @@ function [T] = ur3_dkinematics(obj, i, q)
     theta = [0 0 0 0 0 0];
     alpha = [pi/2 0 0 pi/2 -pi/2 0];
     offset = [0 0 0 0 0 0];
-    a = [0 -0.24355 -0.2132 0 0 0];
-    d = [0.15185 0 0 0.13105 0.08535 0.0921];
+    a = [0 -0.24365 -0.21325 0 0 0];
+    d = [0.15185 0 0 0.1124 0.08535 0.0921];
     type = ones(6,1);
 
     % Assemble the state vector

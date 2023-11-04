@@ -29,25 +29,21 @@ function [T, J] = Kinematics(n, transformation, s)
         % Compute the transformation matrix of the n joint 
         [A] = transformation(i, s(i));
         T(:, 1+4*i:4*(i+1)) = T(:, 1+4*(i-1):4*i) * A;
-    end
-
-    for i = 1:n
+        
         % Perform the transformation 
         Z(:,i) = T(1:3,1+4*(i-1):3+4*(i-1)) * [0; 0; 1];
-        d(:,i+1) = T(1:3,4*i);
     end
+
+    d = T(1:3,4*(1:n+1));
+    D = [zeros(3,1) d(:,n+1)-d(:,1:n)];
 
     % Assemble the Jacobian
     for i = 1:n
-        % Compute the state variable 
-        z = Z(:,i);
-        D = d(:,n+1)-d(:,i);
-
         % Assemble the column vector
         if (1)
-            J(:,i) = [cross(z, D); z];
+            J(:,i) = [cross(Z(:,i), D(:,i+1)); Z(:,i)];
         else
-            J(:,i) = [z; zeros(3,1)];
+            J(:,i) = [Z(:,i); zeros(3,1)];
         end
     end
 end

@@ -10,16 +10,10 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
 
     % Compute the Jacobian
     for i = 1:length(tau)
-%         [~, J] = Problems.RobotDiffKinematics.Kinematics(obj.StateDim, ...
-%                                                         @(j,s)Problems.RobotDiffKinematics.ur3_dkinematics(obj, j, s), ...
-%                                                         s(:,i));
+        [~, J] = Problems.RobotDiffKinematics.Kinematics(obj.StateDim, ...
+                                                        @(j,s)Problems.RobotDiffKinematics.ur3_dkinematics(obj, j, s), ...
+                                                        s(:,i));
         % Compute the control vector
-%         if (det(J * J.') < 1e-5)
-%             u(:,i) = (J.' / (J*J.' + 1e-1 * eye(6))) * s_ref(8:end,i);
-%         else
-%             u(:,i) = s(7:12,i) - pinv(J) * s_ref(8:end,i);
-%         end
+        u(:,i) = s(7:12,i) - (eye(size(J,1)) - pinv(J) * J) * 1e-3 * ones(6,1);
     end
-
-    u = s(7:12,:);
 end
