@@ -47,5 +47,6 @@ classdef RobotDiffKinematics < Problems.AbstractProblem
     methods (Static)
         [T, J] = Kinematics(obj, n, transformation, s);
         [T, R] = ur3_dkinematics(obj, i, q);
+        [dm] = collision_constraint(r1, A1, v1, r2, A2, v2, iterations);
     end
 end

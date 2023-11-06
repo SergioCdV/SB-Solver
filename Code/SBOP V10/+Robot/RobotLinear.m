@@ -11,8 +11,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 12;                                % Polynomial order in the state vector expansion
-m = 20;                               % Number of sampling points
+n = 10;                                % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -68,6 +68,11 @@ params(5) = COE(2);              % Target orbital eccentricity
 params(6) = h;                   % Angular momentum magnitude
 params(7) = nu_0;                % Initial true anomaly [rad]
 params(8) = nu_f;                % Final true anomaly [rad]
+
+params(9) = Lc;                  % Maximum length of the deployed arm [m]
+params(10) = 0.5 * Lc;           % Collision sphere [m]
+
+params(11:13) = rand(1,3);       % Terminal RSO angular velocity [rad/s]
 
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 3;              % Dimension of the configuration vector. Note the difference with the state vector

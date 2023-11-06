@@ -62,6 +62,8 @@ function [P, C, u, omega] = angular_command(n, m, S0, maxIter, P0)
 
     params(5:13) = diag([0.001 0.06 0.06]);    % Inertia tensor of the chaser [kg m^2]
 
+    params(14) = deg2rad(5);       % Angular error for the final attitude [rad]
+
     L = 2;                         % Degree of the dynamics (maximum derivative order of the ODE system)
     StateDimension = 4;            % Dimension of the configuration vector. Note the difference with the state vector
     ControlDimension = 3;          % Dimension of the control vector

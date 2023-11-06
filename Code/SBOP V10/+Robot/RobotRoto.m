@@ -11,7 +11,7 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
+n = 10;                                 % Polynomial order in the state vector expansion
 m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
@@ -42,6 +42,10 @@ params(4) = omega_max;           % Maximum rotational speed [rad/s]
 
 % Inertia tensor of the chaser [kg m^2]
 params(5:13) = diag([0.001 0.06 0.06]);    
+
+params(14) = deg2rad(0);         % Angular error for the final attitude [rad]
+params(15:18) = SF(1:4);         % Terminal attitude
+params(19:21) = omega_f(1:3);    % Terminal angular velocity [rad/s]
 
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 4;              % Dimension of the configuration vector. Note the difference with the state vector

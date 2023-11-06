@@ -13,11 +13,14 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     SF = L \ s(1:6,end);                                                   % Physical boundary conditions
 
     % Inequality constraints
-    % R = dot(params(9:11).'-SF(1:3)-params(12:14).', params(9:11).'-SF(1:3)-params(12:14).', 1)-params(2)^2; 
+    R1 = +dot(SF(1:3),SF(1:3))-params(9)^2; 
+    R2 = -dot(SF(1:3),SF(1:3))+params(10)^2; 
 
     c = [dot(u(1:3,:),u(1:3,:),1)-params(3)^2 ...                          % Constraint on the force magnitude (second order cone)
          -k.^2 * omega ...                                                 % Monotony of the time law
-         %R                                                                % Graspling constraint
+          R1 ...                                                           % Collision constraint
+          R2 ...                                                           % Graspling constraint
+          (SF(4:6) - cross(params(11:13).', SF(1:3))).' ...                % Terminal velocity constraint
         ];                                                               
 
     % Equality constraints
