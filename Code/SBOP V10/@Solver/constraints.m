@@ -28,10 +28,12 @@ function [c, ceq] = constraints(obj, Problem, B, CB, Grid, x)
     [t(1,:), t(2,:)] = Grid.Domain(t0, tf, Grid.tau);                   % Original time independent variable
     P = obj.boundary_conditions(Problem, beta, t0, tf, t, B, P);        % Boundary conditions control points
     s = obj.evaluate_state(n, L, P, CB);                                % State evolution
+    s2 = obj.evaluate_state(n, L, P, B);                                % State evolution
     
     % Normalization
     for i = 1:L
-        s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ ( t(2,:).^i );     
+        s(1+m*i:m*(i+1),:) = s(1+m*i:m*(i+1),:) ./ ( t(2,:).^i ); 
+        s2(1+m*i:m*(i+1),:) = s2(1+m*i:m*(i+1),:) ./ ( t(2,:).^i );  
     end
 
     u = Problem.ControlFunction(Problem.Params, beta, t0, tf, t, s);    % Control function

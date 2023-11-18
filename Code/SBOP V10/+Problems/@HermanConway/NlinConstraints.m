@@ -6,8 +6,11 @@
 
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     % Inequality constraints
-    c = s(1,:)-params(2); 
+    c = [];
 
     % Equality constraints
-    ceq = [];
+    ceq = [
+            % s(1,end) * s(4,end) - sqrt(params(1) / s(1,end)) ...
+            dot(u,u,1)-1 ...
+          ];
 end

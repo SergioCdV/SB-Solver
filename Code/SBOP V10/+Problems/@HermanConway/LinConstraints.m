@@ -14,15 +14,15 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     Dim = 2+size(beta,1)+size(P,1)*size(P,2);    % Total dimension of the optimization variables
 
     % Linear inequalities
-    A = zeros(Dim);
-    A(1,end-size(beta,1)-1) = 1;        % The initial time must be smaller than the final time (the independent variable is monotone)
+    A = zeros(2,Dim);
+    A(1,end-size(beta,1)-1) = 1;                 % The initial time must be smaller than the final time (the independent variable is monotone)
     A(1,end-size(beta,1)) = -1;
-    b = zeros(Dim,1);
-    
+    b = zeros(2,1);
+
     % Linear constraints
-    Aeq = zeros(Dim);
-    Aeq(1,end-size(beta,1)-1) = 1;
-    Aeq(2,end-size(beta,1)) = 1;
-    beq = zeros(Dim,1);
-    beq(2,1) = params(1);
+    Aeq = zeros(2,Dim);
+    Aeq(1,end-size(beta,1)-1) = 1;               % The initial time will be 0
+    Aeq(2,end-size(beta,1)) = 1;                 % The final time will be TOF
+    beq = zeros(2,1);
+    beq(2,1) = params(2);                        % Final TOF
 end

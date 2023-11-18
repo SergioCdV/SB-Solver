@@ -76,14 +76,14 @@ for i = 1:iter
 end
 
 time = mean(time);
-
+%%
 M1 = PolynomialBases.Bezier().LB_tmatrix(7);
-M2 = PolynomialBases.Bezier().DLB_tmatrix(7);
+M2 = PolynomialBases.Bezier().DB_tmatrix(7, 1);
 
 B =  M1 * PolynomialBases.Bezier().basis(7, tau/tf);
+dB = (M1 * M2.') * PolynomialBases.Bezier().basis(7, tau/tf);
 
 L = PolynomialBases.Legendre().derivative(7, 2 * tau/tf-1, 1);
-dB = M2 * PolynomialBases.Bezier().derivative(7, tau/tf, 1);
 
 C2(1:3,:) = P * B; 
 C2(4:6,:) = P * dB; 

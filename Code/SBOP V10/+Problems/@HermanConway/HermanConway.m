@@ -1,17 +1,18 @@
 %% SBOPT %%
-% Date: 05/05/2023
+% Date: 10/11/2023
 
-%% Robot problem %% 
-% Implementation of the 1D robot
+%% Planar transfer %% 
+% Implementation of the low-thrust planar orbital transfer transcription as
+% given in Herman, Conway, 1996
 
-classdef RobotDiffKinematics < Problems.AbstractProblem 
+classdef HermanConway < Problems.AbstractProblem 
     % Fundamental definition of the problem
     properties  
     end
 
     methods 
         % Constructor 
-        function [obj] = RobotDiffKinematics(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+        function [obj] = HermanConway(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
             super_arguments{1} = myInitial;
             super_arguments{2} = myFinal;
             super_arguments{3} = myDerDeg;
@@ -42,12 +43,5 @@ classdef RobotDiffKinematics < Problems.AbstractProblem
         function [obj] = Check(obj)
             obj = Check@Problems.AbstractProblem(obj);
         end
-    end
-
-    methods (Static)
-        [T, J] = Kinematics(obj, n, transformation, s);
-        [T, R] = ur3_dkinematics(obj, i, q);
-        [dm] = collision_constraint(r1, A1, v1, r2, A2, v2, iterations);
-        [v] = body_vertex(index);
     end
 end

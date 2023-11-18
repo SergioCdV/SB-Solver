@@ -60,20 +60,15 @@ function [a, b, flag] = GJK(shape1, shape2, iterations)
     [a, b] = pickLine(v, shape2, shape1);
 
     % Point 3 selection (triangle)
-    [a, b, c, flag] = pickTriangle(a, b, shape2, shape1, iterations);
+    [a, b, c, ~] = pickTriangle(a, b, shape2, shape1, iterations);
 
     % Point 4 selection (tetrahedron)
-    if (flag == 1) 
-        % Only bother if we could find a viable triangle.
-        [a, b, c, d, flag] = pickTetrahedron(a, b, c, shape2, shape1, iterations);
+    [a, b, c, d, flag] = pickTetrahedron(a, b, c, shape2, shape1, iterations);
 
-        % EPA 
-        if (flag)
-            s = [a; b; c; d];                            % Initial simplex
-            b = EPA(shape1, shape2, s, iterations);      % Maximum distance between the convex hulls
-        else
-            b = [];
-        end
+    % EPA 
+    if (flag)
+        s = [a; b; c; d];                            % Initial simplex
+        b = EPA(shape1, shape2, s, iterations);      % Maximum distance between the convex hulls
     else
         b = [];
     end
@@ -81,8 +76,8 @@ end
 
 % Construct the first line of the simplex
 function [a,b] = pickLine(v, shape1, shape2)
-    b = support(shape2, shape1 ,v);
-    a = support(shape2, shape1, -v);
+    b = support(shape2, shape1, v);
+    a = support(shape2, shape1, -b);
 end
 
 function [a, b, c, flag] = pickTriangle(a ,b, shape1, shape2, IterationAllowed)
@@ -116,16 +111,15 @@ function [a, b, c, flag] = pickTriangle(a ,b, shape1, shape2, IterationAllowed)
             c = b;              % Throw away the furthest point and grab a new one in the right direction
             b = a;
             v = abp;            % Cross(Cross(ab,ao),ab);
-            iter = iter + 1;
         % Is origin above (outside) AC?
         elseif dot(acp, ao) > 0
             b = a;
             v = acp;            % Cross(Cross(ac,ao),ac);
-            iter = iter + 1;
         else
-            GoOn = false;
+            % GoOn = false;
         end
         a = support(shape2,shape1,v);
+        iter = iter + 1;
     end
 
     flag = ~GoOn;
@@ -147,13 +141,26 @@ function [a,b,c,d,flag] = pickTetrahedron(a,b,c,shape1,shape2,IterationAllowed)
         b = a;
         
         v = abc;
-        a = support(shape2,shape1,v); % Tetrahedron new point
+        a_new = support(shape2,shape1,v); % Tetrahedron new point
+
+        if ~ismember(a_new', [a;b;c;d]')
+            d = c;
+            c = b;
+            b = a;    
+            a = a_new;
+        end
         
     else % below
         d = b;
         b = a;
         v = -abc;
-        a = support(shape2,shape1,v); % Tetrahedron new point
+        a_new = support(shape2,shape1,v); % Tetrahedron new point
+
+        if ~ismember(a_new', [a;b;c;d]')
+            d = b;
+            b = a;    
+            a = a_new;
+        end
     end
 
     iter = 1; 
@@ -174,7 +181,6 @@ function [a,b,c,d,flag] = pickTetrahedron(a,b,c,shape1,shape2,IterationAllowed)
         % Above triangle ABC
         if dot(abc, ao) > 0 
             % No need to change anything, we'll just iterate again with this face as default
-            iter = iter + 1;
         else
             acd = cross(ac,ad);         % Normal to face of triangle
             
@@ -183,10 +189,9 @@ function [a,b,c,d,flag] = pickTetrahedron(a,b,c,shape1,shape2,IterationAllowed)
                 % Make this the new base triangle
                 b = c;
                 c = d;
-%                 ab = ac;
-%                 ac = ad;            
+                ab = ac;
+                ac = ad;            
                 abc = acd;     
-                iter = iter + 1;
 
             elseif dot(acd, ao) < 0
                 adb = cross(ad,ab);     % Normal to face of triangle
@@ -195,33 +200,41 @@ function [a,b,c,d,flag] = pickTetrahedron(a,b,c,shape1,shape2,IterationAllowed)
                     % Make this the new base triangle.
                     c = b;
                     b = d;              
-%                     ac = ab;
-%                     ab = ad;
+                    ac = ab;
+                    ab = ad;
                     abc = adb; 
-                    iter = iter + 1;
                 else
                     GoOn = false; 
                 end
+            else
+                % The nearest point is one of the three points contained in the simplex
             end
         end
         
         % Try again, above
-        if dot(abc, ao) > 0
-            d = c;
-            c = b;
-            b = a;    
+        if dot(abc, ao) > 0    
             v = abc;
-            a = support(shape2,shape1,v);   % Tetrahedron new point
-            iter = iter + 1;
+            a_new = support(shape2,shape1,v);   % Tetrahedron new point
+
+            if ~ismember(a_new', [a;b;c;d]')
+                d = c;
+                c = b;
+                b = a;    
+                a = a_new;
+            end
 
         % Below
         else 
-            d = b;
-            b = a;
             v = -abc;
-            a = support(shape2,shape1,v);   % Tetrahedron new point
-            iter = iter + 1;
+            a_new = support(shape2,shape1,v);   % Tetrahedron new point
+            if ~ismember(a_new', [a;b;c;d]')
+                d = b;
+                b = a;    
+                a = a_new;
+            end
         end
+
+        iter = iter + 1;
     end
 end
 
@@ -287,5 +300,29 @@ function [dmin, nmin, index] = findClosestEdge(s)
                 index = j;
             end
         end
+    end
+end
+
+function [reconstruct] = reconstruct_simplex(simplex, simplexFaces, extendedPoint)
+    removalFaces = [];
+    for i = 1:size(simplexFaces,1)
+        face = simplexFaces(i,:);
+        ab = face(1)-face(2);
+        ac = face(1)-face(3); 
+        n = cross(ab, ac);
+        n = n/norm(n);
+        a0 = [face(1) 0 0];
+        if (dot(a0, n) > 0)
+            n = -n;
+        end
+
+        if (dot(extendedPoint, n) > 0)
+            removalFaces = [removalFaces; face];
+        end
+    end
+
+    edges = []; 
+    for i = 1:size(removalFaces,1)
+        
     end
 end

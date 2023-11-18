@@ -12,7 +12,7 @@ clear
 basis = 'Bernstein';                    % Polynomial basis to be use
 time_distribution = 'Bernstein';        % Distribution of time intervals
 n = 10;                                % Polynomial order in the state vector expansion
-m = 100;                               % Number of sampling points
+m = 50;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -48,6 +48,7 @@ time = mean(time);
 
 % Analytical solution
 uopt = -12*tau+6;
+sopt = -2*tau.^3 + 3*tau.^2;
 
 %% Plots
 % State representation
@@ -56,8 +57,9 @@ hold on
 xlabel('$t$')
 ylabel('$\mathbf{s}$')
 plot(tau, C(1:2,:));
+plot(tau, sopt, 'ok');
+legend('$s$', '$\dot{s}$', '$s^*$')
 hold off
-legend('off')
 grid on;
 
 % Propulsive acceleration plot
@@ -68,3 +70,4 @@ plot(tau, uopt, 'ok');
 xlabel('$t$')
 ylabel('$\mathbf{u}$')
 grid on;
+legend('SBOPT', '$u^*$')

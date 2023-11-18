@@ -11,8 +11,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 10;                                % Polynomial order in the state vector expansion
-m = 100;                               % Number of sampling points
+n = 7;                                % Polynomial order in the state vector expansion
+m = 50;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -31,13 +31,14 @@ params(2) = Tc;                 % Final time [s]
 params(3:4) = Omega_max;        % Maximum control authority 
 
 % DH parameters of the robot
-S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 0].';
+S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 pi/2].';
 SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 0].';
 
-s_ref = [0.38 -0.1306 0.408 zeros(1,3) 1 1e-3 * rand(1,6)].';
+s_ref = [0.38 -0.1306 0.408 zeros(1,3) 1 1e-4 * ones(1,6)].';
 
 % Reference trajectory polynomial
 epsilon = 1e-3^2;                                                 % Numerical tolerance for the Jacobian determinant
+params(5) = epsilon;
 params(6:6+size(s_ref,1)-1) = reshape(s_ref(:,end), 1, []);  
 
 OptProblem = Problems.RobotDiffKinematics(S0, SF, L, StateDimension, ControlDimension, params);

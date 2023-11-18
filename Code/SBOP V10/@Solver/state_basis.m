@@ -67,12 +67,10 @@ function [B, C, tau] = state_basis(obj, L, n, basis, tau)
         base = P.basis(n(i),tau);
 
         derivative = zeros(L * (n(i)+1),length(tau));
-        cderivative = zeros(L * (n(i)+1),length(ctau));
         
         switch (basis)
             case 'Legendre'
-                M = PolynomialBases.Bezier().LB_tmatrix(n(i));
-                cbase = M * PolynomialBases.Bezier().basis(n(i), ctau);
+                cbase = PolynomialBases.Bezier().LB_tmatrix(n(i)) * PolynomialBases.Bezier().basis(n(i), ctau);
             otherwise
                 cbase = base;
         end
@@ -88,8 +86,9 @@ function [B, C, tau] = state_basis(obj, L, n, basis, tau)
             end
         end
 
+        cderivative = derivative;
         B{i} = [base; derivative];
-        C{i} = [cbase; cderivative];
+        C{i} = [base; derivative];
         C{i} = B{i};
  
     end
