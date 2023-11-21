@@ -6,10 +6,7 @@
 
 function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     rho = 1 + params(5) * cos(tau(1,:));                             % Transformation parameter
-    k = params(4)^2/params(6)^3;                                     % Keplerian constant
-    Omega = rho.^2 .* k;                                             % True anomaly angular velocity [rad/s]
-    Alpha = -2 * k * params(5) * sin(tau(1,:)) .* rho;               % True anomaly acceleration [rad/s^2]
 
     % Compute the control vector as a dynamics residual (linear acceleration, TH relative motion model)
-    u(1:3,:) = s(7:9,:) - [2 * s(3,:); -s(2,:); 2*s(3,:)./rho-2*s(1,:)];
+    u(1:3,:) = s(7:9,:) - [2 * s(6,:); -s(2,:); 3*s(3,:)./rho-2*s(4,:)];
 end
