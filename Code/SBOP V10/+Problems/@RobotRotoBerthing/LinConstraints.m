@@ -19,8 +19,11 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     A(1,end-size(beta,1)) = -1;
     b = zeros(Dim,1);
     
+    A(2,end-size(beta,1)) = 1;          % The initial time must be smaller than the maximum time
+    b(2,1) = +params(1);
+    
     % Linear constraints
     Aeq = zeros(Dim);
-    Aeq(1,end-size(beta,1)-1) = 1;      % Initial and final anomaly constraints
+    Aeq(1,end-size(beta,1)-1) = 1;      % Initial and final time constraints
     beq = zeros(Dim,1);
 end

@@ -140,7 +140,7 @@ figure
 subplot(1,2,1)
 hold on
 xlabel('$\nu$')
-ylabel('$\boldmath{\rho}$ [km]', 'Interpreter','latex')
+ylabel('$\mathbf{\rho}$ [km]', 'Interpreter','latex')
 plot(tau, C(1:3,:) / 1e3);
 legend('$x$', '$y$', '$z$')
 hold off
@@ -152,7 +152,7 @@ xticklabels(strrep(xticklabels, '-', '$-$'));
 subplot(1,2,2)
 hold on
 xlabel('$\nu$')
-ylabel('$\dot{\boldmath{\rho}}$ [m/s]')
+ylabel('$\dot{\mathbf{\rho}}$ [m/s]')
 plot(tau, C(4:6,:) );
 legend('$\dot{x}$', '$\dot{y}$', '$\dot{z}$')
 hold off
@@ -168,7 +168,7 @@ plot(tau, u(1:3,:), 'LineWidth', 0.3)
 plot(tau, sqrt(dot(u(1:3,:), u(1:3,:), 1)), 'k');
 yline(Fmax, 'k--')
 xlabel('$\nu$')
-ylabel('$\mathbf{u}$')
+ylabel('$\mathbf{u}$ [m/$s^2$]')
 legend('$u_r$', '$u_v$', '$u_h$', '$\|\mathbf{u}\|_2$', '$u_{max}$');
 grid on;
 xlim([0 tau(end)])

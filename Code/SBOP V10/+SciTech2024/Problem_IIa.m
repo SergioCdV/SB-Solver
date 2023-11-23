@@ -16,10 +16,10 @@ baseline_flag = true;                  % Baseline (true) vs reduced solution (fa
 
 if (baseline_flag)
     N = 20;                            % Polynomial order in the state vector expansion
-    m = 100;                           % Number of sampling points
+    m = 200;                           % Number of sampling points
 else
     N = 10;                            % Polynomial order in the state vector expansion
-    m = 100;                           % Number of sampling points
+    m = 200;                           % Number of sampling points
 end
  
 solver = Solver(basis, N, time_distribution, m);
@@ -29,14 +29,16 @@ solver = Solver(basis, N, time_distribution, m);
 R1 = 1e3;                                          % Keep-out zone radius 1 [m]
 R2 = 10;                                           % Keep-out zone radius 2 [m]
 L = 1.85;                                          % Graspling reach [m]
-TOF = 3 * 3600;                                    % Maximum allowed phase time [s]
-
-% Target orbital elements
-COE = [7178e3 0.008 deg2rad(190) deg2rad(98.55) 0 0];
+TOF = 6 * 3600;                                    % Maximum allowed phase time [s]
 
 Re = 6378e3;                                       % Mean Earth radius
 J2 = 1.08263e-3;                                   % J2 parameter of the Earth
 mu = 3.986e14;                                     % Gravitational parameter of the Earth
+
+% Target's initial conditions (relative position [m] and velocity [m/s])
+ST = [7.104981874434397e6 1.137298852087994e6 -0.756578094588272e6 -0.586250624037242e3 -1.213011751682090e3 -7.268579401702199e3].';
+COE = OrbitalDynamics.state2coe(mu, ST, 'Inertial');
+
 n = sqrt(mu/COE(1)^3);                             % Mean motion [rad/s]
 K = floor(TOF/(2*pi/n));                           % Number of complete revolutions
 dt = TOF - K * (2*pi/n);                           % Elapsed time in the last revolution [s]
@@ -47,9 +49,6 @@ nu_f = 2*pi*K + OrbitalDynamics.kepler(COE);       % Final true anomaly [rad]
 
 % Initial conditions (relative position [m] and velocity [m/s])
 S0 = [-365.8244397387267 -13.2607761078909 931.0422538255768 -1.4620006073131 0.6101655531506 3.2327911653314].';    
-
-% Target's initial conditions (relative position [m] and velocity [m/s])
-ST = [7.104981874434397e6 1.137298852087994e6 -0.756578094588272e6 -0.586250624037242e3 -1.213011751682090e3 -7.268579401702199e3].';
 
 % Physical parameters
 Fmax = 0.5e-2;                                     % Maximum available acceleration [m/s^2]
@@ -117,19 +116,20 @@ maxIter = 1e6;                                          % Maximum number of iter
 elapsed_time = 0;                                       % Elapsed time
 tof = TOF;                                              % Maximum phase time
 
-St = ST.';
-C = S0.';
+St = zeros(maxIter,6);
+C = zeros(maxIter,6);
+St(1,:) = ST.';
+C(1,:) = S0.';
 U = [];
 
 % Target and chaser ECI initial conditions
-o21 = -cross(St(end,1:3).', St(end,4:6).');             % LVLH y+ definition
-o31 = -St(end,1:3).' / norm(St(end,1:3).');             % LVLH z+ definition
-o11 = cross(o21, o31);                                  % LVLH x+ definition
-Q = [o11 o21 o31];                                      % Rotation matrix from the LVLH to the ECI frames
-y0 = [St(end,:).'; blkdiag(Q,Q) * S0 + St(end,:).'];    % ECI initial conditions
+o21 = -cross(St(1,1:3).', St(1,4:6).');             % LVLH y+ definition
+o31 = -St(1,1:3).' / norm(St(1,1:3).');             % LVLH z+ definition
+o11 = cross(o21, o31);                              % LVLH x+ definition
+Q = [o11 o21 o31];                                  % Rotation matrix from the LVLH to the ECI frames
+y0 = [St(1,:).'; blkdiag(Q,Q) * S0 + St(1,:).'];    % ECI initial conditions
 
 % Transformation to the TS space
-h = sqrt(mu * COE(1) * (1-COE(2)^2));                            % Target angular momentum
 omega = mu^2 / h^3;                                              % True anomaly angular velocity
 k = 1 + COE(2) * cos(nu_0);                                      % Transformation parameter
 kp =  - COE(2) * sin(nu_0);                                      % Derivative of the transformation
@@ -153,25 +153,25 @@ while (GoOn && iter < maxIter)
     solver.maxIter = 1;
     
     % Plant dynamics 
-    [~, s] = ode113(@(t,s)j2_dynamics(mu, J2, Re, t, s, U(:,end)), [0 Ts], y0, options);  
+    [~, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, t, s, U(:,end)), linspace(0, Ts, 100), y0, options);  
 
     % Update initial conditions and state vector
-    St = [St; s(end,1:6)];                                                              % Target ECI state
+    St(iter+1,:) = s(end,1:6);                                                          % Target ECI state
     Sc = s(end,7:12);                                                                   % Chaser's ECI state
     y0 = s(end,:).';                                                                    % New initial conditions
-    o21 = -cross(St(end,1:3).', St(end,4:6).');                                         % LVLH y+ definition
-    o31 = -St(end,1:3).' / norm(St(end,1:3).');                                         % LVLH z+ definition
+    o21 = -cross(St(iter+1,1:3).', St(iter+1,4:6).');                                   % LVLH y+ definition
+    o31 = -St(iter+1,1:3).' / norm(St(iter+1,1:3).');                                   % LVLH z+ definition
     o11 = cross(o21,o31);                                                               % LVLH x+ definition
     Q = [o11 o21 o31].';                                                                % Rotation matrix from the ECI to the LVLH frames
-    rho = Sc-St(end,:);                                                                 % Chaser state vector in the LVLH frame
+    rho = Sc-St(iter+1,:);                                                              % Chaser state vector in the LVLH frame
     S0 = blkdiag(Q,Q) * rho.';                                                          % Relative state vector in the LVLH frame
-    C = [C; S0.'];
+    C(iter+1,:) = S0.';
 
     % Navigation system
     S0 = mvnrnd(S0, blkdiag(Sigma_r, Sigma_v), 1).';                                    % Noisy state vector
 
     % Transformation to TS space
-    COEo = OrbitalDynamics.state2coe(mu, St(end,:).', 'Inertial');
+    COEo = OrbitalDynamics.state2coe(mu, St(iter+1,:).', 'Inertial');
     nu_o = OrbitalDynamics.kepler(COEo);
     h = sqrt(mu * COEo(1) * (1-COEo(2)^2));                          % Target angular momentum
     omega = mu^2 / h^3;                                              % True anomaly angular velocity
@@ -181,14 +181,23 @@ while (GoOn && iter < maxIter)
     S0 = A * S0;
 
     % Convergence 
-    if (elapsed_time >= TOF || norm(C(end,1:3)) <= R2)
+    if (elapsed_time >= TOF || norm(C(iter+1,1:3)) <= R2)
         GoOn = false;
     else
         % Shrinking horizon
-        if (elapsed_time > 0.8 * TOF)
+        if (elapsed_time > 0.0 * TOF)
             tof = tof - Ts; 
             params(1) = tof;
+
+            K = floor(tof/(2*pi/n));                        % Number of complete revolutions
+            dt = tof - K * (2*pi/n);                        % Elapsed time in the last revolution [s]
         end
+
+        % New initial and final anomaly
+        params(7) = nu_o;
+        COEo(6) = COEo(6) + n * dt /ts;                     % Final mean anomaly [rad]
+        nu_f = 2*pi*K + OrbitalDynamics.kepler(COEo);       % Final true anomaly [rad]
+        params(8) = nu_f;
 
         % Update the number of iterations
         iter = iter + 1;
@@ -197,7 +206,10 @@ end
 
 U = [U zeros(3,1)];
 t = Ts * (0:iter);      % Elapsed time vector
-    
+
+C = C(1:iter+1,:);
+St = St(1:iter+1,:); 
+
 %% Dimensionalization
 C = C.';
 C(1:3,:) = C(1:3,:) * Lc; 
@@ -226,7 +238,7 @@ plot(t, C(4:6,:) );
 legend('$\dot{x}$', '$\dot{y}$', '$\dot{z}$')
 hold off
 grid on;
-xlim([0 tau(end)])
+xlim([0 t(end)])
 
 % Propulsive acceleration plot
 figure;
@@ -234,8 +246,8 @@ hold on
 plot(t, U(1:3,:), 'LineWidth', 0.3)
 plot(t, sqrt(dot(U(1:3,:), U(1:3,:), 1)), 'k');
 yline(Fmax, 'k--')
-xlabel('$t$')
-ylabel('$\mathbf{u}$')
+xlabel('$\nu$')
+ylabel('$\mathbf{u}$ [m/$s^2$]')
 legend('$u_r$', '$u_v$', '$u_h$', '$\|\mathbf{u}\|_2$', '$u_{max}$');
 grid on;
 xlim([0 t(end)])
@@ -264,14 +276,16 @@ function [dr] = j2_dynamics(mu, J2, Re, t, s, u)
 
     % Target dynamics
     dr(1:3) = s(4:6);                                                   % Position derivative
-    a = 1-1.5*J2*(Re/norm(s(1:3)))^2*(5*(s(3)/norm(s(1:3)))^2-1);
-    b = 1-1.5*J2*(Re/norm(s(1:3)))^2*(5*(s(3)/norm(s(1:3)))^2-3);
+    a = 1-1.5 * J2*(Re/norm(s(1:3)))^2 * (5*(s(3)/norm(s(1:3)))^2-1);
+    b = 1-1.5 * J2*(Re/norm(s(1:3)))^2 * (5*(s(3)/norm(s(1:3)))^2-3);
+
     dr(4:6) = - mu * s(1:3)/norm(s(1:3))^3 .* [a; a; b];                % Velocity derivative
 
     % Chaser dynamics
     dr(7:9) = s(10:12);                                                 % Position derivative
-    a = 1-1.5*J2*(Re/norm(s(7:9)))^2*(5*(s(9)/norm(s(7:9)))^2-1);
-    b = 1-1.5*J2*(Re/norm(s(7:9)))^2*(5*(s(9)/norm(s(7:9)))^2-3);
+    a = 1-1.5 * J2 * (Re/norm(s(7:9)))^2 * (5*(s(9)/norm(s(7:9)))^2-1);
+    b = 1-1.5 * J2 * (Re/norm(s(7:9)))^2 * (5*(s(9)/norm(s(7:9)))^2-3);
+
     dr(10:12) = Q * u - mu * s(7:9)/norm(s(7:9))^3 .* [a; a; b];        % Velocity derivative
 
     dr = dr.';

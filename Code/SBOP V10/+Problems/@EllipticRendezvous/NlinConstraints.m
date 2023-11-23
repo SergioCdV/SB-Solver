@@ -10,13 +10,13 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     k = 1 + params(5) * cos(tau(1,:));                                     % Transformation parameter
 
     % Inequality constraints
-    R1 = +dot(s(1:3,end), s(1:3,end))-(k(end) * params(10))^2; 
-    L =  -dot(s(1:3,end), s(1:3,end))+(k(end) * params(11))^2;
+    R1 = +dot(s(1:3,end), s(1:3,end))-(k(end) * params(2))^2; 
+    %L =  -dot(s(1:3,end), s(1:3,end))+(k(end) * params(11))^2;
 
     c = [
           params(9) * sqrt(dot(u(1:3,:),u(1:3,:),1))-params(3) ...         % Constraint on the force magnitude (second order cone)
           R1 ...                                                           % Keep-out sphere constraint
-          L ...                                                            % Graspling reach
+          %L ...                                                            % Graspling reach
         ];                                                               
 
     % Equality constraints
