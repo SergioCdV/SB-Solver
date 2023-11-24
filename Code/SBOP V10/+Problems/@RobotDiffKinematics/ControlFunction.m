@@ -14,6 +14,6 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
                                                         @(j,s)Problems.RobotDiffKinematics.ur3_dkinematics(obj, j, s), ...
                                                         s(:,i));
         % Compute the control vector
-        u(:,i) = s(7:12,i) - (eye(size(J,1)) - pinv(J) * J) * 1e-3 * ones(6,1);
+        u(:,i) = s(7:12,i); %- (eye(size(J,1)) - pinv(J) * J) * 1e-3 * ones(6,1);
     end
 end
