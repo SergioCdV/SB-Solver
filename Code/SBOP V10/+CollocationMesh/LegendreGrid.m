@@ -93,7 +93,7 @@ classdef LegendreGrid < CollocationMesh.AbstractGrid
         end
 
         function [t, dt] = Domain(obj, t0, tf, tau)
-            t  = (tf - t0) * obj.J * (1+tau); 
+            t  = (tf - t0) * obj.J * (1+tau) + t0; 
             dt = (tf - t0) * obj.J * ones(1,length(tau));
         end
     end   

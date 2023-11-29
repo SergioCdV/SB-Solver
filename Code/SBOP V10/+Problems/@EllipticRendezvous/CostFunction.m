@@ -10,6 +10,11 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     Omega = params(4)^2/params(6)^3 .* rho.^2;            % True anomaly angular velocity [rad/s]
 
     % Mayer and Lagrange terms
-    M = 0; 
-    L = dot(u, u, 1) .* Omega;
+    M = 0;
+    if (length(params) < 12)
+        L = dot(u, u, 1);
+    else
+        L = dot(u, u, 1) + ones(1, size(u,2));
+    end
+    L = L ./ Omega;
 end

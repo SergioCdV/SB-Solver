@@ -18,13 +18,13 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     A(1,end-size(beta,1)-1) = 1;        % The initial time must be smaller than the final time (the independent variable is monotone)
     A(1,end-size(beta,1)) = -1;
     b = zeros(Dim,1);
-
-    A(2,end-size(beta,1)) = -1;         % Final time inequality
-    b(2,1) = -params(8);
     
     % Linear constraints
     Aeq = zeros(Dim);
     Aeq(1,end-size(beta,1)-1) = 1;      % Initial and final anomaly constraints
     beq = zeros(Dim,1);
     beq(1,1) = params(7);
+
+    A(2,end-size(beta,1)) = 1;          % Final time inequality
+    b(2,1) = params(8);
 end

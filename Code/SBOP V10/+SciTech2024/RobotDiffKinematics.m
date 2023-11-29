@@ -17,7 +17,7 @@ m = 50;                               % Number of sampling points
 solver = Solver(basis, n, time_distribution, m);
 
 Lc = 1;                         % Characteristic length [m]
-Tc = 300;                       % Characteristic time [s]
+Tc = 120;                       % Characteristic time [s]
 Omega_max = [pi; 2*pi];         % Maximum angular velocity [rad/s]
 
 %% Problem definition 

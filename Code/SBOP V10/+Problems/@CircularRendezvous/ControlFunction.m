@@ -5,12 +5,6 @@
 % Function implementation of the control function as a dynamics residual
 
 function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
-    omega = params(4)^2 / params(6)^3;                               % True anomaly angular velocity
-    rho = 1 + params(5) * cos(tau(1,:));                             % Transformation parameter
-
     % Compute the control vector as a dynamics residual (linear acceleration, TH relative motion model)
-    u(1:3,:) = s(7:9,:) - [2 * s(6,:); -s(2,:); 3*s(3,:)./rho-2*s(4,:)];
-
-    % Dimensionalisation 
-    u = u .* (omega^2 * rho.^3);
+    u(1:3,:) = s(7:9,:) - [2 * s(6,:); -s(2,:); 3*s(3,:)-2*s(4,:)];
 end

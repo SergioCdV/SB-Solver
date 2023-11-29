@@ -1,5 +1,5 @@
 %% Project: SBOPT %%
-% Date: 18/01/23
+% Date: 27/11/23
 
 %% Long-range rendezvous in YA model %% 
 % This script provides the solving of Problem I in URJC rendezvous laboratory,
@@ -70,13 +70,6 @@ k = 1 + COE(2) * cos(nu_0);                                     % Transformation
 kp =  - COE(2) * sin(nu_0);                                     % Derivative of the transformation
 L = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];      % TH transformation matrix
 S0 = L * S0;                                                    % TH initial boundary conditions
-
-Phi0 = OrbitalDynamics.YA_Phi(mu, h, COE(2), 0, nu_0);          % Initial fundamental matrix
-invPhi0 = (Phi0\eye(6));                                        % Inverse of the initial fundamental matrix
-phi = OrbitalDynamics.YA_Phi(mu, h, COE(2), TOF, nu_f);         % Final fundamental matrix
-Phi = phi * invPhi0;                                            % YA STM
-r_f = Phi(1:3,:) * S0;                                          % Final dimensional position vector [m]
-v_f = Phi(4:6,:) * S0;                                          % Initial dimensional velocity vector [m/s]
 
 % Assemble the state vector
 SF = zeros(6,1);                                                % Final conditions
@@ -226,6 +219,7 @@ end
 % Scaling 
 S = S * Lc / 1e3;
 T = T * Lc / 1e3;
+V = V * Vc / 1e3;
 
 figure 
 view(3)

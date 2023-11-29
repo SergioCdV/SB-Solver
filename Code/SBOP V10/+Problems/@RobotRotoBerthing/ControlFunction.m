@@ -6,7 +6,7 @@
 
 function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     % Compute the angular velocity
-    I = reshape(params(4:12), 3, 3);      % Inertia tensor of the chaser
+    I = reshape(params(5:13), 3, 3);      % Inertia tensor of the chaser
 
     % Angular velocity
     omega = 2 * [s(4,:).*s(5,:)+s(3,:).*s(6,:)-s(2,:).*s(7,:)-s(1,:).*s(8,:); ...

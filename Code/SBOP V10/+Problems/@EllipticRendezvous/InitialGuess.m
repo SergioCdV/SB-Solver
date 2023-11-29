@@ -8,5 +8,10 @@ function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
     % Initial guess
     t0 = params(7);                    % Initial true anomaly [rad]
     tf = params(8);                    % Final true anomaly [rad]
-    beta = final(1:6);
+
+    if (length(params) < 12)
+        beta = final(1:6);
+    else
+        beta = params(12:end).';
+    end
 end

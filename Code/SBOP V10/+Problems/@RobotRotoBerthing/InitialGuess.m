@@ -6,7 +6,7 @@
 
 function [beta, t0, tf] = InitialGuess(obj, params, initial, final)    
     % Initial guess
-    t0 = 0;                    % Initial clock
-    tf = params(1);            % Final clock
-    beta = final;
+    t0 = params(1);        % Initial clock
+    tf = params(2);        % Final clock
+    beta = [];
 end

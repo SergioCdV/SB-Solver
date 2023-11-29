@@ -6,6 +6,6 @@
 
 function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     % Mayer and Lagrange terms
-    M = 0 * s(1,end); 
-    L = 1 * dot(s(7:12,:), s(7:12,:), 1);
+    M = 0; 
+    L = dot(s(7:12,:), s(7:12,:), 1);
 end

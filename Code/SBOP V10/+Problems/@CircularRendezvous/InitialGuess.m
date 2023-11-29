@@ -6,11 +6,11 @@
 
 function [beta, t0, tf] = InitialGuess(obj, params, initial, final)    
     % Initial guess
-    t0 = params(1);            % Initial clock
-    tf = params(2);            % Final clock
+    t0 = params(7);                    % Initial true anomaly [rad]
+    tf = params(8);                    % Final true anomaly [rad]
 
-    if (length(params) < 21)
-        beta = initial;            % Initial guess for the final boundary condition
+    if (length(params) < 12)
+        beta = final(1:6);
     else
         beta = [];
     end

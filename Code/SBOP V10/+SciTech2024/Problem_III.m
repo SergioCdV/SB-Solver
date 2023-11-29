@@ -12,8 +12,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
-m = 50;                                % Number of sampling points
+n = 10;                                % Polynomial order in the state vector expansion
+m = 30;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -27,26 +27,28 @@ ControlDimension = 6;                  % Dimension of the control vector
 
 % Linear problem data
 params(1) = 0;                         % Initial time [s]
-params(2) = Tc;                        % Final time [s]
+params(2) = 0.1 * Tc;                  % Final time [s]
 params(3:4) = Omega_max;               % Maximum control authority 
+params(5) = 5;                         % Constrain on the linear velocity
+params(6) = 2;                         % Constraint on the angular velocity
+
+epsilon = 1e-4^2;                      % Numerical tolerance for the Jacobian determinant
+params(7) = epsilon;
+
+% Final conditions
+params(8:20) = [0.2; -0.05; 0.1; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-1); 0].';
 
 % DH parameters of the robot
 S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 pi/2].';
 SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 0].';
 
-% Reference trajectory polynomial
-epsilon = 1e-3^2;                           % Numerical tolerance for the Jacobian determinant
-params(5) = epsilon;
-params(6:11) = zeros(1,6);                  % Joints angular velocity  
-
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 30;                                                 % Sampling time
+Ts = 1;                                                 % Sampling time [s]
 
 % Noise 
-Sigma_t = 0.01 * eye(6);                                % Joint state covariance [rad]
-Sigma_o = 0.05 * eye(6);                                % Joint velocity covariance [rad/s]
+Sigma_t = deg2rad(1)^2 * eye(6);                        % Joint state covariance [rad]
 
 GoOn = true;                                            % Convergence boolean
 iter = 1;                                               % Initial iteration
@@ -61,9 +63,18 @@ y0 = S0.';
 
 while (GoOn && iter < maxIter)
     % Optimization (feedback phase)
-    elapsed_time = (iter-1) * Ts;
+    tic
     OptProblem = Problems.RobotDiffKinematics(S0, SF, L, StateDimension, ControlDimension, params);
-    [~, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
+    [T, dV, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
+
+    if (iter == 1)
+        params(21:26) = mod(T(1:6,end), 2*pi);
+        SF = mod(T(1:6,end), 2*pi);
+        open_cost = dV;
+        open_time = toc;
+    else
+        iter_time(iter-1) = toc;
+    end
     
     if (norm(u(1:3,1), "inf") > Omega_max(1))
         u(norm(u(1:3,1), "inf") > Omega_max(1),1) = Omega_max(1);
@@ -71,35 +82,36 @@ while (GoOn && iter < maxIter)
     if (norm(u(4:6,1), "inf") > Omega_max(2))
         u(norm(u(4:6,1), "inf") > Omega_max(2),1) = Omega_max(2);
     end
-    U = [U u(:,1)];     % Control trajectory
 
     % Preparing phase
     solver.InitialGuessFlag = true; 
     solver.P0 = P;
     solver.maxIter = 1;
     
-    % Plant dynamics 
-    [~, s] = ode45(@(t,s)robot_kinematics(t, s, U(:,end)), linspace(0, Ts, 100), y0, options);  
+    % Plant dynamics
+    if (iter > 1)
+        [~, s] = ode45(@(t,s)robot_kinematics(t, s, Pu, t0, tf), [Ts Ts + iter_time(iter-1)], y0, options);
+        y0 = s(end,:);
+    end
+
+    Pu = PolynomialBases.Legendre().modal_projection(u);
+    U = [U Pu * PolynomialBases.Legendre().basis(size(Pu,2)-1, 2* (linspace(0,Ts,100)-t0)/(tf-t0) -1)];     % Control trajectory
+
+    [~, s] = ode45(@(t,s)robot_kinematics(t, s, Pu, t0, tf), [0 Ts], y0, options);  
+    elapsed_time = (iter-1) * Ts;
 
     % Update initial conditions and state vector
     y0 = s(end,:);
     C(iter+1,:) = [s(end,:) u(:,1).'];
 
     % Navigation system
-    S0 = C(iter+1,:);
-    S0 = mvnrnd(S0, blkdiag(Sigma_t, Sigma_o), 1).';    % Noisy state vector
+    S0 = C(iter+1,1:6).';
+    S0 = S0 + mvnrnd(zeros(1,6), Sigma_t, 1).';    % Noisy state vector
 
     % Convergence 
     if (elapsed_time >= Tc)
         GoOn = false;
     else
-        % Shrinking horizon
-        if (elapsed_time > 0.0 * Tc)
-            tof = tof - Ts; 
-            params(2) = tof;
-        end
-
-        params(6:11) = S0(7:12);                         % Joints angular velocity
         S0 = S0(1:6);
 
         % Update the number of iterations
@@ -111,19 +123,31 @@ U = [U zeros(size(U,1),1)];     % Control trajectory
 t = Ts * (0:iter);              % Elapsed time vector
 C = C(1:iter+1,:).';            % State trajectory
 
+iter_time = mean(iter_time);
+
 %% Analysis
 % Check for singularities 
-detJ = zeros(1,length(t)); 
+detJ = zeros(1,length(tau)); 
+v = zeros(6,length(tau));
 
-for i = 1:length(t)
+OptProblem = Problems.RobotDiffKinematics(S0, SF, L, StateDimension, ControlDimension, params);
+[C, dV, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
+
+for i = 1:length(tau)
     % Compute the Jacobian 
     [T, J] = Problems.RobotDiffKinematics.Kinematics(OptProblem.StateDim, ...
                                                      @(i,s)Problems.RobotDiffKinematics.ur3_dkinematics(OptProblem, i, s), ...
-                                                     C(i,:).');
+                                                     C(:,i));
 
     % Compute the determinant of the Jacobian
     detJ(i) = det(J);
+
+    % Compute the frame velocities
+    v(:,i) = J * C(7:12,i);
 end
+
+% Close loop cost 
+close_cost = trapz(linspace(0, elapsed_time, size(U,2)), dot(U,U,1));
 
 %% Plots
 % State representation
@@ -132,18 +156,10 @@ hold on
 xlabel('$t$ [s]')
 ylabel('$\mathbf{\theta}$ [rad]')
 plot(t, C(1:6,:));
+for i = 1:6
+    yline(mod(params(20 + i), 2*pi), 'k--')
+end
 legend('$\theta_1$', '$\theta_2$', '$\theta_3$', '$\theta_4$', '$\theta_5$', '$\theta_6$')
-hold off
-legend('off')
-grid on;
-xlim([0 t(end)])
-
-figure
-hold on
-xlabel('$t$')
-ylabel('$\dot{\mathbf{\theta}}$ [rad/s]')
-plot(t, C(7:12,:));
-legend('$\dot{\theta}_1$', '$\dot{\theta}_2$', '$\dot{\theta}_3$', '$\dot{\theta}_4$', '$\dot{\theta}_5$', '$\dot{\theta}_6$')
 hold off
 legend('off')
 grid on;
@@ -162,18 +178,40 @@ xlim([0 t(end)])
 % Propulsive acceleration plot
 figure;
 hold on
-plot(t, max(abs(U(1:3,:)), [], 1), 'r');
-plot(t, max(abs(U(4:6,:)), [], 1), 'b');
+plot(linspace(0, elapsed_time, size(U,2)), max(abs(U(1:3,:)), [], 1), 'r');
+plot(linspace(0, elapsed_time, size(U,2)), max(abs(U(4:6,:)), [], 1), 'b');
 yline(Omega_max(1), 'r--')
 yline(Omega_max(2), 'b--')
 xlabel('$t$')
-ylabel('$\mathbf{\omega}$')
-legend('$\|\omega^{1:3}\|_{\infty}$', '$\|\omega^{4:6}\|_{\infty}$', '$\tau_{max,1}$', '$\tau_{max,2}$');
+ylabel('$\mathbf{u}$ [rad/s]')
+legend('$\|\omega^{1:3}\|_{\infty}$', '$\|\omega^{4:6}\|_{\infty}$', '$\omega_{max,1}$', '$\omega_{max,2}$');
 grid on;
-xlim([0 tau(end)])
+xlim([0 t(end)])
+
+% Frame velocities plot
+figure;
+hold on
+subplot(2,1,1)
+plot(t, max(abs(v(4:6,:)), [], 1), 'b');
+yline(params(6), 'r--')
+legend('$\|\mathbf{\omega}\|_{\infty}$', '$\omega_{max}$');
+grid on;
+subplot(2,1,2)
+plot(t, max(abs(v(1:3,:)), [], 1), 'r');
+yline(params(5), 'b--')
+xlabel('$t$')
+legend('$\|\dot{\mathbf{d}}\|_{\infty}$', '$v_{max}$');
+grid on;
+xlim([0 t(end)])
 
 %% Auxiliary function 
 % Robot kinematics 
-function [dq] = robot_kinematics(t,s,u)
-    dq = u;
+function [dq] = robot_kinematics(t, s, P, t0, tf)
+    tau = 2 * (t-t0)/(tf-t0) - 1;
+    B = PolynomialBases.Legendre().basis(size(P,2)-1, tau);
+    u = P * B;
+
+    b = 1e-2; 
+    k = 1e-3;
+    dq = (1-b) * (u + b * sin(u.^2)) + k * (s(1:6,1) - s(1:6,1).^2);
 end

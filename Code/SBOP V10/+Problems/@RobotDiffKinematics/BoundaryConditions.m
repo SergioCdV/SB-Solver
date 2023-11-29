@@ -6,5 +6,10 @@
 
 function [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf)
     s0 = initial; 
-    sf = beta;
+
+    if (~isempty(beta))
+        sf = beta;
+    else
+        sf = final;
+    end
 end
