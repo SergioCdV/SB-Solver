@@ -75,7 +75,7 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     [A, b, Aeq, beq] = Problem.LinConstraints(Problem.Params, betaapp, P0);
 
     % Modification of fmincon optimisation options and parameters (according to the details in the paper)
-    options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp');
+    options = optimoptions('fmincon', 'TolCon', 1e-6, 'Display', 'off', 'Algorithm', 'sqp', 'ScaleProblem', true);
     options.MaxFunctionEvaluations = obj.maxFunctionEvaluations;
     options.MaxIterations = obj.maxIter;
     

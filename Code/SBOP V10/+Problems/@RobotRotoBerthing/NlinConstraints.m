@@ -6,9 +6,16 @@
 
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     % Inequality constraints    
-    omega = 2 * [+s(4,:).*s(5,:)+s(3,:).*s(6,:)-s(2,:).*s(7,:)-s(1,:).*s(8,:); ...
-                 -s(3,:).*s(5,:)+s(4,:).*s(6,:)+s(1,:).*s(7,:)-s(2,:).*s(8,:); ...
-                 +s(2,:).*s(5,:)-s(1,:).*s(6,:)+s(4,:).*s(7,:)-s(3,:).*s(8,:)];
+%     omega = 2 * [+s(4,:).*s(5,:)+s(3,:).*s(6,:)-s(2,:).*s(7,:)-s(1,:).*s(8,:); ...
+%                  -s(3,:).*s(5,:)+s(4,:).*s(6,:)+s(1,:).*s(7,:)-s(2,:).*s(8,:); ...
+%                  +s(2,:).*s(5,:)-s(1,:).*s(6,:)+s(4,:).*s(7,:)-s(3,:).*s(8,:)];
+
+    omega = zeros(3,length(tau));
+    for i = 1:length(tau)
+        q = [s(1:3,i); -1];
+        B = QuaternionAlgebra.Quat2Matrix(q);
+        omega(:,i) = 4 * B.' * s(4:6,i) / dot(q,q)^2;         
+    end
 
     % Relative state 
 %     It = reshape(params(13:21), 3, 3);                  % Inertia tensor of the target
@@ -37,11 +44,15 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 %     b = QuaternionAlgebra.RotateVector( QuaternionAlgebra.quaternion_inverse(q_t(:,end)), b);
 
     c = [
-%              reshape(+u-params(35), 1, []) ...          % Constraint on the maximum control torque (epigraph form)
-%              reshape(-u-params(35), 1, []) ...          % Constraint on the maximum control torque (epigraph form)
-%              reshape(+omega-params(3), 1, []) ...       % Constraint on the maximum angular velocity (epigraph form)
-%              reshape(-omega-params(3), 1, []) ...       % Constraint on the maximum angular velocity (epigraph form)
+%              reshape(+omega-params(4), 1, []) ...       % Constraint on the maximum angular velocity (epigraph form)
+%              reshape(-omega-params(4), 1, []) ...       % Constraint on the maximum angular velocity (epigraph form)
+%              reshape(+u-params(5), 1, []) ...          % Constraint on the maximum control torque (epigraph form)
+%              reshape(-u-params(5), 1, []) ...          % Constraint on the maximum control torque (epigraph form)
 %                cos(params(2)) - dot(-r, b)                % Graspling fixture conic constraint
+
+%                dot(omega,omega,1)-omega(4)^2 ...
+               dot(s(1:3,:),s(1:3,:))-1 ...
+               dot(u,u,1)-params(5)^2 ...
          ];                                                           
 
     % Equality constraints
@@ -49,7 +60,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 %     omega_tf =     QuaternionAlgebra.RotateVector(QuaternionAlgebra.quaternion_inverse( q_t(:,end) ),  omega_t(:,end));
 
     ceq = [
-            dot(s(1:4,:), s(1:4,:), 1).'-1; ...         % Quaternion norm constraint
+%             dot(s(1:4,:), s(1:4,:), 1).'-1; ...         % Quaternion norm constraint
 %             omega(:,end) - omega_tf ...                 % Relative angular velocity
           ]; 
 end

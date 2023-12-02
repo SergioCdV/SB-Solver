@@ -37,9 +37,11 @@ params(7) = epsilon;
 
 % Final conditions
 params(8:20) = [0.2; -0.05; 0.1; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-1); 0].';
+params(8:20) = [0.4; -0.138; 0.38; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-0.5); 0].';
 
 % DH parameters of the robot
-S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 pi/2].';
+S0 = [0 deg2rad(-151.31) deg2rad(142.22) deg2rad(-145) deg2rad(89.37) deg2rad(125)].';
+%S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 pi/2].';
 SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 0].';
 
 %% Optimization (NMPC-RTI)
@@ -76,12 +78,8 @@ while (GoOn && iter < maxIter)
         iter_time(iter-1) = toc;
     end
     
-    if (norm(u(1:3,1), "inf") > Omega_max(1))
-        u(norm(u(1:3,1), "inf") > Omega_max(1),1) = Omega_max(1);
-    end
-    if (norm(u(4:6,1), "inf") > Omega_max(2))
-        u(norm(u(4:6,1), "inf") > Omega_max(2),1) = Omega_max(2);
-    end
+    u(1:3, max(abs(u(1:4,:))) > Omega_max(2)) = Omega_max(2);
+    u(4:6, max(abs(u(4:6,:))) > Omega_max(2)) = Omega_max(2);
 
     % Preparing phase
     solver.InitialGuessFlag = true; 
@@ -127,13 +125,10 @@ iter_time = mean(iter_time);
 
 %% Analysis
 % Check for singularities 
-detJ = zeros(1,length(tau)); 
-v = zeros(6,length(tau));
+detJ = zeros(1,length(t)); 
+v = zeros(6,length(t));
 
-OptProblem = Problems.RobotDiffKinematics(S0, SF, L, StateDimension, ControlDimension, params);
-[C, dV, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
-
-for i = 1:length(tau)
+for i = 1:length(t)
     % Compute the Jacobian 
     [T, J] = Problems.RobotDiffKinematics.Kinematics(OptProblem.StateDim, ...
                                                      @(i,s)Problems.RobotDiffKinematics.ur3_dkinematics(OptProblem, i, s), ...
@@ -149,31 +144,23 @@ end
 % Close loop cost 
 close_cost = trapz(linspace(0, elapsed_time, size(U,2)), dot(U,U,1));
 
+C(1:6,:) = mod(C(1:6,:), 2*pi);
+
 %% Plots
 % State representation
 figure
 hold on
 xlabel('$t$ [s]')
-ylabel('$\mathbf{\theta}$ [rad]')
-plot(t, C(1:6,:));
+ylabel('$\mathbf{\theta}$ [deg]')
+plot(t, rad2deg(C(1:6,:)));
 for i = 1:6
-    yline(mod(params(20 + i), 2*pi), 'k--')
+    yline( rad2deg(mod(params(20 + i), 2*pi)), 'k--')
 end
 legend('$\theta_1$', '$\theta_2$', '$\theta_3$', '$\theta_4$', '$\theta_5$', '$\theta_6$')
 hold off
-legend('off')
 grid on;
 xlim([0 t(end)])
-
-figure
-hold on
-xlabel('$t$')
-ylabel('det $J$')
-plot(t, detJ);
-hold off
-legend('off')
-grid on;
-xlim([0 t(end)])
+yticklabels(strrep(yticklabels, '-', '$-$'));
 
 % Propulsive acceleration plot
 figure;
@@ -204,6 +191,15 @@ legend('$\|\dot{\mathbf{d}}\|_{\infty}$', '$v_{max}$');
 grid on;
 xlim([0 t(end)])
 
+figure
+hold on
+xlabel('$t$')
+ylabel('det $J$')
+plot(t, detJ);
+hold off
+legend('off')
+grid on;
+xlim([0 t(end)])
 %% Auxiliary function 
 % Robot kinematics 
 function [dq] = robot_kinematics(t, s, P, t0, tf)

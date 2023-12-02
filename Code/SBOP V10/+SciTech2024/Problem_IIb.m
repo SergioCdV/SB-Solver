@@ -12,8 +12,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-N = 15;                                % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+N = 10;                                % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
  
 solver = Solver(basis, N, time_distribution, m);
 
@@ -22,56 +22,65 @@ solver = Solver(basis, N, time_distribution, m);
 TOF = 0.25 * 3600;                      % Maximum allowed phase time [s]
 
 % Target's initial conditions
-ST = [0.5 * ones(4,1); deg2rad(0); deg2rad(0); deg2rad(0)];
+ST = [1; 0; 0; deg2rad(0); deg2rad(0); deg2rad(0)];
 
 % Chaser's conditions
-SC = [zeros(3,1); 1; zeros(3,1)];   
+SC = [zeros(3,1); zeros(3,1)];   
 
 % Physical parameters
-Fmax = 10e-5;                            % Maximum available torque [m/s^2]
-It = 1e-3 * diag([140 36.9 36.9]);             % Inertia tensor of the target [kg m^2]
-Ic = 1e-3 * diag([100 95.9 80]);               % Inertia tensor of the chaser [kg m^2]
+Fmax = 1e1;                            % Maximum available torque [m/s^2]
+It = diag([140 36.9 36.9]);             % Inertia tensor of the target [kg m^2]
+Ic = diag([100 95.9 80]);               % Inertia tensor of the chaser [kg m^2]
 
 theta_e = deg2rad(10);                  % Error angle [rad]
 omega_max = deg2rad(10);                % Maximum chaser's angular velocity infinity norm
 
 % Final boundary conditions
-SF = [ST; 0];                           % Final conditions
+SF = ST;                           % Final conditions
+
+%% Dimensionalisation
+Ip = It(1,1);
+Ic = Ic / Ip;
+Fmax = Fmax / Ip;
+It = It / Ip;
 
 %% Problem parameters
-% Angular problem data
+% MPC data 
+Th = 0.1 * TOF;                         % Prediction horizon [s]
+Ts = 10;                          % Control horizon [s]
+
+% Problem's data
 params(1) = 0;                          % Initial clock [s]
-params(2) = TOF;                        % Maximum TOF [s]
+params(2) = Th;                         % Maximum TOF [s]
 params(3) = theta_e;                    % Attitude angular error [rad]
 params(4) = omega_max;                  % Maximum angular velocity [rad/s]
 params(5) = Fmax;                       % Torque envelope [N m]
 params(6:14) = reshape(Ic, 3, []);      % Chaser inertia tensor
 params(15:23) = reshape(It, 3, []);     % Target inertia tensor
-params(24:30) = reshape(ST, 1, []);     % Initial target conditions 
-params(31:33) = [0 0 1];                % Robotic arm boresight direction in the chaser body frame  
-params(34:36) = [0 0 1];                % Graspling fixture boresight direction in the target body frame 
+params(24:29) = reshape(ST, 1, []);     % Initial target conditions 
+params(30:32) = [0 0 1];                % Robotic arm boresight direction in the chaser body frame  
+params(33:35) = [0 0 1];                % Graspling fixture boresight direction in the target body frame 
  
 %% Create the problem
 L = 2;                                  % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 4;                     % Dimension of the configuration vector. Note the difference with the state vector
+StateDimension = 3;                     % Dimension of the configuration vector. Note the difference with the state vector
 ControlDimension = 3;                   % Dimension of the control vector
 
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 80;                                                % Sampling time
-Th = TOF;                                           % Prediction horizon
 
 % Noise 
-Sigma_o = 1E-3 * eye(3);                                % Relative angular velocity covariance
+Sigma_c = (deg2rad(0.1))^2 * eye(3);                    % Chaser's angular velocity covariance
+Sigma_o = (deg2rad(0.1))^2 * eye(3);                    % Target's angular velocity covariance
 
 GoOn = true;                                            % Convergence boolean
 iter = 1;                                               % Initial iteration
 maxIter = 1e6;                                          % Maximum number of iterations
 elapsed_time = 0;                                       % Elapsed time
 
-St = zeros(maxIter,7);
-C = zeros(maxIter,7);
+St = zeros(maxIter,6);
+C = zeros(maxIter,6);
 St(1,:) = ST.';
 C(1,:) = SC.';
 U = [];
@@ -81,42 +90,63 @@ y0 = [ST; SC];
 
 while (GoOn && iter < maxIter)
     % Optimization (feedback phase)
-    omega_0 = 0.5 * QuaternionAlgebra.right_isoclinic([C(iter,5:7).'; 0]) * C(iter,1:4).';   % Quaternion kinematics
-    S0 = [C(iter,1:4).'; omega_0];
+    % omega_0 = 0.5 * QuaternionAlgebra.right_isoclinic([C(iter,5:7).'; 0]) * C(iter,1:4).';   % Quaternion kinematics
+    S0 = C(iter,:).';
 
+    if (norm(S0(1:3)) > 1)
+        S0(1:3) = - S0(1:3) / dot(S0(1:3), S0(1:3));
+    end
+
+    tic
     OptProblem = Problems.RobotRotoBerthing(S0, SF, L, StateDimension, ControlDimension, params);
-    [T, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
+    [T, dV, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
 
-%     if (iter == 1)
-%         params(36:43) = T(1:8,end).';
-%     end
+    if (iter == 1)
+        %   params(36:43) = T(1:8,end).';
+        open_time = toc();
+        close_cost = dV;
+    else
+        % Save the computational delay
+        iter_time(iter-1) = toc();
+        
+        % Integration during the preparation phase
+        [~, s] = ode45(@(t,s)euler_dynamics(Ic, It, t, s, Pu, t0, tf), [Ts Ts + iter_time(iter-1)], y0, options);
+        U = [U Pu * PolynomialBases.Legendre().basis(size(Pu,2)-1, 2* (linspace(Ts, Ts + iter_time(iter-1), 100) - t0) / (tf-t0) -1)];
+        y0 = s(end,:);
+        elapsed_time = elapsed_time + iter_time(iter-1);
+    end
      
     % Control trajectory
-    if (norm(u(:,1), 'inf') > Fmax)
-        u(norm(u(:,1), 'inf') > Fmax,1) = Fmax;
-    end
+    u(:, sqrt(dot(u,u,1)) > Fmax) = Fmax;
     Pu = PolynomialBases.Legendre().modal_projection(u);
-    U = [U u(:,1)];     
+    U = [U Pu * PolynomialBases.Legendre().basis(size(Pu,2)-1, 2* (linspace(0, Ts, 100) - t0)/(tf-t0) -1)];     
 
-%     % Preparing phase
+    % Preparing phase
     solver.InitialGuessFlag = true; 
     solver.P0 = P;
-    solver.maxIter = 1;
+    solver.maxIter = 10;
     
     % Plant dynamics 
-    [~, s] = ode113(@(t,s)euler_dynamics(Ic, It, t, s, Pu, t0, tf), [0 Ts], y0, options); 
-    elapsed_time = iter * Ts;
-    params(1) = 0;
-    params(2) = params(1) + Th;
+    [~, s] = ode45(@(t,s)euler_dynamics(Ic, It, t, s, Pu, t0, tf), [0 Ts], y0, options); 
+    elapsed_time = elapsed_time + Ts;
 
     % Update initial conditions and state vector
-    y0 = s(end,:);
-    St(iter+1,:) = s(end,1:7);                         % Target attitude conditions
-    C(iter+1,:) = s(end,8:14);                         % Chaser attitude conditions
+    y0 = s(end,:);                 % New initial conditions
+    St(iter+1,:) = s(end,1:6);     % Target attitude conditions
+    C(iter+1,:) = s(end,7:12);     % Chaser attitude conditions
+    
+    if (norm(y0(1:3)) > 1)
+        y0(1:3) = -y0(1:3) / dot(y0(1:3),y0(1:3));
+    end
+
+    if (norm(y0(7:9)) > 1)
+        y0(7:9) = -y0(7:9) / dot(y0(7:9),y0(7:9));
+    end
 
     % Navigation system
-    omega = mvnrnd(St(iter+1,5:7), Sigma_o, 1);                     % Noisy state vector
-    params(22:28) = reshape([St(iter+1,1:4) omega], 1, []);         % Initial target conditions
+    omega = mvnrnd(St(iter+1,4:6), Sigma_o, 1);                     % Noisy state vector
+%     params(22:28) = reshape([St(iter+1,13) omega], 1, []);         % Initial target conditions
+%     C(iter+1,4:6) = mvnrnd(C(iter+1,4:6), Sigma_c, 1);              % Initial chaser conditions
 
     % Convergence 
     if (elapsed_time >= TOF)
@@ -132,6 +162,8 @@ t = Ts * (0:iter);      % Elapsed time vector
 
 C = C(1:iter+1,:).';
 St = St(1:iter+1,:).';
+
+iter_time = mean(iter_time);
           
 %% Plots
 % Relative state representation
@@ -221,17 +253,26 @@ zticklabels(strrep(zticklabels, '-', '$-$'));
 %% Auxiliary functions 
 % Attitude dynamics
 function [dq] = euler_dynamics(I, It, t, s, P, t0, tf)
-    c = 1e-3; 
+%     c = 0 * 1e-3; 
 
     tau = 2 * (t-t0)/(tf-t0) - 1;
     B = PolynomialBases.Legendre().basis(size(P,2)-1, tau);
     u = P * B;
 
-    dq(1:4) = 0.5 * QuaternionAlgebra.right_isoclinic( [s(5:7); 0] ) * s(1:4) + c * (1 - s(1:4).' * s(1:4)) * s(1:4);
-    dq(5:7) = It \ cross(It * s(5:7), s(5:7));
+%     dq(1:3) = 0.25 * QuaternionAlgebra.right_isoclinic( [s(5:7); 0] ) * s(1:4) + c * (1 - s(1:4).' * s(1:4)) * s(1:4);
+%     dq(7:9) = 0.25 * QuaternionAlgebra.right_isoclinic( [s(12:14); 0] ) * s(8:11) + c * (1 - s(8:11).' * s(8:11)) * s(8:11);
 
-    dq(8:11) = 0.5 * QuaternionAlgebra.right_isoclinic( [s(12:14); 0] ) * s(8:11) + c * (1 - s(8:11).' * s(8:11)) * s(8:11);
-    dq(12:14) = I \ ( u + cross(I * s(12:14), s(12:14)) );
+    q1 = [s(1:3); -1];
+    q2 = [s(7:9); -1];
+    
+    B1 = QuaternionAlgebra.Quat2Matrix(q1);
+    B2 = QuaternionAlgebra.Quat2Matrix(q2); 
+
+    dq(1:3) = 0.25 * B1 * s(4:6);
+    dq(7:9) = 0.25 * B2 * s(10:12);
+
+    dq(4:6) = It \ cross(It * s(4:6), s(4:6));
+    dq(10:12) = I * ( u + cross(I * s(10:12), s(10:12)) );
 
     dq = dq.';
 end

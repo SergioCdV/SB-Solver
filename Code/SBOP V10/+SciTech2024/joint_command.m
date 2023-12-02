@@ -64,4 +64,5 @@ function [P, C, u] = joint_command(n, m, S0, maxIter, P0, sf)
 
     % Optimization    
     [P, ~, u, ~, ~, ~, ~, ~, C] = solver.solve(OptProblem);
+    P = [tau; P(1:6,:)];
 end

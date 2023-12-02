@@ -59,6 +59,8 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
          +reshape(v(4:6,:), 1, [])-params(6) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
          +dm ...                                        % Collisions constraints
          epsilon-reshape(detJ, 1, []) ...               % Singularity constraint 
+         reshape(s(1:6,1)-s(1:6,end), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
+         reshape(s(1:6,end)-s(1:6,1), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
         ];   
 
     % Equality constraints    
