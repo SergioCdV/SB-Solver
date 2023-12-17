@@ -17,6 +17,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 
     counter = 1;
     v = zeros(6,length(tau));
+    z_pos = zeros(1,length(tau));
     for i = 1:size(tau,2)
         [T, J] = Problems.RobotDiffKinematics.Kinematics(obj.StateDim, ...
                                                  @(j,s)Problems.RobotDiffKinematics.ur3_dkinematics(obj, j, s), ...
@@ -25,6 +26,8 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
         detJ(i) = det(J)^2;
 
         v(:,i) = J * s(7:12,i);
+
+        z_pos(i) = T(3,4);
 
         % Compute the collisions
         for j = 1:length(objects)
@@ -61,6 +64,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
          epsilon-reshape(detJ, 1, []) ...               % Singularity constraint 
          reshape(s(1:6,1)-s(1:6,end), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
          reshape(s(1:6,end)-s(1:6,1), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
+         -z_pos                                         % Constraint to lie above the table
         ];   
 
     % Equality constraints    

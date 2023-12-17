@@ -200,6 +200,7 @@ hold off
 legend('off')
 grid on;
 xlim([0 t(end)])
+
 %% Auxiliary function 
 % Robot kinematics 
 function [dq] = robot_kinematics(t, s, P, t0, tf)
