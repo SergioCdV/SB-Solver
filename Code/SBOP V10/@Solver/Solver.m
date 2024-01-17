@@ -105,8 +105,10 @@ classdef Solver
         [P, C] = initial_fitting(obj, Problem, Grid, s);
         [P_lb, P_ub] = opt_bounds(obj, Problem, n, B);
         [P] = boundary_conditions(obj, Problem, beta, t0, tf, tau, B, basis, n, P0);
-        [c, ceq] = constraints(obj, Problem, B, CB, Grid, x);
-        [r] = cost_function(obj, Problem, B, Grid, x);
+        [r, c, ceq] = ComputeAll(obj, Problem, B, CB, Grid, x);
+%         [c, ceq] = constraints(obj, Problem, B, CB, Grid, x);
+%         [r] = cost_function(obj, Problem, B, Grid, x);
+
     end
 
     methods (Static, Access = private)

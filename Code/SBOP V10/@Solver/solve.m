@@ -63,10 +63,16 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     x0 = [x0; t0app; tfapp; betaapp];
         
     % Objective function
-    objective = @(x)obj.cost_function(Problem, B, Grid, x);
+%     objective = @(x)obj.cost_function(Problem, B, Grid, x);
 
     % Non-linear constraints
-    nonlcon = @(x)obj.constraints(Problem, B, B, Grid, x);
+%     nonlcon = @(x)obj.constraints(Problem, B, B, Grid, x);
+
+    % Declare the global variables 
+    global x_last obj_all c_all ceq_all; 
+    x_last = x0;
+    [obj_all, c_all, ceq_all] = obj.ComputeAll(Problem, B, CB, Grid, x_last);
+    ComputeAll = @(x)obj.ComputeAll(Problem, B, CB, Grid, x);
 
     % Upper and lower bounds 
     [P_lb, P_ub] = obj.opt_bounds(Problem, n, size(betaapp,1));
@@ -80,7 +86,7 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     options.MaxIterations = obj.maxIter;
     
     % Optimisation
-    [sol, cost, exitflag, output] = fmincon(objective, x0, A, b, Aeq, beq, P_lb, P_ub, nonlcon, options);
+    [sol, cost, exitflag, output] = fmincon(@(x)obj_fun(x, ComputeAll), x0, A, b, Aeq, beq, P_lb, P_ub, @(x)non_fun(x, ComputeAll), options);
     
     % Solution 
     StateCard = (max(n)+1) * Problem.StateDim;                               % Cardinal of the state modes
@@ -108,4 +114,35 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     
     % Results 
     obj.display_results(exitflag, cost, output);
+end
+
+%% Auxiliary functions 
+% Objective function
+function [obj] = obj_fun(x, ComputeAll)
+    % Global function 
+    global x_last obj_all c_all ceq_all;
+
+    % Check if the function has changed 
+    if any(x ~= x_last)
+        [obj_all, c_all, ceq_all] = ComputeAll(x);
+        x_last = x;
+    end
+
+    % Set the new objective function 
+    obj = obj_all;
+end
+
+% Constraint function
+function [c, ceq] = non_fun(x, ComputeAll)
+    % Global function 
+    global x_last obj_all c_all ceq_all;
+
+    % Check if the function has changed 
+    if any(x ~= x_last)
+        [obj_all, c_all, ceq_all] = ComputeAll(x);
+    end
+
+    % Set the new constraint function 
+    c = c_all;
+    ceq = ceq_all;
 end
