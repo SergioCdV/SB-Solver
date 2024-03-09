@@ -43,7 +43,7 @@ function [P, C, u] = joint_command(n, m, S0, maxIter, P0, sf)
     params(1) = 0;                  % Initial time [s]
     params(2) = 0.1 * Tc;           % Final time [s]
     params(3:4) = Omega_max;        % Maximum control authority 
-    params(5) = 5;                  % Constrain on the linear velocity
+    params(5) = 5;                  % Constraint on the linear velocity
     params(6) = 2;                  % Constraint on the angular velocity
     
     epsilon = 1e-4^2;               % Numerical tolerance for the Jacobian determinant
@@ -53,8 +53,8 @@ function [P, C, u] = joint_command(n, m, S0, maxIter, P0, sf)
     params(8:20) = [0.2; -0.05; 0.1; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-1); 0].';
     
     if (exist('sf', 'var'))
-        params(21:26) = mod(sf, 2*pi);
-        SF = mod(sf, 2*pi);
+        params(21:26) = sf;
+        SF = sf;
     else
         SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 pi/2].';
     end

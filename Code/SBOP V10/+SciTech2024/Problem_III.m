@@ -37,7 +37,7 @@ params(7) = epsilon;
 
 % Final conditions
 params(8:20) = [0.2; -0.05; 0.1; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-1); 0].';
-params(8:20) = [0.4; -0.138; 0.38; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-0.5); 0].';
+params(8:20) = [0.3; -0.138; 0.40; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-0.5); 0].';
 
 % DH parameters of the robot
 S0 = [0 deg2rad(-151.31) deg2rad(142.22) deg2rad(-145) deg2rad(89.37) deg2rad(125)].';
@@ -70,8 +70,8 @@ while (GoOn && iter < maxIter)
     [T, dV, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
 
     if (iter == 1)
-        params(21:26) = mod(T(1:6,end), 2*pi);
-        SF = mod(T(1:6,end), 2*pi);
+        params(21:26) = T(1:6,end);
+        SF = T(1:6,end);
         open_cost = dV;
         open_time = toc;
     else
