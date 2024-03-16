@@ -25,6 +25,6 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     beq = zeros(Dim,1);
     beq(1,1) = params(2);
 
-    A(2,end-size(beta,1)) = 1;          % Final time inequality
-    b(2,1) = params(3);
+%     A(2,end-size(beta,1)) = 1;          % Final time inequality
+%     b(2,1) = params(3);
 end
