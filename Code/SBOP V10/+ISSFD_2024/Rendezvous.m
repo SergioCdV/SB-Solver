@@ -38,10 +38,16 @@ COEf = COE;                                        % Classical orbital elements 
 COEf(6) = COEf(6) + n * dt;                        % Final mean anomaly [rad]
 
 % Initial true anomaly [rad]
-nu_0 = OrbitalDynamics.KeplerSolver(COE(2), COE(6));                
+nu_0 = OrbitalDynamics.KeplerSolver(COE(2), COE(6)); 
+if (nu_0 < 0)
+    nu_0 = nu_0 + 2 * pi;
+end
 
 % Final true anomaly [rad]
-nu_f = 2 *pi*K + OrbitalDynamics.KeplerSolver(COEf(2), COEf(6));      
+nu_f = 2 * pi * K + OrbitalDynamics.KeplerSolver(COEf(2), COEf(6));  
+if (nu_f < 0)
+    nu_f = nu_f + 2 * pi;
+end
 
 % Initial conditions (relative position [m], velocity [m/s], LVLH MRP, LVLH angular velocity [rad/s])
 S0 = [467.9492284850632 -77.2962065075666 -871.9827927879848 -1.7286747525940 -0.3307280703785 5.5751101965630].';  
@@ -82,7 +88,7 @@ ST(4:6) = ST(4:6) / Vc;         % Normalized initial target velocity vector
 
 %% Final boundary conditions
 % Assemble the state vector
-SF = zeros(12,1);               % Final reference conditions
+SF = zeros(6,1);               % Final reference conditions
 
 %% Create the problem
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
@@ -91,15 +97,14 @@ ControlDimension = 3;            % Dimension of the control vector
 
 % Linear problem data
 params(1) = TOF;                 % TOF 
-% 
-% params(2) = mu;                  % Gauss constant
-% params(3) = COE(2);              % Target orbital eccentricity
-% params(4) = h;                   % Angular momentum magnitude
-% params(5) = nu_0;                % Initial true anomaly of the target [rad]
-% params(6) = nu:f;                % Final true anomaly of the target [rad]
-% 
+
+params(2) = mu;                  % Gauss constant
+params(3) = COE(2);              % Target orbital eccentricity
+params(4) = h;                   % Angular momentum magnitude
+params(5) = nu_0;                % Initial true anomaly of the target [rad]
+params(6) = nu_f;                % Final true anomaly of the target [rad]
+params(7) = Fmax;                % Maximum control authority (linear)
 % params(7) = Tmax;                % Maximum control authority (angular)
-% params(8) = Fmax;                % Maximum control authority (linear)
 % 
 % params(9) = gamma;               % Characteristic acceleration
 % 
@@ -110,8 +115,8 @@ params(1) = TOF;                 % TOF
 % Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-N = 20;                                % Polynomial order in the state vector expansion
-m = 200;                               % Number of sampling points
+N = 10;                                % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
  
 solver = Solver(basis, N, time_distribution, m);
 
@@ -140,6 +145,7 @@ Sigma_v = (0.05 / Vc)^2 * eye(3);                       % Relative velocity cova
 % Target and chaser ECI initial conditions
 Qt = OrbitalDynamics.ECI2LVLH(St(1,1:3).', St(1,4:6).', 1);      % Rotation matrix from the ECI to the LVLH frames
 y0 = [St(1,:).'; St(1,:).' + blkdiag(Qt.',Qt.') * S0];           % ECI initial conditions (target - chaser)
+K = 0; 
 
 % Transformation to the TS space
 omega = mu^2 / h^3;                                              % True anomaly angular velocity
@@ -150,8 +156,8 @@ S0 = A * S0;                                                     % Initial TH re
 
 while (GoOn && iter < maxIter)
     % Optimization (feedback phase)
-%     OptProblem = Problems.CircularRendezvous(S0, SF, L, StateDimension, ControlDimension, params);
-%     [T, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
+    OptProblem = ISSFD_2024.RendezvousADR(S0, SF, L, StateDimension, ControlDimension, params);
+    [T, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
 % 
 %     if (iter == 1)
 %         SF = T(1:6,end);
@@ -164,9 +170,9 @@ while (GoOn && iter < maxIter)
 %     U = [U Pu * PolynomialBases.Legendre().basis(size(Pu,2)-1, 2 * (linspace(0, Ts, 100)-t0) / (tf-t0) - 1)];
 
     % Preparing phase
-%     solver.InitialGuessFlag = true; 
-%     solver.P0 = P;
-%     solver.maxIter = 1;
+    solver.InitialGuessFlag = true; 
+    solver.P0 = P;
+    solver.maxIter = 1;
     
     % Plant dynamics 
     [~, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, t, s, 0, 0, 0), [0 Ts], y0, options);  
@@ -186,7 +192,30 @@ while (GoOn && iter < maxIter)
     nu = OrbitalDynamics.KeplerSolver(osc_COE(2), osc_COE(6));  % Osculating true anomaly
     h = sqrt(mu * osc_COE(1) * (1 - osc_COE(2)^2));             % Osculating angular momentum
 
-    params(4) = h;                                              % Update the problem parameters
+    nu_0 = OrbitalDynamics.KeplerSolver(osc_COE(2), osc_COE(6));
+    if (nu_0 < 0)
+        nu_0 = nu_0 + 2 * pi;
+    end
+
+    n = sqrt(mu / osc_COE(1)^3);                % Mean motion [rad/s]
+    T = 2*pi / n;                               % Period of the orbit
+    tf = TOF - elapsed_time;                    % Current available time
+    K = max(0, floor(tf/T));                    % Number of complete revolutions
+    dt = tf - K * T;                            % Elapsed time in the last revolution [s]
+    osc_COEf = osc_COE;                         % Classical orbital elements at the final epoch
+    osc_COEf(6) = osc_COEf(6) + max(0, n * dt); % Final mean anomaly [rad]
+
+    nu_f = OrbitalDynamics.KeplerSolver(osc_COEf(2), osc_COEf(6));  
+    if (nu_f < 0)
+        nu_f = nu_f + 2 * pi;
+    end
+
+    nu_f = nu_f + 2 * pi * K;
+
+    params(3) = osc_COE(2);      % Target orbital eccentricity
+    params(4) = h;               % Angular momentum magnitude
+    params(5) = nu_0;            % Initial true anomaly of the target [rad]
+    params(6) = nu_f;            % Final true anomaly of the target [rad]% Update the problem parameters
 
     % Rotation matrix from the ECI to the LVLH frames
     Qt = OrbitalDynamics.ECI2LVLH(St(iter+1,1:3).', St(iter+1,4:6).', 1);     
