@@ -7,5 +7,5 @@
 function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     % Mayer and Lagrange terms
     M = 0;
-    L = dot(u, u, 1);
+    L = sqrt( dot(u, u, 1) );
 end

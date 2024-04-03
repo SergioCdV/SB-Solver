@@ -96,9 +96,9 @@ C(3,:) = z;
 figure_orbits = figure;
 view(3)
 hold on
-xlabel('$X$')
-ylabel('$Y$')
-zlabel('$Z$')
+xlabel('$x$')
+ylabel('$y$')
+zlabel('$z$')
 plot3(0,0,0, '*k');
 plot3(x(1), y(1), z(1), '*k');
 % plot3(xE, yE, zE,'LineStyle','--','Color','r','LineWidth',0.3);   % Initial orbit
@@ -107,9 +107,12 @@ hold on
 grid on; 
     
 legend('off')
-plot3(x, y, z,'k','LineWidth',1);
+plot3(x, y, z,'b','LineWidth',1);
 plot3(x(end), y(end), z(end),'*k');
 grid on;
+%xticklabels(strrep(xticklabels, '-', '$-$'));
+yticklabels(strrep(yticklabels, '-', '$-$'));
+zticklabels(strrep(zticklabels, '-', '$-$'));
 
 % Propulsive acceleration plot
 figure_propulsion = figure;
@@ -117,10 +120,11 @@ hold on
 plot(tau, sqrt(dot(u,u,1)) * gamma, 'k','LineWidth',1)
 plot(tau, u * gamma, 'LineWidth', 0.3)
 yline(T * gamma, '--k')
-xlabel('Flight time')
-ylabel('$\mathbf{a}$')
+xlabel('$t$')
+ylabel('$\mathbf{u} [m/s^2] $')
 legend('$u$','$u_x$','$u_y$','$u_z$')
 grid on;
+yticklabels(strrep(yticklabels, '-', '$-$'));
 
 figure 
 hold on
