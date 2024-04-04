@@ -123,12 +123,12 @@ solver = Solver(basis, N, time_distribution, m);
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 200 / ts;                                          % Sampling time
+Ts = 1 / ts;                                          % Sampling time
 
 % Numerial setup
 GoOn = true;                                            % Convergence boolean
 iter = 1;                                               % Initial iteration
-maxIter = 1e3;                                          % Maximum number of iterations
+maxIter = ceil(TOF/Ts);                                 % Maximum number of iterations
 elapsed_time = 0;                                       % Elapsed time
 
 % Preallocation
@@ -199,18 +199,23 @@ while (GoOn && iter < maxIter)
 
     n = sqrt(mu / osc_COE(1)^3);                % Mean motion [rad/s]
     T = 2*pi / n;                               % Period of the orbit
-    tf = TOF - elapsed_time;                    % Current available time
-    K = max(0, floor(tf/T));                    % Number of complete revolutions
+    tf = max(0, TOF - elapsed_time);            % Current available time
+    K = floor(tf / T);                          % Number of complete revolutions
+    dnu = 2 * pi * K + nu_0;
     dt = tf - K * T;                            % Elapsed time in the last revolution [s]
     osc_COEf = osc_COE;                         % Classical orbital elements at the final epoch
-    osc_COEf(6) = osc_COEf(6) + max(0, n * dt); % Final mean anomaly [rad]
+    osc_COEf(6) = osc_COEf(6) + n * dt;         % Final mean anomaly [rad]
 
     nu_f = OrbitalDynamics.KeplerSolver(osc_COEf(2), osc_COEf(6));  
     if (nu_f < 0)
         nu_f = nu_f + 2 * pi;
     end
 
-    nu_f = nu_f + 2 * pi * K;
+    if (nu_f < nu_0)
+        nu_f = nu_0 + 2*pi - (nu_0-nu_f);
+    end
+
+    nu_f = dnu + nu_f - nu_0;
 
     params(3) = osc_COE(2);      % Target orbital eccentricity
     params(4) = h;               % Angular momentum magnitude
