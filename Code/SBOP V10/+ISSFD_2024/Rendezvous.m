@@ -44,13 +44,20 @@ if (nu_0 < 0)
 end
 
 % Final true anomaly [rad]
-nu_f = 2 * pi * K + OrbitalDynamics.KeplerSolver(COEf(2), COEf(6));  
+nu_f = OrbitalDynamics.KeplerSolver(COEf(2), COEf(6));  
 if (nu_f < 0)
     nu_f = nu_f + 2 * pi;
 end
 
+dnu = nu_f - nu_0; 
+if (dnu < 0)
+    dnu = 2 * pi + dnu;
+end
+
+nu_f = 2 * pi * K + nu_0 + dnu;
+
 % Initial conditions (relative position [m], velocity [m/s], LVLH MRP, LVLH angular velocity [rad/s])
-S0 = [467.9492284850632 -77.2962065075666 -871.9827927879848 -1.7286747525940 -0.3307280703785 5.5751101965630].';  
+S0 = 0 * [467.9492284850632 -77.2962065075666 -871.9827927879848 -1.7286747525940 -0.3307280703785 5.5751101965630].';  
 
 %% Scaling 
 ts = 1 / n;                     % Characteristic time 
@@ -123,7 +130,7 @@ solver = Solver(basis, N, time_distribution, m);
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 1 / ts;                                          % Sampling time
+Ts = 20 / ts;                                          % Sampling time
 
 % Numerial setup
 GoOn = true;                                            % Convergence boolean
@@ -154,29 +161,30 @@ kp =  - COE(2) * sin(nu_0);                                      % Derivative of
 A = [k * eye(3) zeros(3); kp * eye(3) eye(3)/(k * omega)];       % TH transformation matrix
 S0 = A * S0;                                                     % Initial TH relative conditions
 
+% Preallocation of the time windows
+nu_0 = [nu_0 zeros(1,maxIter-1)];
+nu_f = [nu_f zeros(1,maxIter-1)];
+
 while (GoOn && iter < maxIter)
     % Optimization (feedback phase)
     OptProblem = ISSFD_2024.RendezvousADR(S0, SF, L, StateDimension, ControlDimension, params);
-    [T, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
-% 
-%     if (iter == 1)
-%         SF = T(1:6,end);
-%     end
-%     
+    [S, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
+    
     % Control vector
-%     index = gamma * sqrt(dot(u,u,1)) > Fmax;
-%     u(:,index) = u(:,index) / norm(u(:,index)) * Fmax/gamma;
-%     Pu = PolynomialBases.Legendre().modal_projection(u);
-%     U = [U Pu * PolynomialBases.Legendre().basis(size(Pu,2)-1, 2 * (linspace(0, Ts, 100)-t0) / (tf-t0) - 1)];
+    index = sqrt(dot(u,u,1)) > Fmax;
+    u(:,index) = u(:,index) / norm(u(:,index)) * Fmax;
+    Pu = PolynomialBases.Legendre().modal_projection(u);
 
     % Preparing phase
     solver.InitialGuessFlag = true; 
     solver.P0 = P;
-    solver.maxIter = 1;
+    solver.maxIter = 2;
     
     % Plant dynamics 
-    [~, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, t, s, 0, 0, 0), [0 Ts], y0, options);  
+    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, t, s, Pu, 0, Ts), [0 Ts], y0, options);  
     elapsed_time = iter * Ts;
+
+    U = [U Pu * PolynomialBases.Legendre().basis(size(Pu,2)-1, 2 * tspan.' / Ts - 1 )];
 
     % Update initial conditions and state vector
     y0 = s(end,:).';                                            % New initial conditions
@@ -192,35 +200,35 @@ while (GoOn && iter < maxIter)
     nu = OrbitalDynamics.KeplerSolver(osc_COE(2), osc_COE(6));  % Osculating true anomaly
     h = sqrt(mu * osc_COE(1) * (1 - osc_COE(2)^2));             % Osculating angular momentum
 
-    nu_0 = OrbitalDynamics.KeplerSolver(osc_COE(2), osc_COE(6));
-    if (nu_0 < 0)
-        nu_0 = nu_0 + 2 * pi;
+    nu_0(iter+1) = nu;
+    if (nu_0(iter+1) < 0)
+        nu_0(iter+1) = nu_0(iter+1) + 2 * pi;
     end
 
     n = sqrt(mu / osc_COE(1)^3);                % Mean motion [rad/s]
     T = 2*pi / n;                               % Period of the orbit
     tf = max(0, TOF - elapsed_time);            % Current available time
     K = floor(tf / T);                          % Number of complete revolutions
-    dnu = 2 * pi * K + nu_0;
+    dnu = 2 * pi * K + nu_0(iter+1);
     dt = tf - K * T;                            % Elapsed time in the last revolution [s]
     osc_COEf = osc_COE;                         % Classical orbital elements at the final epoch
     osc_COEf(6) = osc_COEf(6) + n * dt;         % Final mean anomaly [rad]
 
-    nu_f = OrbitalDynamics.KeplerSolver(osc_COEf(2), osc_COEf(6));  
-    if (nu_f < 0)
-        nu_f = nu_f + 2 * pi;
+    nu_f(iter+1) = OrbitalDynamics.KeplerSolver(osc_COEf(2), osc_COEf(6));  
+    if (nu_f(iter+1) < 0)
+        nu_f(iter+1) = nu_f(iter+1) + 2 * pi;
     end
 
-    if (nu_f < nu_0)
-        nu_f = nu_0 + 2*pi - (nu_0-nu_f);
+    if (nu_f(iter+1) < nu_0(iter+1))
+        nu_f(iter+1) = 2*pi - (nu_0(iter+1) - nu_f(iter+1));
     end
 
-    nu_f = dnu + nu_f - nu_0;
+    nu_f(iter+1) = dnu + nu_f(iter+1);
 
-    params(3) = osc_COE(2);      % Target orbital eccentricity
-    params(4) = h;               % Angular momentum magnitude
-    params(5) = nu_0;            % Initial true anomaly of the target [rad]
-    params(6) = nu_f;            % Final true anomaly of the target [rad]% Update the problem parameters
+    params(3) = osc_COE(2);           % Target orbital eccentricity
+    params(4) = h;                    % Angular momentum magnitude
+    params(5) = nu_0(iter+1);         % Initial true anomaly of the target [rad]
+    params(6) = nu_f(iter+1);         % Final true anomaly of the target [rad]% Update the problem parameters
 
     % Rotation matrix from the ECI to the LVLH frames
     Qt = OrbitalDynamics.ECI2LVLH(St(iter+1,1:3).', St(iter+1,4:6).', 1);     
@@ -247,6 +255,9 @@ St = St.';                   % Target trajectory
 C = C.';                     % Linear relative trajectory
 C = C(:,1:iter);
 St = St(:,1:iter);
+
+nu_0 = nu_0(1:iter);
+nu_f = nu_f(1:iter);
 
 U = zeros(6,iter);
 U = [U zeros(size(U,1),1)];  % Control vector
@@ -308,6 +319,24 @@ xticklabels(strrep(xticklabels, '-', '$-$'));
 hold off
 grid on;
 
+if false
+    r1 = [cos(nu_0); sin(nu_0)];
+    r2 = [cos(nu_f); sin(nu_f)];
+    figure 
+    grid on;
+    xlim([-1 1])
+    ylim([-1 1])
+    for i = 1:size(nu_0,2)
+        hold on
+        J = plot(r1(1,i), r1(2,i), 'or');
+        H = plot(r2(1,i), r2(2,i), 'ob');
+        drawnow;
+        pause(2)
+        delete(J);
+        delete(H)
+    end
+end
+
 %% Auxiliary functions 
 % Osculating J2 dynamics
 function [dr] = j2_dynamics(mu, J2, Re, t, s, P, t0, tf)
@@ -331,9 +360,9 @@ function [dr] = j2_dynamics(mu, J2, Re, t, s, P, t0, tf)
     a = 1 - 1.5 * J2 * ReJ2 * ( 5 * ( s(9,:).^2 ./ rsquare) - 1 );
     b = 1 - 1.5 * J2 * ReJ2 * ( 5 * ( s(9,:).^2 ./ rsquare) - 3 );
 
-%     tau = 2 * (t-t0) / (tf-t0) - 1;
-%     B = PolynomialBases.Legendre().basis(size(P,2)-1, tau);
-    u = zeros(3,1);
+    tau = 2 * (t-t0) / (tf-t0) - 1;
+    B = PolynomialBases.Legendre().basis(size(P,2)-1, tau);
+    u = P * B;
 
     dr(7:9,1) = s(10:12);                                                      % Position derivative
     dr(10:12,1) = Qt * u - mu * s(7:9,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
