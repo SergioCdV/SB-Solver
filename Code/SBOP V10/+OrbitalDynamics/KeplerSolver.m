@@ -48,4 +48,13 @@ function [theta, E] = KeplerSolver(e, M)
     sin_E = sqrt(1-e.^2) .* sin(E) ./ (1-e.*cos(E));
     cos_E = (cos(E)-e) ./ (1-e.*cos(E));
     theta = atan2(sin_E, cos_E);
+
+    % Wrapping angles 
+    if (theta < 0)
+        theta = theta + 2 * pi;
+    end
+
+    if (E < 0)
+        E = E + 2 * pi;
+    end
 end

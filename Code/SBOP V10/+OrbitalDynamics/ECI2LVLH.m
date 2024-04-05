@@ -8,6 +8,8 @@ function [Q] = ECI2LVLH(r, v, direction)
     o31 = -r(1:3,:) ./ sqrt(dot(r,r,1));        % LVLH z+ definition
     o11 = cross(o21, o31);                      % LVLH x+ definition
 
+    o11 = o11 ./ sqrt(dot(o11,o11,1));
+
     Q = reshape([o11; o21; o31], 3, []).';      % Rotation matrix from the LVLH to the ECI frames
 
     if (~direction)
