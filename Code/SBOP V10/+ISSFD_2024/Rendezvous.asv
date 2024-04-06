@@ -89,7 +89,7 @@ SF = zeros(12,1);               % Final reference conditions
 %% Create the problem
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 6;              % Dimension of the configuration vector. Note the difference with the state vector
-ControlDimension = 3;            % Dimension of the control vector
+ControlDimension = 6;            % Dimension of the control vector
 
 % Linear problem data
 params(1) = TOF;                 % TOF 
@@ -137,17 +137,20 @@ elapsed_time = 0;                                       % Elapsed time
 % Preallocation
 St = [];                                                % Target trajectory
 C = [];                                                 % Relative trajectory
+St(1,:) = ST.';                                         % Initial target state
+C(1,:) = S0.';                                          % Initial relative state
 U = [];                                                 % Control function
-t = [];                                                 % Trajectories time
+tc = [];                                                % Controller function time
+t = [];                                                 % T
 
 % Noise definition
 Sigma_r = (0.1 / Lc)^2 * eye(3);                                         % Relative position covariance
 Sigma_v = (0.5 / Vc)^2 * eye(3);                                         % Relative velocity covariance
 
 % Target and chaser ECI initial conditions
-Qt = OrbitalDynamics.ECI2LVLH(ST(1:3,1), ST(4:6,1), 1);                      % Rotation matrix from the ECI to the LVLH frames
-y0(1:12,1) = ST(1:12,1);                                                     % Target ECI and attitude, LVLH initial conditions
-y0(13:24,1) = [ST(1:6,1) + blkdiag(Qt.',Qt.') * S0(1:6); S0(7:9); omega.'];  % Chaser ECI and attitude, inertial initial conditions
+Qt = OrbitalDynamics.ECI2LVLH(St(1,1:3).', St(1,4:6).', 1);                    % Rotation matrix from the ECI to the LVLH frames
+y0(1:12,1) = St(1,1:12).';                                                     % Target ECI and attitude, LVLH initial conditions
+y0(13:24,1) = [St(1,1:6).' + blkdiag(Qt.',Qt.') * S0(1:6); S0(7:9); omega.'];  % Chaser ECI and attitude, inertial initial conditions
 
 omega = mu^2 / h^3;                                                      % True anomaly angular velocity
 k = 1 + COE(2) * cos(nu_0);                                              % Transformation parameter
@@ -179,37 +182,20 @@ while (GoOn && iter <= maxIter)
 
     comp_time = toc / ts;
 
-    if ( iter == 1 || 1 )
-        Pu = zeros(ControlDimension, size(u,2));
-    end
-
     % Plant dynamics 
-    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pnew, t0, tf, Fmax, n, params(3), It, I, t, s), [0 Ts], y0, options); 
+    [~, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu, t0, tf, Fmax, n, params(3), It, I, t, s), [0 comp_time], y0, options); 
+    y0 = s(end,:).';
 
-    % Shadow transformation
-    idx = dot(s(:,7:9), s(:,7:9), 2) > 1;
-    s(idx,7:9) = -s(idx,7:9) ./ dot(s(idx,7:9), s(idx,7:9), 2);
+    % New controller
+    Pu = Pnew;
 
-    idx = dot(s(:,19:21), s(:,19:21), 2) > 1;
-    s(idx,19:21) = -s(idx,19:21) ./ dot(s(idx,19:21), s(idx,19:21), 2);
-
-    if (iter == 1)
-        t = tspan;
-
-        % Save the trajectory
-        St = [St; s(:,1:12)];                         % Target ECI and attitude state
-        C = [C; [s(:,13:18)-s(:,1:6) s(:,19:24)] ];   % Output trajectory
-
-    else
-        t = [t; t(end) + tspan(2:end)];
-
-        % Save the trajectory
-        St = [St; s(2:end,1:12)];                                 % Target ECI and attitude state
-        C = [C; [s(2:end,13:18)-s(2:end,1:6) s(2:end,19:24)] ];   % Output trajectory
-    end
-
+    % Preparing phase
+%     solver.maxIter = 10;
+    
+    % Plant dynamics 
+    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu(1:3,:), t0, tf, Fmax, n, params(3), It, I, t, s), [0 Ts], y0, options);  
+    
     % Control law
-    u_aux = zeros(ControlDimension, length(tspan));
     for i = 1:size(tspan,1)
         [~, nu] = wrapp_anomaly(n, params(3), t0, tspan(i));
         if (tf <= t0)
@@ -219,74 +205,41 @@ while (GoOn && iter <= maxIter)
         end
         tau = min(1, max(-1, tau));
 
-        u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
-
-        if norm( u_aux(1:3,i) ) > Fmax
-            u_aux(1:3,i) = Fmax * u_aux(1:3,i) / norm( u_aux(1:3,i) ); 
+        u_aux = Pu(1:3,:) * PolynomialBases.Legendre().basis(size(Pu,2)-1, tau );
+        if norm(u_aux) > Fmax
+            u_aux = Fmax * u_aux / norm(u_aux); 
         end
 
-%         if norm( u_aux(4:6,i) ) > Tmax
-%             u_aux(4:6,i) = Tmax * u_aux(4:6,i) / norm( u_aux(4:6,i) ); 
-%         end
+        tau_aux = Pu(1,3,:) * PolynomialBases.Legendre().basis(size(Pu,2)-1, tau );
+        if norm(tau_aux) > Tmax
+            tau_aux = Tmax * tau_aux / norm(tau_aux); 
+        end
+
+        U = [ U [u_aux; tau_aux] ];
     end
 
     if (iter == 1)
-        U = u_aux;
+        tc = tspan;
     else
-        U = [ U u_aux(:,2:end) ];
+        tc = [tc; tc(end) + tspan];
     end
-
-    % New controller
-%     Pu = Pnew;
-
-    % Preparing phase
-%     solver.maxIter = 10;
-    
-    % Plant dynamics 
-%     y0 = s(end,:).';
-%     [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu(1:3,:), t0, tf, Fmax, n, params(3), It, I, t, s), [tspan(end) tspan(end) + Ts], y0, options);  
-
-    % Control law
-%     u_aux = zeros(ControlDimension, length(tspan));
-%     for i = 1:size(tspan,1)
-%         [~, nu] = wrapp_anomaly(n, params(3), t0, tspan(i));
-%         if (tf <= t0)
-%             tau = -1;
-%         else
-%             tau = 2 * (nu-t0) / (tf-t0) - 1;                                % Evaluation point for the controller
-%         end
-%         tau = min(1, max(-1, tau));
-% 
-%         u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
-% 
-%         if norm( u_aux(1:3,i) ) > Fmax
-%             u_aux(1:3,i) = Fmax * u_aux(1:3,i) / norm( u_aux(1:3,i) ); 
-%         end
-% 
-%         if norm( u_aux(4:6,i) ) > Tmax
-%             u_aux(4:6,i) = Tmax * u_aux(4:6,i) / norm( u_aux(4:6,i) ); 
-%         end
-%     end
-% 
-%     U = [ U u_aux(:,2:end) ];
-
-    % Shadow transformation
-%     idx = dot(s(:,7:9), s(:,7:9), 2) > 1;
-%     s(idx,7:9) = -s(idx,7:9) ./ dot(s(idx,7:9), s(idx,7:9), 2);
-% 
-%     idx = dot(s(:,19:21), s(:,19:21), 2) > 1;
-%     s(idx,19:21) = -s(idx,19:21) ./ dot(s(idx,19:21), s(idx,19:21), 2);
-
-    % Save the trajectory
-%     t = [t; t(end) + tspan(2:end)];
-%     St = [St; s(2:end,1:12)];                                 % Target ECI and attitude state
-%     C = [C; [s(2:end,13:18)-s(2:end,1:6) s(2:end,19:24)] ];   % Output trajectory
 
     elapsed_time = iter * Ts;
 
+    % Shadow transformation
+    idx = dot(s(:,7:9), s(:,7:9), 2) > 1;
+    s(idx,7:9) = -s(idx,7:9) / dot(s(idx,7:9), s(idx,7:9), 2);
+
+    idx = dot(s(:,19:21), s(:,19:21), 2) > 1;
+    s(idx,19:21) = -s(idx,19:21) / dot(s(idx,19:21), s(idx,19:21), 2);
+
+    % Save the trajectory
+    St = [St; s(:,1:12)];                                 % Target ECI and attitude state
+    C = [C; [s(:,13:18).'-s(:,1:6).' s(:,19:24)] ];       % Output trajectory
+
     % Update initial conditions and state vector
     y0 = s(end,:).';                                      % New initial conditions
-    S0(1:6) = y0(13:18,1) - y0(1:6,1);                    % Relative state vector in the ECI frame
+    S0(1:6) = s(end,13:18).' - s(end,1:6).';              % Relative state vector in the ECI frame
     S0(7:12) = y0(19:24,1);                               % Chaser attitude state
 
     % Navigation system
@@ -294,7 +247,7 @@ while (GoOn && iter <= maxIter)
 %     S0 = S0 + noise;
 
     % Transformation to the TH LVLH frame 
-    osc_COE = OrbitalDynamics.ECI2COE(mu, y0, 1);               % Osculating target COE
+    osc_COE = OrbitalDynamics.ECI2COE(mu, s(1,1:6).', 1);       % Osculating target COE
     n = sqrt(mu / osc_COE(1)^3);                                % Osculating mean motion
     h = sqrt(mu * osc_COE(1) * (1 - osc_COE(2)^2));             % Osculating angular momentum
 
@@ -307,7 +260,7 @@ while (GoOn && iter <= maxIter)
     params(6) = nu_f(iter+1);                                   % Final true anomaly of the target [rad]% Update the problem parameters
 
     % Rotation matrix from the ECI to the LVLH frames
-    Qt = OrbitalDynamics.ECI2LVLH(y0(1:3,1), y0(4:6,1), 1);     
+    Qt = OrbitalDynamics.ECI2LVLH(St(iter+1,1:3).', St(iter+1,4:6).', 1);     
 
     S0(1:6) = blkdiag(Qt, Qt) * S0(1:6);                        % Initial conditions in the LVLH frame
 
@@ -335,6 +288,8 @@ C = C.';                        % Linear relative trajectory and chaser attitude
 nu_0 = nu_0(1:iter);
 nu_f = nu_f(1:iter);
  
+t = Ts * (0:iter-1);            % Elapsed time vector
+
 %% Dimensionalization
 t = t * ts;                     % Mission time  
 C(1:3,:) = C(1:3,:) * Lc;       % Relative position 
@@ -392,26 +347,26 @@ xlim([0 t(end)])
 % Propulsive acceleration plot
 figure;
 hold on
-plot(t, U(1:3,:), 'LineWidth', 0.3)
-plot(t, sqrt(dot(U(1:3,:), U(1:3,:), 1)), 'k');
+plot(tc, U(1:3,:), 'LineWidth', 0.3)
+plot(tc, sqrt(dot(U(1:3,:), U(1:3,:), 1)), 'k');
 yline(Fmax * gamma, 'k--')
 xlabel('$\nu$')
 ylabel('$\mathbf{u}$ [m/$s^2$]')
 legend('$u_r$', '$u_v$', '$u_h$', '$\|\mathbf{u}\|_2$', '$u_{max}$');
 grid on;
-xlim([0 t(end)])
+xlim([0 tc(end)])
 
 % Propulsive acceleration plot
 figure;
 hold on
-plot(t, U(4:6,:), 'LineWidth', 0.3)
-plot(t, sqrt(dot(U(4:6,:), U(4:6,:), 1)), 'k');
+plot(tc, U(4:6,:), 'LineWidth', 0.3)
+plot(tc, sqrt(dot(U(4:6,:), U(4:6,:), 1)), 'k');
 yline(Tmax * Tau, 'k--')
 xlabel('$\nu$')
 ylabel('$\mathbf{\tau}$ [m/$s^2$]')
 legend('$\tau_x$', '$\tau_y$', '$\tau_z$', '$\|\mathbf{\tau}\|_2$', '$\tau_{max}$');
 grid on;
-xlim([0 t(end)])
+xlim([0 tc(end)])
 
 figure
 view(3)
@@ -520,7 +475,7 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, n, e, It, Ic, t, s)
     end
 
     dr(13:15,1) = s(16:18);                                                        % Position derivative
-    dr(16:18,1) = Qt.' * u(1:3,:) - mu * s(13:15,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
+    dr(16:18,1) = Qt.' * u - mu * s(13:15,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
 
     % Chaser attitude dynamics
     sigma_c = s(19:21,1);
