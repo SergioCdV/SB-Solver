@@ -18,7 +18,13 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
 
     % Attitude control 
     I = reshape(params(9:17), [3 3]);       % Inertia tensor of the chaser
-    q = [s(4:6,:); -ones(1,size(tau,2))];   % Modified MRPs
+
+    % Shadow transformation
+    sigma = s(4:6,:);
+    idx = sqrt(dot(sigma, sigma, 1)) > 1;
+    sigma(:,idx) = -sigma(:,idx) ./ dot(sigma(:,idx), sigma(:,idx), 1);
+
+    q = [sigma; -ones(1,size(tau,2))];      % Modified MRPs
     omega = zeros(3,size(tau,2));           % Angular velocity of the chaser
     alpha = omega;                          % Angular velocity of the target
 
@@ -28,7 +34,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     for i = 1:size(tau,2)
         B = QuaternionAlgebra.Quat2Matrix(q);
         omega(:,i) = 4 * B.' * dsigma(:,i) / dot(q(:,i),q(:,i))^2;
-        dB = dBmatrix(s(4:6,i), dsigma(:,i));
+        dB = dBmatrix(sigma(:,i), dsigma(:,i));
         alpha(:,i) = 4 * B.' * (ddsigma(:,i) - 0.25 * dB * omega(:,i));
     end
     
