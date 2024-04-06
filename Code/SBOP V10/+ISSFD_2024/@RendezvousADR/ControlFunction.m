@@ -17,7 +17,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     u(1:3,:) = u(1:3,:) .* olvlh.^2;
 
     % Attitude control 
-    I = reshape(params(9:17), [3 3]);       % Inertia tensor of the chaser
+%     I = reshape(params(9:17), [3 3]);       % Inertia tensor of the chaser
 
     % Shadow transformation
 %     sigma = s(4:6,:);

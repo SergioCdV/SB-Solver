@@ -166,7 +166,7 @@ S0(11) = y0(23);                                                         % Body 
 nu_0 = [nu_0 zeros(1,maxIter-1)];
 nu_f = [nu_f zeros(1,maxIter-1)];
 
-while (GoOn && iter <= maxIter)
+while (GoOn && iter < maxIter)
     % Optimization (feedback phase)
     tic
     OptProblem = ISSFD_2024.RendezvousADR(S0([1:3 7:9 4:6 10:12]), SF, L, StateDimension, ControlDimension, params);
@@ -175,16 +175,16 @@ while (GoOn && iter <= maxIter)
     % Control vector
     index = sqrt(dot(u,u,1)) > Fmax;
     u(:,index) = u(:,index) / norm(u(:,index)) * Fmax;
-    Pnew = PolynomialBases.Legendre().modal_projection(u);
+    Pnew = PolynomialBases.Legendre().modal_projection(u(1:3,:));% PolynomialBases.Legendre().modal_projection(u(4:6,:))];
 
     comp_time = toc / ts;
 
-    if ( iter == 1 || 1 )
+    if ( iter == 1 )
         Pu = zeros(ControlDimension, size(u,2));
     end
 
     % Plant dynamics 
-    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pnew, t0, tf, Fmax, n, params(3), It, I, t, s), [0 Ts], y0, options); 
+    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu, t0, tf, Fmax, n, params(3), It, I, t, s), [0 Ts], y0, options); 
 
     % Shadow transformation
     idx = dot(s(:,7:9), s(:,7:9), 2) > 1;
@@ -237,52 +237,52 @@ while (GoOn && iter <= maxIter)
     end
 
     % New controller
-%     Pu = Pnew;
+    Pu = Pnew;
 
     % Preparing phase
 %     solver.maxIter = 10;
     
     % Plant dynamics 
-%     y0 = s(end,:).';
-%     [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu(1:3,:), t0, tf, Fmax, n, params(3), It, I, t, s), [tspan(end) tspan(end) + Ts], y0, options);  
+    y0 = s(end,:).';
+    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu, t0, tf, Fmax, n, params(3), It, I, t, s), [tspan(end) tspan(end) + Ts], y0, options);  
 
     % Control law
-%     u_aux = zeros(ControlDimension, length(tspan));
-%     for i = 1:size(tspan,1)
-%         [~, nu] = wrapp_anomaly(n, params(3), t0, tspan(i));
-%         if (tf <= t0)
-%             tau = -1;
-%         else
-%             tau = 2 * (nu-t0) / (tf-t0) - 1;                                % Evaluation point for the controller
-%         end
-%         tau = min(1, max(-1, tau));
-% 
-%         u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
-% 
-%         if norm( u_aux(1:3,i) ) > Fmax
-%             u_aux(1:3,i) = Fmax * u_aux(1:3,i) / norm( u_aux(1:3,i) ); 
-%         end
-% 
+    u_aux = zeros(ControlDimension, length(tspan));
+    for i = 1:size(tspan,1)
+        [~, nu] = wrapp_anomaly(n, params(3), t0, tspan(i));
+        if (tf <= t0)
+            tau = -1;
+        else
+            tau = 2 * (nu-t0) / (tf-t0) - 1;                                % Evaluation point for the controller
+        end
+        tau = min(1, max(-1, tau));
+
+        u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
+
+        if norm( u_aux(1:3,i) ) > Fmax
+            u_aux(1:3,i) = Fmax * u_aux(1:3,i) / norm( u_aux(1:3,i) ); 
+        end
+
 %         if norm( u_aux(4:6,i) ) > Tmax
 %             u_aux(4:6,i) = Tmax * u_aux(4:6,i) / norm( u_aux(4:6,i) ); 
 %         end
-%     end
-% 
-%     U = [ U u_aux(:,2:end) ];
+    end
+
+    U = [ U u_aux(:,2:end) ];
 
     % Shadow transformation
-%     idx = dot(s(:,7:9), s(:,7:9), 2) > 1;
-%     s(idx,7:9) = -s(idx,7:9) ./ dot(s(idx,7:9), s(idx,7:9), 2);
-% 
-%     idx = dot(s(:,19:21), s(:,19:21), 2) > 1;
-%     s(idx,19:21) = -s(idx,19:21) ./ dot(s(idx,19:21), s(idx,19:21), 2);
+    idx = dot(s(:,7:9), s(:,7:9), 2) > 1;
+    s(idx,7:9) = -s(idx,7:9) ./ dot(s(idx,7:9), s(idx,7:9), 2);
+
+    idx = dot(s(:,19:21), s(:,19:21), 2) > 1;
+    s(idx,19:21) = -s(idx,19:21) ./ dot(s(idx,19:21), s(idx,19:21), 2);
 
     % Save the trajectory
-%     t = [t; t(end) + tspan(2:end)];
-%     St = [St; s(2:end,1:12)];                                 % Target ECI and attitude state
-%     C = [C; [s(2:end,13:18)-s(2:end,1:6) s(2:end,19:24)] ];   % Output trajectory
+    t = [t; t(end) + tspan(2:end)];
+    St = [St; s(2:end,1:12)];                                 % Target ECI and attitude state
+    C = [C; [s(2:end,13:18)-s(2:end,1:6) s(2:end,19:24)] ];   % Output trajectory
 
-    elapsed_time = iter * Ts;
+    elapsed_time = t(end);
 
     % Update initial conditions and state vector
     y0 = s(end,:).';                                      % New initial conditions
@@ -290,8 +290,8 @@ while (GoOn && iter <= maxIter)
     S0(7:12) = y0(19:24,1);                               % Chaser attitude state
 
     % Navigation system
-%     noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), 1).';          % Noisy state vector
-%     S0 = S0 + noise;
+    noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), 1).';          % Noisy state vector
+    S0(1:6,1) = S0(1:6,1) + noise;
 
     % Transformation to the TH LVLH frame 
     osc_COE = OrbitalDynamics.ECI2COE(mu, y0, 1);               % Osculating target COE
