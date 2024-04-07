@@ -8,10 +8,5 @@ function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
     % Initial guess
     t0 = params(1);            % Initial clock
     tf = params(2);            % Final clock
-
-    if (length(params) < 21)
-        beta = initial;            % Initial guess for the final boundary condition
-    else
-        beta = [];
-    end
+    beta = initial;            % Finall joints states
 end

@@ -184,7 +184,7 @@ while (GoOn && iter < maxIter)
     end
 
     % Plant dynamics 
-    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu, t0, tf, Fmax, n, params(3), It, I, t, s), [0 Ts], y0, options); 
+    [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu, t0, tf, Fmax, n, params(3), It, I, t, s), [0 comp_time], y0, options); 
 
     % Shadow transformation
     idx = dot(s(:,7:9), s(:,7:9), 2) > 1;

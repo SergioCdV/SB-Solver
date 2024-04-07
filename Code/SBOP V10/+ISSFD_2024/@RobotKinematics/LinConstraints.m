@@ -23,6 +23,7 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     Aeq = zeros(Dim);
     Aeq(1,end-size(beta,1)-1) = 1;      % Initial and final time constraints
     Aeq(2,end-size(beta,1)) = 1;        % Initial and final time constraints
+    
     beq = zeros(Dim,1);
     beq(1) = params(1);
     beq(2) = params(2);

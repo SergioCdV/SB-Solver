@@ -4,14 +4,14 @@
 %% Robot problem %% 
 % Implementation of the 1D robot
 
-classdef RobotDiffKinematics < Problems.AbstractProblem 
+classdef RobotKinematics < Problems.AbstractProblem 
     % Fundamental definition of the problem
     properties  
     end
 
     methods 
         % Constructor 
-        function [obj] = RobotDiffKinematics(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+        function [obj] = RobotKinematics(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
             super_arguments{1} = myInitial;
             super_arguments{2} = myFinal;
             super_arguments{3} = myDerDeg;
