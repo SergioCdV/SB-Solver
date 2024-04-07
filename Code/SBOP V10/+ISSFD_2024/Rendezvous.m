@@ -290,8 +290,8 @@ while (GoOn && iter < maxIter)
     S0(7:12) = y0(19:24,1);                               % Chaser attitude state
 
     % Navigation system
-    noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), 1).';          % Noisy state vector
-    S0(1:6,1) = S0(1:6,1) + noise;
+%     noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), 1).';          % Noisy state vector
+%     S0(1:6,1) = S0(1:6,1) + noise;
 
     % Transformation to the TH LVLH frame 
     osc_COE = OrbitalDynamics.ECI2COE(mu, y0, 1);               % Osculating target COE

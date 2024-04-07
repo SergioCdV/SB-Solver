@@ -14,7 +14,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     u(1:3,:) = s(13:15,:) - [2 * s(9,:); -s(2,:); 3 * s(3,:) ./ rho - 2 * s(7,:)];
 
     % Dimensionalisation 
-    u(1:3,:) = u(1:3,:) .* olvlh.^2;
+    u(1:3,:) = u(1:3,:) .* olvlh.^2 ./ rho;
 
     % Attitude control 
 %     I = reshape(params(9:17), [3 3]);       % Inertia tensor of the chaser
