@@ -13,6 +13,6 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     % Mayer and Lagrange terms
     M = 0;
 
-    L = dot(u(1:3,:), u(1:3,:), 1);
+    L = dot(u(1:3,:), u(1:3,:), 1) + dot(u(4:6,:), u(4:6,:), 1);     
     L = L .* Omega;
 end

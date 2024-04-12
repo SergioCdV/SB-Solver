@@ -89,7 +89,7 @@ SF = zeros(12,1);               % Final reference conditions
 %% Create the problem
 L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
 StateDimension = 6;              % Dimension of the configuration vector. Note the difference with the state vector
-ControlDimension = 3;            % Dimension of the control vector
+ControlDimension = 6;            % Dimension of the control vector
 
 % Linear problem data
 params(1) = TOF;                 % TOF 
@@ -126,7 +126,7 @@ solver = Solver(basis, N, time_distribution, m);
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 60 / ts;                                          % Sampling time
+Ts = 30 / ts;                                          % Sampling time
 
 % Numerial setup
 GoOn = true;                                            % Convergence boolean
@@ -166,6 +166,8 @@ S0(11) = y0(23);                                                         % Body 
 nu_0 = [nu_0 zeros(1,maxIter-1)];
 nu_f = [nu_f zeros(1,maxIter-1)];
 
+noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), maxIter).';          % Noisy state vector
+
 while (GoOn && iter < maxIter)
     % Optimization (feedback phase)
     tic
@@ -173,9 +175,17 @@ while (GoOn && iter < maxIter)
     [S, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
 
     % Control vector
-    index = sqrt(dot(u,u,1)) > Fmax;
-    u(:,index) = u(:,index) / norm(u(:,index)) * Fmax;
-    Pnew = PolynomialBases.Legendre().modal_projection(u(1:3,:));% PolynomialBases.Legendre().modal_projection(u(4:6,:))];
+    if ( exitflag ~= -2 )
+        idx = dot(u(1:3,:), u(1:3,:), 1) > Fmax^2;
+        u(1:3,idx) = Fmax * u(1:3,idx)./ sqrt( dot(u(1:3,idx), u(1:3,idx), 1) ); 
+    
+        idx = dot(u(4:6,:), u(4:6,:), 1) > Tmax^2;
+        u(4:6,idx) = Tmax * u(4:6,idx) ./ sqrt( dot(u(4:6,idx), u(4:6,idx), 1) ); 
+    
+        Pnew = [PolynomialBases.Legendre().modal_projection(u(1:3,:)); PolynomialBases.Legendre().modal_projection(u(4:6,:))];
+    else
+        Pnew = Pu;
+    end
 
     comp_time = toc / ts;
 
@@ -209,26 +219,24 @@ while (GoOn && iter < maxIter)
     end
 
     % Control law
-    u_aux = zeros(ControlDimension, length(tspan));
+    tau = zeros(1, length(tspan));
     for i = 1:size(tspan,1)
         [~, nu] = wrapp_anomaly(n, params(3), t0, tspan(i));
         if (tf <= t0)
-            tau = -1;
+            tau(i) = -1;
         else
-            tau = 2 * (nu-t0) / (tf-t0) - 1;                                % Evaluation point for the controller
+            tau(i) = 2 * (nu-t0) / (tf-t0) - 1;                                % Evaluation point for the controller
         end
-        tau = min(1, max(-1, tau));
-
-        u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
-
-        if norm( u_aux(1:3,i) ) > Fmax
-            u_aux(1:3,i) = Fmax * u_aux(1:3,i) / norm( u_aux(1:3,i) ); 
-        end
-
-%         if norm( u_aux(4:6,i) ) > Tmax
-%             u_aux(4:6,i) = Tmax * u_aux(4:6,i) / norm( u_aux(4:6,i) ); 
-%         end
+        tau(i) = min(1, max(-1, tau(i)));
     end
+
+    u_aux = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
+
+    idx = dot(u_aux(1:3,:), u_aux(1:3,:), 1) > Fmax^2;
+    u_aux(1:3,idx) = Fmax * u_aux(1:3,idx) ./ sqrt( dot(u_aux(1:3,idx), u_aux(1:3,idx), 1) ); 
+
+    idx = dot(u_aux(4:6,:), u_aux(4:6,:), 1) > Tmax^2;
+    u_aux(4:6,idx) = Tmax * u_aux(4:6,idx) ./ sqrt( dot(u_aux(4:6,idx), u_aux(4:6,idx), 1) ); 
 
     if (iter == 1)
         U = u_aux;
@@ -247,26 +255,24 @@ while (GoOn && iter < maxIter)
     [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu, t0, tf, Fmax, n, params(3), It, I, t, s), [tspan(end) tspan(end) + Ts], y0, options);  
 
     % Control law
-    u_aux = zeros(ControlDimension, length(tspan));
+    tau = zeros(1, length(tspan));
     for i = 1:size(tspan,1)
         [~, nu] = wrapp_anomaly(n, params(3), t0, tspan(i));
         if (tf <= t0)
-            tau = -1;
+            tau(i) = -1;
         else
-            tau = 2 * (nu-t0) / (tf-t0) - 1;                                % Evaluation point for the controller
+            tau(i) = 2 * (nu-t0) / (tf-t0) - 1;                                % Evaluation point for the controller
         end
-        tau = min(1, max(-1, tau));
-
-        u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
-
-        if norm( u_aux(1:3,i) ) > Fmax
-            u_aux(1:3,i) = Fmax * u_aux(1:3,i) / norm( u_aux(1:3,i) ); 
-        end
-
-%         if norm( u_aux(4:6,i) ) > Tmax
-%             u_aux(4:6,i) = Tmax * u_aux(4:6,i) / norm( u_aux(4:6,i) ); 
-%         end
+        tau(i) = min(1, max(-1, tau(i)));
     end
+
+    u_aux = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
+
+    idx = dot(u_aux(1:3,:), u_aux(1:3,:), 1) > Fmax^2;
+    u_aux(1:3,idx) = Fmax * u_aux(1:3,idx) ./ sqrt( dot(u_aux(1:3,idx), u_aux(1:3,idx), 1) ); 
+
+    idx = dot(u_aux(4:6,:), u_aux(4:6,:), 1) > Tmax^2;
+    u_aux(4:6,idx) = Tmax * u_aux(4:6,idx) ./ sqrt( dot(u_aux(4:6,idx), u_aux(4:6,idx), 1) );
 
     U = [ U u_aux(:,2:end) ];
 
@@ -290,8 +296,7 @@ while (GoOn && iter < maxIter)
     S0(7:12) = y0(19:24,1);                               % Chaser attitude state
 
     % Navigation system
-%     noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), 1).';          % Noisy state vector
-%     S0(1:6,1) = S0(1:6,1) + noise;
+%     S0(1:6,1) = S0(1:6,1) + noise(:,iter);
 
     % Transformation to the TH LVLH frame 
     osc_COE = OrbitalDynamics.ECI2COE(mu, y0, 1);               % Osculating target COE
@@ -344,8 +349,21 @@ C(10:12,:) = C(10:12,:) / ts;   % Normalised derivative of the MRP
 U(1:3,:) = U(1:3,:) * gamma;    % Linear control acceleration
 U(4:6,:) = U(4:6,:) * Tau;      % Angular control acceleration
 
+%% Save results 
+save Rendezvous_ISSFD2024.mat;
+
+Trajectory = [t / ts C(1:3,:).' / Lc zeros(size(C,2),3) ones(size(C,2),1)];
+csvwrite('RVD_example_I.csv', Trajectory);
+
 %% Plots
 % State representation
+figure 
+plot3(C(1,:), C(2,:), C(3,:))
+grid on;
+xlabel('$x$')
+ylabel('$y$')
+zlabel('$z$')
+
 figure
 subplot(1,2,1)
 hold on
@@ -486,14 +504,18 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, n, e, It, Ic, t, s)
 
     sigma_t = [sigma_t; -1];
 
-    dr(7:9,1) = 0.25 * QuaternionAlgebra.Quat2Matrix( sigma_t ) * s(10:12,1);                                                  % Target attitude kinematics
+    dr(7:9,1) = 0.25 * QuaternionAlgebra.Quat2Matrix( sigma_t ) * s(10:12,1);   % Target attitude kinematics
 
     h = cross(s(1:3,:), s(4:6,:));
     dtheta = sqrt(dot(h,h,1)) ./ rsquare;
     omega_t =  s(10:12,1) + [0; -dtheta; 0];
     vt = Qt * s(4:6,:);
     alpha = -2 * dtheta .* (-vt(3,:) ./ vt(1,:)) * [0; -1; 0];
-    dr(10:12,1) = - It * alpha + cross(It * omega_t, omega_t) + mu ./ sqrt( rsquare ).^5 .* cross(Qt * s(7:9,:), Ic * Qt * s(7:9,:));  % Target attitude dynamics
+
+    qm = QuaternionAlgebra.MPR2Quat(1, 1, s(7:9,:), true);
+    rb = QuaternionAlgebra.RotateVector(qm, Qt * s(1:3,:));
+
+    dr(10:12,1) = - It * alpha + cross(It * omega_t, omega_t) + mu ./ sqrt( rsquare ).^5 .* cross(rb, Ic * rb);  % Target attitude dynamics
 
     % Chaser linear dynamics
     rsquare = dot(s(13:15,:), s(13:15,:), 1);
@@ -515,11 +537,11 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, n, e, It, Ic, t, s)
     B = PolynomialBases.Legendre().basis(size(P,2)-1, tau);
     u = P * B;
 
-    if norm(u) > Fmax
-        u = Fmax * u / norm(u); 
+    if norm(u(1:3,:)) > Fmax
+        u(1:3,:) = Fmax * u(1:3,:) / norm(u(1:3,:)); 
     end
 
-    dr(13:15,1) = s(16:18);                                                        % Position derivative
+    dr(13:15,1) = s(16:18);                                                               % Position derivative
     dr(16:18,1) = Qt.' * u(1:3,:) - mu * s(13:15,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
 
     % Chaser attitude dynamics
@@ -531,8 +553,12 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, n, e, It, Ic, t, s)
     sigma_c = [sigma_c; -1];
 
     omega_t = s(22:24,1) + [0; -dtheta; 0];
-    dr(19:21,1) = 0.25 * QuaternionAlgebra.Quat2Matrix( sigma_c ) * s(22:24,1);                                                  % Target attitude kinematics
-    dr(22:24,1) = - It * alpha + cross(Ic * omega_t, omega_t) + mu ./ sqrt( rsquare )^5 .* cross(s(13:15,:), Ic * s(13:15,:));   % Target attitude dynamics
+    dr(19:21,1) = 0.25 * QuaternionAlgebra.Quat2Matrix( sigma_c ) * s(22:24,1);                                  % Target attitude kinematics
+
+    qm = QuaternionAlgebra.MPR2Quat(1, 1, s(19:21,:), true);
+    rb = QuaternionAlgebra.RotateVector(qm, Qt * s(13:15,:));
+
+    dr(22:24,1) = - It * alpha + cross(Ic * omega_t, omega_t) + mu ./ sqrt( rsquare )^5 .* cross(rb, Ic * rb);   % Target attitude dynamics
 end
 
 % Compute the final true anomaly considering multiple revolutions 

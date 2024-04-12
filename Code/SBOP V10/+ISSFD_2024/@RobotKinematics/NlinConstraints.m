@@ -51,11 +51,19 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 % 
 %     epsilon = params(7);
 % 
-%     c = [
-%          -reshape(s(7:9,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-%          +reshape(s(7:9,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-%          -reshape(s(10:12,:), 1, [])-params(4) ...      % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-%          +reshape(s(10:12,:), 1, [])-params(4) ...      % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+    DH_parameters.base =   reshape(params(8:10), 1, 3).'; 
+    DH_parameters.theta =  reshape(params(11:16), 1, obj.StateDim).';
+    DH_parameters.alpha =  reshape(params(17:22), 1, obj.StateDim).';
+    DH_parameters.offset = reshape(params(23:28), 1, obj.StateDim).';
+    DH_parameters.a =      reshape(params(29:34), 1, obj.StateDim).';
+    DH_parameters.d =      reshape(params(35:40), 1, obj.StateDim).';
+    DH_parameters.type =   reshape(params(41:46), 1, obj.StateDim).';
+
+    c = [
+         -reshape(s(7:9,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         +reshape(s(7:9,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         -reshape(s(10:12,:), 1, [])-params(4) ...      % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         +reshape(s(10:12,:), 1, [])-params(4) ...      % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
 %          -reshape(v(1:3,:), 1, [])-params(5) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
 %          +reshape(v(1:3,:), 1, [])-params(5) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
 %          -reshape(v(4:6,:), 1, [])-params(6) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
@@ -63,10 +71,9 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 %          +dm ...                                        % Collisions constraints
 %          epsilon-reshape(detJ, 1, []) ...               % Singularity constraint
 %          -z_pos                                         % Constraint to lie above the table
-% %          reshape(s(1:6,1)-s(1:6,end), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
-% %          reshape(s(1:6,end)-s(1:6,1), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
-%         ];   
-%     c = [];
+%          reshape(s(1:6,1)-s(1:6,end), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
+%          reshape(s(1:6,end)-s(1:6,1), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
+        ];   
 % 
 %     % Equality constraints    
 %     if (length(params) < 21)
@@ -88,6 +95,5 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 %         ceq = [];
 %     end
 
-      c = []; 
       ceq = [];
 end

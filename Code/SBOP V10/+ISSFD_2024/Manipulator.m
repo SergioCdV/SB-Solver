@@ -27,9 +27,17 @@ params(5) = vmax;                      % Constrain on the linear velocity
 params(6) = omega_max;                 % Constraint on the angular velocity
 params(7) = epsilon;                   % Numerical tolerance for the Jacobian determinant
 
+params(8:10) =  [0; 0; 0];             % Base of the DH parameters
+params(11:16) = [0 0 0 0 0 0].';
+params(17:22) = [pi/2 0 0 pi/2 -pi/2 0].';
+params(23:28) = [0 0 0 0 0 0].';
+params(29:34) = [0 -0.24365 -0.21325 0 0 0].';
+params(35:40) = [0.15185 0 0 0.1124 0.08535 0.0921].';
+params(41:46) = ones(6,1);
+
 % Final conditions of the end-effector (reference position and attitude)
-params(8:20) = [0.2; -0.05; 0.1; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-1); 0].';
-params(8:20) = [0.3; -0.138; 0.40; sin(deg2rad(0)/2) * [0;0;1]; cos(deg2rad(0)/2); zeros(3,1); deg2rad(0.1); deg2rad(-0.5); 0].';
+sigma = zeros(3,1);
+params(47:58) = [0.2; -0.05; 0.1; sigma; zeros(3,1); zeros(3,1)].';
 
 % DH parameters of the robot
 S0 = [0 deg2rad(-151.31) deg2rad(142.22) deg2rad(-145) deg2rad(89.37) deg2rad(125)].';
@@ -191,11 +199,18 @@ C = C.';                        % Output trajectory
 detJ = zeros(1, length(t)); 
 v = zeros(StateDimension, length(t));
 
+% DH parameters 
+DH_parameters.base =   reshape(params(8:10), 1, 3).'; 
+DH_parameters.theta =  reshape(params(11:16), 1, StateDimension).';
+DH_parameters.alpha =  reshape(params(17:22), 1, StateDimension).';
+DH_parameters.offset = reshape(params(23:28), 1, StateDimension).';
+DH_parameters.a =      reshape(params(29:34), 1, StateDimension).';
+DH_parameters.d =      reshape(params(35:40), 1, StateDimension).';
+DH_parameters.type =   reshape(params(41:46), 1, StateDimension).';
+
 for i = 1:length(t)
     % Compute the Jacobian 
-    [T, J] = ISSFD_2024.RobotKinematics.Kinematics(OptProblem.StateDim, ...
-                                                     @(i,s)ISSFD_2024.RobotKinematics.ur3_dkinematics(OptProblem, i, s), ...
-                                                     C(:,i));
+    [T, J] = ISSFD_2024.RobotKinematics.Kinematics(OptProblem.StateDim, @(i,s)ISSFD_2024.RobotKinematics.ur3_dkinematics(DH_parameters, i, s), C(:,i));
 
     % Compute the determinant of the Jacobian
     detJ(i) = det(J);
