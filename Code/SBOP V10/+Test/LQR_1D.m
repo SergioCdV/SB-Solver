@@ -9,10 +9,10 @@ close all
 clear
 
 %% Numerical solver definition 
-basis = 'Bernstein';                    % Polynomial basis to be use
-time_distribution = 'Bernstein';        % Distribution of time intervals
+basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Legendre';        % Distribution of time intervals
 n = 10;                                % Polynomial order in the state vector expansion
-m = 50;                               % Number of sampling points
+m = 100;                               % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -35,7 +35,7 @@ tic
 toc 
 
 % Average results 
-iter = 0; 
+iter = 25; 
 time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter

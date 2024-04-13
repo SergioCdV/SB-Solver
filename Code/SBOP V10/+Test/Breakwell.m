@@ -11,7 +11,7 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                   % Polynomial basis to be use. Alternatively: Legendre, Bernestein, Orthogonal Bernstein
 time_distribution = 'Legendre';       % Distribution of time intervals. Alternatively: Bernstein, Orthogonal Bernstein, Chebsyhev, Legendre, Linear, Newton-Cotes, Normal, Random, Trapezoidal
-n = 20;                               % Polynomial order in the state vector expansion
+n = 10;                               % Polynomial order in the state vector expansion
 m = 100;                              % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
@@ -41,7 +41,7 @@ tic
 toc 
 
 % Average results 
-iter = 0; 
+iter = 25; 
 time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter
@@ -76,9 +76,10 @@ ylim([min(C(2,:)) max(C(2,:))])
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau, u)
 plot(tau, uopt, 'ok');
+plot(tau, u)
+
 xlabel('$t$')
 ylabel('$\mathbf{u}$')
-legend('SBOPT', '$u^*$')
+legend('$u^*$','SBOPT')
 grid on;
