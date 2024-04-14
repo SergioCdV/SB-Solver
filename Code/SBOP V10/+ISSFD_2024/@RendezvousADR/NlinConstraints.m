@@ -32,13 +32,13 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     end
 
     c = [
-%             dot(u(1:3,:), u(1:3,:), 1) - params(7)^2 ...         % Constraint on the force magnitude (second order cone)
-%             reshape(+v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
-%             reshape(-v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
+            dot(u(1:3,:), u(1:3,:), 1) - params(7)^2 ...         % Constraint on the force magnitude (second order cone)
             reshape(+u(4:6,:) - params(8), 1, []) ...            % Constraint on the torque magnitude (infinty norm)
             reshape(-u(4:6,:) - params(8), 1, [])...             % Constraint on the torque magnitude (infinty norm)
             reshape(+Omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
             reshape(-Omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
+            reshape(+v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
+            reshape(-v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
         ];         
 
     % Equality constraints

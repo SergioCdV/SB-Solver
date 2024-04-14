@@ -30,7 +30,7 @@ vmax = 5;                                          % Maximum angular velocity of
 omega_max = 1;                                     % Maximum angular velocity of the chaser [rad/s]
 
 % Mission constraints
-TOF = 1 * 180;                                    % Maximum allowed phase time [s]
+TOF = 1 * 3600;                                    % Maximum allowed phase time [s]
 
 % Target's initial conditions (relative position [m], velocity [m/s], LVLH MRP, LVLH angular velocity [rad/s])
 ST = [7.104981874434397e6 1.137298852087994e6 -0.756578094588272e6 -0.586250624037242e3 -1.213011751682090e3 -7.268579401702199e3 zeros(1,6)].';
@@ -43,7 +43,7 @@ sigma = zeros(1,3);                                                             
 omega = deg2rad( [0 3.53 3.53] );                                               % Angular velocity in the chaser body frame
 dsigma = 0.25 * omega * QuaternionAlgebra.Quat2Matrix( [sigma.'; -1] ).';       % Derivative of the MRP
 
-S0 = 0E-1 * [467.9492284850632 -77.2962065075666 -871.9827927879848 -1.7286747525940 -0.3307280703785 5.5751101965630 sigma dsigma].';  
+S0 = 1E-1 * [467.9492284850632 -77.2962065075666 -871.9827927879848 -1.7286747525940 -0.3307280703785 5.5751101965630 sigma dsigma].';  
 
 %% Final boundary conditions
 % Assemble the state vector
@@ -135,7 +135,7 @@ solver = Solver(basis, N, time_distribution, m);
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 10 / ts;                                          % Sampling time
+Ts = 60 / ts;                                          % Sampling time
 
 % Numerial setup
 GoOn = true;                                            % Convergence boolean
@@ -553,17 +553,23 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, Tmax, n, e, It, Ic, t, 
     B = PolynomialBases.Legendre().basis(size(P,2)-1, tau);
     u = P * B;
 
+    % Linear control
     if norm(u(1:3,:)) > Fmax
         u(1:3,:) = Fmax * u(1:3,:) / norm(u(1:3,:)); 
     end
 
+    qm = QuaternionAlgebra.MPR2Quat(1, 1, s(19:21,:), true);
+    inv_qm = QuaternionAlgebra.quaternion_inverse( qm );
+    thrust = u(1:3,:);%QuaternionAlgebra.RotateVector(inv_qm, 0 * u(1:3,:));
+
+    dr(13:15,1) = s(16:18);                                                             % Position derivative
+    dr(16:18,1) = Qt.' * thrust - mu * s(13:15,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
+
+    % Torque
     tau = u(4:6,:);
     if max(abs(tau)) > Tmax
         tau(abs(tau) == max(abs(tau)),:) = sign(tau(abs(tau) == max(abs(tau)),:)) * Tmax; 
     end
-
-    dr(13:15,1) = s(16:18);                                                               % Position derivative
-    dr(16:18,1) = Qt.' * 0 * u(1:3,:) - mu * s(13:15,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
 
     % Chaser attitude dynamics
     sigma_c = s(19:21,1);
@@ -576,7 +582,6 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, Tmax, n, e, It, Ic, t, 
     omega_t = s(22:24,1) + [0; -dtheta; 0];
     dr(19:21,1) = 0.25 * QuaternionAlgebra.Quat2Matrix( sigma_c ) * s(22:24,1);           % Target attitude kinematics
 
-    qm = QuaternionAlgebra.MPR2Quat(1, 1, s(19:21,:), true);
     rb = QuaternionAlgebra.RotateVector(qm, Qt * s(13:15,:));
 
     dr(22:24,1) = Ic \ (tau - Ic * alpha + cross(Ic * omega_t, omega_t) + mu ./ sqrt( rsquare )^5 .* cross(rb, Ic * rb));   % Target attitude dynamics
