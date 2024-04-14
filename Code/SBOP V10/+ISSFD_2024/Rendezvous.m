@@ -23,6 +23,7 @@ Fmax = 0.5e-2;                                     % Maximum available accelerat
 Tmax = 0.5e-2;                                     % Maximum available torque [rad/s^2]
 I = diag( [1 2 3] );                               % Inertia matrix of the chaser in the body frame [kg m2]
 It = diag( [3 2 1] );                              % Inertia matrix of the target in the body frame [kg m2]
+Lg = 10;                                           % Graspling distance [m]
 
 rdoc = [1 0 0; 0 1 0].';                           % Docking ports of the chaser and target in their respective body frames
 
@@ -72,6 +73,10 @@ Tmax = Tmax / Tau;              % Normalized torque
 vmax = vmax / Vc;               % Normalised linear velocity 
 omega_max = omega_max * ts;     % Normalised angular velocity 
 
+rdoc = rdoc / Lc;               % Normalised docking ports
+
+Lg = Lg / Lc;                   % Normalised distance to the spacecraft
+
 % Normalized COE
 COE([1 7])  = COE([1 7]) / Lc;  % Normalized target COE
 
@@ -96,10 +101,6 @@ Re = Re / Lc;                   % Normalized Earth's radius
 h = sqrt(mu * COE(1) * (1-COE(2)^2));    % Target angular momentum
 
 %% Create the problem
-L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 6;              % Dimension of the configuration vector. Note the difference with the state vector
-ControlDimension = 6;            % Dimension of the control vector
-
 % Linear problem data
 params(1) = TOF;                 % TOF 
 
@@ -119,15 +120,16 @@ params(9:17) = reshape(I, [], 1);       % Inertia tensor of the chaser
 params(18:23) = reshape(rdoc, [], 1);   % Docking ports of the chaser and target respectively
 params(24) = vmax;                      % Maximum linear velocity
 params(25) = omega_max;                 % Maximum angular velocity
+params(26) = Lg;                        % Graspling reach [m]
 
-% params(10) = R1;                 % Keep out sphere radius 1 [m]
-% params(11) = R2;                 % Keep out sphere radius 2 [m]
-% params(12) = L;                  % Graspling reach [m]
+% Numerical solver definition
+L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
+StateDimension = 6;              % Dimension of the configuration vector. Note the difference with the state vector
+ControlDimension = 6;            % Dimension of the control vector
 
-% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-N = 7;                                % Polynomial order in the state vector expansion
+N = 5;                                % Polynomial order in the state vector expansion
 m = 30;                                % Number of sampling points
  
 solver = Solver(basis, N, time_distribution, m);
@@ -178,10 +180,17 @@ nu_f = [nu_f zeros(1,maxIter-1)];
 noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), maxIter).';        % Noisy state vector
 
 while (GoOn && iter < maxIter)
+    % Prediction of target's attitude state
+    
+
     % Optimization (feedback phase)
     tic
     OptProblem = ISSFD_2024.RendezvousADR(S0([1:3 7:9 4:6 10:12]), SF([1:3 7:9 4:6 10:12]), L, StateDimension, ControlDimension, params);
     [S, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
+
+    if (iter == 1 && exitflag ~= -2)
+        params(27:29) = S(1:3,end).';
+    end
 
     % Control vector
     idx = dot(u(1:3,:), u(1:3,:), 1) > Fmax^2;
@@ -386,7 +395,8 @@ hold on
 xlabel('$t$')
 ylabel('$\boldmath{\rho}$ [m]', 'Interpreter', 'latex')
 plot(t, C(1:3,:));
-legend('$x$', '$y$', '$z$')
+yline(Lg * Lc, 'k--')
+legend('$x$', '$y$', '$z$', '$L_g$')
 hold off
 grid on;
 xlim([0 t(end)])
