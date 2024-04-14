@@ -77,16 +77,16 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 
     % Inequalities
     c = [
-         +reshape(u(1:4,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-         -reshape(u(1:4,:), 1, [])-params(3)  ...       % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-         +reshape(u(5:6,:), 1, [])-params(4) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-         -reshape(u(5:6,:), 1, [])-params(4) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         reshape(+u(1:4,:)-params(3), 1, []) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         reshape(-u(1:4,:)-params(3), 1, [])  ...       % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         reshape(+u(5:6,:)-params(4), 1, []) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         reshape(-u(5:6,:)-params(4), 1, []) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
          reshape(+res -1E-3 , 1, []) ...                % Relaxed equalities
          reshape(-res -1E-3 , 1, []) ...                % Relaxed equalities
-%          reshape(+v(1:3,:)-params(5), 1, []) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
-%          reshape(-v(1:3,:)-params(5), 1, []) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
-%          reshape(+v(4:6,:)-params(6), 1, []) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
-%          reshape(-v(4:6,:)-params(6), 1, []) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
+         reshape(+v(1:3,:)-params(5), 1, []) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
+         reshape(-v(1:3,:)-params(5), 1, []) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
+         reshape(+v(4:6,:)-params(6), 1, []) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
+         reshape(-v(4:6,:)-params(6), 1, []) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
 %          params(7)-reshape(detJ, 1, []) ...             % Singularity constraint
         ];   
 
