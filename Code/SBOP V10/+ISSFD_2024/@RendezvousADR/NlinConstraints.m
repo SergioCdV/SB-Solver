@@ -13,7 +13,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 
     % Angular velocity of the chaser
     sigma = s(4:6,:);
-    idx = sqrt(dot(sigma, sigma, 1)) > 1;
+    idx = dot(sigma, sigma, 1) > 1;
     sigma(:,idx) = -sigma(:,idx) ./ dot(sigma(:,idx), sigma(:,idx), 1);
 
     q = [sigma; -ones(1,size(tau,2))];                    % Modified MRPs
@@ -32,13 +32,13 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     end
 
     c = [
-            dot(u(1:3,:), u(1:3,:), 1) - params(7)^2 ...         % Constraint on the force magnitude (second order cone)
+%             dot(u(1:3,:), u(1:3,:), 1) - params(7)^2 ...         % Constraint on the force magnitude (second order cone)
+%             reshape(+v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
+%             reshape(-v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
             reshape(+u(4:6,:) - params(8), 1, []) ...            % Constraint on the torque magnitude (infinty norm)
             reshape(-u(4:6,:) - params(8), 1, [])...             % Constraint on the torque magnitude (infinty norm)
-            reshape(+v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
-            reshape(-v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
-            reshape(+omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
-            reshape(-omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
+            reshape(+Omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
+            reshape(-Omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
         ];         
 
     % Equality constraints

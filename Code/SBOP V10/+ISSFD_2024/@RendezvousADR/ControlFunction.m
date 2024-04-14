@@ -28,11 +28,10 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     % Pre-allocation
     q = [sigma; -ones(1,size(tau,2))];      % Modified MRPs
     q_squared = dot( q, q ).^2;             % Dot product of the associated quaternions
-    omega = zeros(3,size(tau,2));           % Angular velocity of the chaser
-    alpha = omega;                          % Angular velocity of the target
+    alpha = zeros(3,size(tau,2));           % Angular velocity of the target
         
     % Angular velocity
-    dsigma = s(10:12,:) .* olvlh;
+    dsigma =  s(10:12,:) .* olvlh;
     ddsigma = s(16:18,:) .* olvlh.^2 + (- 2 * k .* rho .* drho) .* dsigma;
 
     omega = dsigma ./ q_squared;
@@ -46,7 +45,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, tau, s)
     end
 
     alpha = alpha ./ q_squared;                                                 % Angular acceleration
-    alpha = (I * alpha) + 2 * olvlh .* rho .* drho .* (I * omega);              % Derivative of the angular momentum
+    alpha = (I * alpha) + 2 * 0 * olvlh .* rho .* drho .* (I * omega);              % Derivative of the angular momentum
     u(4:6,:) = alpha + cross( omega, I * omega );                               % Torque on the spacecraft 
-    u(4:6,:) = zeros(3,size(tau,2));
+%     u(4:6,:) = zeros(3,size(tau,2));
 end
