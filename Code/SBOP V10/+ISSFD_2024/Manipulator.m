@@ -104,13 +104,10 @@ while (GoOn && iter < maxIter)
     Pnew = PolynomialBases.Legendre().modal_projection(u);
 
     comp_time = toc;
-
-    if ( iter == 1 )
-        Pu = zeros(ControlDimension, size(u,2));
-    end
     
     % Plant dynamics
     if ( iter == 1 )
+        Pu = zeros(ControlDimension, size(u,2));
         span = linspace(0, comp_time, 10);
     else
         span = linspace(t(end), t(end) + comp_time, 10);

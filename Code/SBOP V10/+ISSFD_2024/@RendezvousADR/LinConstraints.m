@@ -24,9 +24,9 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     % Linear constraints
     Aeq = zeros(Dim);
     Aeq(1,end-size(beta,1)-1) = 1;      % Initial true anomaly constraints
+    Aeq(2,end-size(beta,1)) = 1;        % Final true anomaly inequality
+
     beq = zeros(Dim,1);
     beq(1,1) = params(5);
-
-    Aeq(2,end-size(beta,1)) = 1;        % Final true anomaly inequality
     beq(2,1) = params(6);
 end
