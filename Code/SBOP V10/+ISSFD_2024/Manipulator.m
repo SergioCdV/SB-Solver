@@ -11,9 +11,9 @@ clear
 
 %% Problem definition 
 % Mission constraints
-Tc = 120;                              % Characteristic time [s]
+Tc = 180;                              % Characteristic time [s]
 T0 = 0;                                % Initial clcok
-TOF = 0.1 * Tc;                        % Mission TOF
+TOF = 1 * Tc;                        % Mission TOF
 Omega_max = [pi; 2*pi];                % Maximum angular velocity of the joints [rad/s]
 vmax = 5;                              % Maximum linear velocity [m]
 omega_max = 2;                         % Maximum angular velocity of the end-effector [rad/s]
@@ -36,10 +36,9 @@ params(35:40) = [0.15185 0 0 0.1124 0.08535 0.0921].';
 params(41:46) = ones(6,1);
 
 % Final conditions of the end-effector (reference position and attitude)
-sigma = zeros(3,1);
-params(47:58) = [0.2; -0.05; 0.1; sigma; zeros(3,1); zeros(3,1)].';
+sigma = [0.33;0.01;0.33];
+params(47:58) = [0.1; -0.05; 0.01; sigma; zeros(3,1); zeros(3,1)].';
 
-% DH parameters of the robot
 S0 = [0 deg2rad(-151.31) deg2rad(142.22) deg2rad(-145) deg2rad(89.37) deg2rad(125)].';
 %S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 pi/2].';
 SF = [0 -3*pi/4 +pi/2 -3*pi/4 pi/2 0].';
@@ -51,20 +50,20 @@ ControlDimension = 6;                  % Dimension of the control vector
 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 10;                                % Polynomial order in the state vector expansion
-m = 30;                                % Number of sampling points
+n = 5;                                % Polynomial order in the state vector expansion
+m = 20;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 1;                                                 % Sampling time [s]
+Ts = 3;                                                 % Sampling time [s]
 
 % Numerical setup 
 GoOn = true;                                            % Convergence boolean
 iter = 1;                                               % Initial iteration
-maxIter = ceil(TOF/Ts);                                 % Maximum number of iterations
+maxIter = ceil(TOF/Ts) + 1;                             % Maximum number of iterations
 elapsed_time = 0;                                       % Elapsed time
 
 % Preallocation
@@ -73,24 +72,35 @@ U = [];                                                 % Control function
 t = [];                                                 % Trajectories time
 
 % Noise 
-Sigma_t = deg2rad(1)^2 * eye(6);                        % Joint state covariance [rad]
+Sigma = deg2rad(0.1)^2 * eye(6);                        % Joint state covariance [rad]
 
 % Initial conditions
 y0 = S0.';
+
+% DH parameters of the robot
+DH_parameters.base =   reshape(params(8:10), 1, 3).'; 
+DH_parameters.theta =  reshape(params(11:16), 1, StateDimension).';
+DH_parameters.alpha =  reshape(params(17:22), 1, StateDimension).';
+DH_parameters.offset = reshape(params(23:28), 1, StateDimension).';
+DH_parameters.a =      reshape(params(29:34), 1, StateDimension).';
+DH_parameters.d =      reshape(params(35:40), 1, StateDimension).';
+DH_parameters.type =   reshape(params(41:46), 1, StateDimension).';
 
 while (GoOn && iter < maxIter)
     % Optimization (feedback phase)
     tic
     OptProblem = ISSFD_2024.RobotKinematics(S0, SF, L, StateDimension, ControlDimension, params);
-    [T, dV, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
-    
-    % Control vector
-    idx = max(abs(u(1:4,:))) > Omega_max(1);
-    u(1:3,idx) = Omega_max(1) * ones(1, sum(idx));
-    
-    idx = max(abs(u(5:6,:))) > Omega_max(2);
-    u(5:6,idx) = Omega_max(2) * ones(1, sum(idx));
+    [S, dV, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
 
+    % Control vector
+%     idx2 = abs(u(1:4,:)) == max(abs(u(1:4,:)), [], 1);
+%     idx = u(idx2) > Omega_max(1);
+%     u(idx2(idx)) = repmat(Omega_max(1), sum(idx2(idx),1), sum(idx));
+%     
+%     idx2 = abs(u(5:6,:)) == max(abs(u(5:6,:)), [], 1);
+%     idx = u(idx2) > Omega_max(2);
+%     u(idx2(idx)) = repmat(Omega_max(2), sum(idx2,1), sum(idx));
+    
     Pnew = PolynomialBases.Legendre().modal_projection(u);
 
     comp_time = toc;
@@ -100,8 +110,28 @@ while (GoOn && iter < maxIter)
     end
     
     % Plant dynamics
-    [tspan, s] = ode45(@(t,s)robot_kinematics(t, s, Pu, t0, tf, Omega_max), [0 comp_time], y0, options);
-    ds = robot_kinematics(tspan.', s.', Pu, t0, tf, Omega_max).';
+    if ( iter == 1 )
+        span = linspace(0, comp_time, 10);
+    else
+        span = linspace(t(end), t(end) + comp_time, 10);
+    end
+
+    [tspan, s] = ode45(@(t,s)robot_kinematics(t, s, Pu, t0, tf, Omega_max), span, y0, options);
+    
+    % Control law
+    tau = zeros(1, length(tspan));
+    for i = 1:size(tspan,1)
+        if (tf <= t0)
+            tau(i) = -1;
+        else
+            tau(i) = 2 * (tspan(i)-t0) / (tf-t0) - 1;     % Evaluation point for the controller
+        end
+        tau(i) = min(1, max(-1, tau(i)));
+    end
+
+    u_aux = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
+
+    ds = u_aux.';
 
     if (iter == 1)
         t = tspan;
@@ -110,30 +140,19 @@ while (GoOn && iter < maxIter)
         C = [C; [s ds] ];            % Output trajectory
 
     else
-        t = [t; t(end) + tspan(2:end)];
+        t = [t; tspan(2:end)];
 
         % Save the trajectory
         C = [C; [s(2:end,:) ds(2:end,:)] ];   % Output trajectory
     end
-    
-    % Control law
-    u_aux = zeros(ControlDimension, length(tspan));
-    for i = 1:size(tspan,1)
-        if (tf <= t0)
-            tau = -1;
-        else
-            tau = 2 * (tspan(i)-t0) / (tf-t0) - 1;     % Evaluation point for the controller
-        end
-        tau = min(1, max(-1, tau));
 
-        u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
-    end
-
-    idx = max(abs(u(1:4,:))) > Omega_max(1);
-    u_aux(1:3,idx) = Omega_max(1) * ones(1, sum(idx));
-    
-    idx = max(abs(u(5:6,:))) > Omega_max(2);
-    u_aux(5:6,idx) = Omega_max(2) * ones(1, sum(idx));
+%     idx2 = abs(u_aux(1:4,:)) == max(abs(u_aux(1:4,:)), [], 1);
+%     idx = u_aux(idx2) > Omega_max(1);
+%     u_aux(idx2(idx)) = repmat(Omega_max(1), sum(idx2,1), 1);
+%     
+%     idx2 = abs(u_aux(5:6,:)) == max(abs(u_aux(5:6,:)), [], 1);
+%     idx = u_aux(idx2) > Omega_max(2);
+%     u_aux(idx2(idx)) = repmat(Omega_max(2), sum(idx2,1), sum(idx));
 
     if (iter == 1)
         U = u_aux;
@@ -142,45 +161,56 @@ while (GoOn && iter < maxIter)
     end
 
     % New controller
-    Pu = Pnew;
+    if (exitflag ~= -2)
+        Pu = Pnew;
 
-    % Plant dynamics
-    y0 = s(end,:);
-    [tspan, s] = ode45(@(t,s)robot_kinematics(t, s, Pu, t0, tf, Omega_max), [tspan(end) tspan(end) + Ts], y0, options); 
-    ds = robot_kinematics(tspan.', s.', Pu, t0, tf, Omega_max).';
-
-    u_aux = zeros(ControlDimension, length(tspan));
-    for i = 1:size(tspan,1)
-        if (tf <= t0)
-            tau = -1;
-        else
-            tau = 2 * (tspan(i)-t0) / (tf-t0) - 1;     % Evaluation point for the controller
+        if (iter == 1)
+            params(59:64) = mod(S(1:6,end).', 2*pi);
         end
-        tau = min(1, max(-1, tau));
-
-        u_aux(:,i) = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
+    
     end
 
-    idx = max(abs(u(1:4,:))) > Omega_max(1);
-    u(1:3,idx) = Omega_max(1) * ones(1, sum(idx));
-    
-    idx = max(abs(u(5:6,:))) > Omega_max(2);
-    u(5:6,idx) = Omega_max(2) * ones(1, sum(idx));
+    % Plant dynamics
+    y0 = mod(s(end,:), 2*pi);
+    [tspan, s] = ode45(@(t,s)robot_kinematics(t, s, Pu, t0, tf, Omega_max), linspace(t(end), t(end) + Ts, 10), y0, options); 
+
+    tau = zeros(1, length(tspan));
+    for i = 1:size(tspan,1)
+        if (tf <= t0)
+            tau(i) = -1;
+        else
+            tau(i) = 2 * (tspan(i)-t0) / (tf-t0) - 1;     % Evaluation point for the controller
+        end
+        tau(i) = min(1, max(-1, tau(i)));
+    end
+
+    u_aux = Pu * PolynomialBases.Legendre().basis( size(Pu,2)-1, tau );
+%     idx2 = abs(u_aux(1:4,:)) == max(abs(u_aux(1:4,:)), [], 1);
+%     idx = u_aux(idx2) > Omega_max(1);
+%     u_aux(idx2(idx)) = repmat(Omega_max(1), sum(idx2,1), 1);
+%     
+%     idx2 = abs(u_aux(5:6,:)) == max(abs(u_aux(5:6,:)), [], 1);
+%     idx = u_aux(idx2) > Omega_max(2);
+%     u_aux(idx2(idx)) = repmat(Omega_max(2), sum(idx2,1), sum(idx));
+
+    ds = u_aux.';
 
     U = [ U u_aux(:,2:end) ];
 
     % Save the trajectory
-    t = [t; t(end) + tspan(2:end)];
+    t = [t; tspan(2:end)];
     C = [C; [s(2:end,:) ds(2:end,:)] ];               % Output trajectory
 
     elapsed_time = t(end);
 
     % Update initial conditions
-    y0 = s(end,:).';
+    y0 = mod(s(end,:), 2*pi);
+    S0 = y0.';
+    params(1) = elapsed_time;                        % Initial time [s]
 
     % Navigation system
-%     noise = mvnrnd(zeros(1,size(y0,1), blkdiag(Sigma_r, Sigma_v), 1).';          % Noisy state vector
-%     S0 = S0 + noise;
+    noise = mvnrnd(zeros(1,size(y0,2)), Sigma, 1).';          % Noisy state vector
+    S0 = S0 + noise;
 
     % Convergence 
     if (elapsed_time >= TOF)
@@ -199,18 +229,9 @@ C = C.';                        % Output trajectory
 detJ = zeros(1, length(t)); 
 v = zeros(StateDimension, length(t));
 
-% DH parameters 
-DH_parameters.base =   reshape(params(8:10), 1, 3).'; 
-DH_parameters.theta =  reshape(params(11:16), 1, StateDimension).';
-DH_parameters.alpha =  reshape(params(17:22), 1, StateDimension).';
-DH_parameters.offset = reshape(params(23:28), 1, StateDimension).';
-DH_parameters.a =      reshape(params(29:34), 1, StateDimension).';
-DH_parameters.d =      reshape(params(35:40), 1, StateDimension).';
-DH_parameters.type =   reshape(params(41:46), 1, StateDimension).';
-
 for i = 1:length(t)
     % Compute the Jacobian 
-    [T, J] = ISSFD_2024.RobotKinematics.Kinematics(OptProblem.StateDim, @(i,s)ISSFD_2024.RobotKinematics.ur3_dkinematics(DH_parameters, i, s), C(:,i));
+    [T, J] = ISSFD_2024.RobotKinematics.Kinematics(OptProblem.StateDim, @(j,s)ISSFD_2024.RobotKinematics.ur3_dkinematics(DH_parameters, j, s), C(:,i));
 
     % Compute the determinant of the Jacobian
     detJ(i) = det(J);
@@ -218,6 +239,21 @@ for i = 1:length(t)
     % Compute the frame velocities
     v(:,i) = J * C(7:12,i);
 end
+
+% Final position and attitude error
+R = T(1:3,end-2:end);                   % Final rotation matrix
+q = QuaternionAlgebra.Matrix2Quat(R);   % Associated quaternion
+
+sigma = QuaternionAlgebra.MPR2Quat(1, 1, q, false);
+
+r_ref = params(47:49).';                % Reference position
+sigma_ref = params(50:52).';            % Reference attitude
+v_ref = params(53:58).';                % Reference velocity
+
+r_eff = T(1:3,end);                     % End effector position 
+res(1:3,1) = r_eff - r_ref;             % Error to the reference position
+res(4:6,1) = sigma - sigma_ref;         % Error to the reference attitude 
+res(7:12,1) = v(:,end) - v_ref;         % Error to the velocities
 
 % Close loop cost 
 close_cost = trapz(linspace(0, elapsed_time, size(U,2)), dot(U,U,1));
@@ -280,17 +316,19 @@ xlim([0 t(end)])
 % Robot kinematics 
 function [dq] = robot_kinematics(t, s, P, t0, tf, Omega_max)
     tau = 2 * (t-t0)/(tf-t0) - 1;
-    tau = min(1, max(-1, tau));
+    tau = max(-1, min(1, tau));
     B = PolynomialBases.Legendre().basis(size(P,2)-1, tau);
     u = P * B;
     
-    idx = max(abs(u(1:4,:))) > Omega_max(1);
-    u(1:3,idx) = Omega_max(1) * ones(1, sum(idx));
-    
-    idx = max(abs(u(5:6,:))) > Omega_max(2);
-    u(5:6,idx) = Omega_max(2) * ones(1, sum(idx));
+%     idx2 = abs(u(1:4,:)) == max(abs(u(1:4,:)), [], 1);
+%     idx = u(idx2) > Omega_max(1);
+%     u(idx2(idx)) = repmat(Omega_max(1), sum(idx2(idx),1), 1);
+%     
+%     idx2 = abs(u(5:6,:)) == max(abs(u(5:6,:)), [], 1);
+%     idx = u(idx2) > Omega_max(2);
+%     u(idx2(idx)) = repmat(Omega_max(2), sum(idx2(idx),1), sum(idx));
 
-    b = 1e-2; 
+    b = 1e-3; 
     k = 1e-3;
-    dq = (1-b) * (u + b * sin(u.^2)) + k * (s(1:6,:) - s(1:6,:).^2);
+    dq = u + b * sin(t * u / 1E3) + k * (s(1:6,:) - s(1:6,:).^2);
 end

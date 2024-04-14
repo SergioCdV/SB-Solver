@@ -5,8 +5,17 @@
 % Function implementation of the path and boundary constraints functions
 
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
+    % Constants 
+    % DH parameters 
+    DH_parameters.base =   reshape(params(8:10), 1, 3).'; 
+    DH_parameters.theta =  reshape(params(11:16), 1, obj.StateDim).';
+    DH_parameters.alpha =  reshape(params(17:22), 1, obj.StateDim).';
+    DH_parameters.offset = reshape(params(23:28), 1, obj.StateDim).';
+    DH_parameters.a =      reshape(params(29:34), 1, obj.StateDim).';
+    DH_parameters.d =      reshape(params(35:40), 1, obj.StateDim).';
+    DH_parameters.type =   reshape(params(41:46), 1, obj.StateDim).';
+
     % Inequality constraints
-%     detJ = zeros(1,size(tau,2));
 %     objects = [];
 % 
 %     if (~isempty(objects))
@@ -16,17 +25,19 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 %     end
 % 
 %     counter = 1;
-%     v = zeros(6,length(tau));
+    detJ = zeros(1, size(tau,2));
+    v = zeros(6, size(tau,2));
+
 %     z_pos = zeros(1,length(tau));
-%     for i = 1:size(tau,2)
-%         [T, J] = Problems.RobotDiffKinematics.Kinematics(obj.StateDim, ...
-%                                                  @(j,s)Problems.RobotDiffKinematics.ur3_dkinematics(obj, j, s), ...
-%                                                  s(:,i));
-%         % Jacobian singularities
-%         detJ(i) = det(J)^2;
-% 
-%         v(:,i) = J * s(7:12,i);
-% 
+    for i = size(tau,2):size(tau,2)
+        [T, J] = ISSFD_2024.RobotKinematics.Kinematics(obj.StateDim, @(j,s)ISSFD_2024.RobotKinematics.ur3_dkinematics(DH_parameters, j, s), s(:,i));
+        
+        % Jacobian singularities
+        detJ(i) = det(J)^2;
+        
+        % Velocity of the end frame
+        v(:,i) = J * s(7:12,i);
+
 %         z_pos(i) = T(3,4);
 % 
 %         % Compute the collisions
@@ -47,53 +58,37 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 %                 counter = counter + 1;
 %             end
 %         end
-%     end
-% 
-%     epsilon = params(7);
-% 
-    DH_parameters.base =   reshape(params(8:10), 1, 3).'; 
-    DH_parameters.theta =  reshape(params(11:16), 1, obj.StateDim).';
-    DH_parameters.alpha =  reshape(params(17:22), 1, obj.StateDim).';
-    DH_parameters.offset = reshape(params(23:28), 1, obj.StateDim).';
-    DH_parameters.a =      reshape(params(29:34), 1, obj.StateDim).';
-    DH_parameters.d =      reshape(params(35:40), 1, obj.StateDim).';
-    DH_parameters.type =   reshape(params(41:46), 1, obj.StateDim).';
+    end
+            
+    % Reference position and velocity 
+    R = T(1:3,end-2:end);                   % Final rotation matrix
+    q = QuaternionAlgebra.Matrix2Quat(R);   % Associated quaternion
 
+    sigma = QuaternionAlgebra.MPR2Quat(1, 1, q, false);
+
+    r_ref = params(47:49).';                % Reference position
+    sigma_ref = params(50:52).';            % Reference attitude
+    v_ref = params(53:58).';                % Reference velocity
+
+    r_eff = T(1:3,end);                     % End effector position 
+    res(1:3,1) = r_eff - r_ref;             % Error to the reference position
+    res(4:6,1) = sigma - sigma_ref;         % Error to the reference attitude 
+    res(7:12,1) = v(:,end) - v_ref;         % Error to the velocities
+
+    % Inequalities
     c = [
-         -reshape(s(7:9,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-         +reshape(s(7:9,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-         -reshape(s(10:12,:), 1, [])-params(4) ...      % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-         +reshape(s(10:12,:), 1, [])-params(4) ...      % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
-%          -reshape(v(1:3,:), 1, [])-params(5) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
-%          +reshape(v(1:3,:), 1, [])-params(5) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
-%          -reshape(v(4:6,:), 1, [])-params(6) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
-%          +reshape(v(4:6,:), 1, [])-params(6) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
-%          +dm ...                                        % Collisions constraints
-%          epsilon-reshape(detJ, 1, []) ...               % Singularity constraint
-%          -z_pos                                         % Constraint to lie above the table
-%          reshape(s(1:6,1)-s(1:6,end), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
-%          reshape(s(1:6,end)-s(1:6,1), 1, [])-pi ...     % Constraint on the frame angular velocity (infinity norm in epigraph form)
+         +reshape(u(1:4,:), 1, [])-params(3) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         -reshape(u(1:4,:), 1, [])-params(3)  ...       % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         +reshape(u(5:6,:), 1, [])-params(4) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         -reshape(u(5:6,:), 1, [])-params(4) ...        % Constraint on the angular velocity magnitude (infinity norm in epigraph form)
+         reshape(+res -1E-3 , 1, []) ...                % Relaxed equalities
+         reshape(-res -1E-3 , 1, []) ...                % Relaxed equalities
+%          reshape(+v(1:3,:)-params(5), 1, []) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
+%          reshape(-v(1:3,:)-params(5), 1, []) ...        % Constraint on the frame linear velocity (infinity norm in epigraph form)
+%          reshape(+v(4:6,:)-params(6), 1, []) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
+%          reshape(-v(4:6,:)-params(6), 1, []) ...        % Constraint on the frame angular velocity (infinity norm in epigraph form)
+%          params(7)-reshape(detJ, 1, []) ...             % Singularity constraint
         ];   
-% 
-%     % Equality constraints    
-%     if (length(params) < 21)
-%         s_ref = reshape(params(8:20), [], 1);           % Desired waypoint
-% 
-%         q_f(4,1) = sqrt(1 + T(1,1) + T(2,2) + T(3,3))/2;
-%         q_f(1,1) = (T(3,2) - T(2,3)) / (4 * q_f(4));
-%         q_f(2,1) = (T(1,3) - T(3,1)) / (4 * q_f(4));
-%         q_f(3,1) = (T(2,1) - T(1,2)) / (4 * q_f(4));
-%     
-%         dq = QuaternionAlgebra.right_isoclinic( q_f ) * QuaternionAlgebra.quaternion_inverse( s_ref(4:7,1) );
-% 
-%         ceq = [
-%                T(1:3,end)-s_ref(1:3,1); ...            % Final linear position constraint
-%                J*s(7:12,end)-s_ref(8:13,1); ...        % Final linear and angular velocity constraint
-%                dq(4) - 1;                              % Final attitude constraint
-%                ];   
-%     else
-%         ceq = [];
-%     end
 
-      ceq = [];
+    ceq = [];
 end
