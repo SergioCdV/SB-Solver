@@ -11,11 +11,26 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     Omega = k .* rho.^2;                    % True anomaly angular velocity [rad/s]
 
     % Mayer and Lagrange terms
-    if ( length(params) <= 26 )
-        M = 0;
+    if ( length(params) <= 35 + 4 * (params(35)+1) )
+        q = params(35 + 4 * params(35) : 35 + 4 * ( params(35) + 1) ).';
+        sigma = QuaternionAlgebra.MPR2Quat(1, 1, q, false);
+        dsigma = 0.25 * QuaternionAlgebra.Quat2Matrix([sigma; -1]) * params(32:34).';
+
+        beta_ref = [
+                    zeros(3,1); ...
+                    sigma; ...
+                    zeros(3,1); ...
+                    dsigma
+                ]; 
     else
-        M = dot(s(1:3,end) - params(27:29).', s(1:3,end) - params(27:29).');
+        beta_ref = [
+                    params(35 + 4 * (params(35)+1) + 1 : 35 + 4 * (params(35)+1) + 9).';
+                    ];
+        beta_ref = [beta_ref(1:6); zeros(3,1); beta(7:9)];
     end
+    
+    diff = s(1:12,end) - beta_ref;
+    M = dot(diff, diff);
 
     L = dot(u(1:3,:), u(1:3,:), 1) + dot(u(4:6,:), u(4:6,:), 1);     
     L = L .* Omega;

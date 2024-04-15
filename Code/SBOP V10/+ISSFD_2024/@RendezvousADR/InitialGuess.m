@@ -9,9 +9,19 @@ function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
     t0 = params(5);                    % Initial true anomaly [rad]
     tf = params(6);                    % Final true anomaly [rad]
 
-    if ( length(params) <= 26 )
-        beta = zeros(3,1); 
+    if ( length(params) <= 35 + 4 * (params(35)+1) )
+        q = params(35 + 4 * params(35) : 35 + 4 * ( params(35) + 1) ).';
+        sigma = QuaternionAlgebra.MPR2Quat(1, 1, q, false);
+        dsigma = 0.25 * QuaternionAlgebra.Quat2Matrix([sigma; -1]) * params(32:34).';
+
+        beta = [
+                    zeros(3,1); ...
+                    sigma; ...
+                    dsigma
+                ]; 
     else
-        beta = params(26:28).';
+        beta = [
+                    params(35 + 4 * (params(35)+1) + 1 : 35 + 4 * (params(35)+1) + 9).'; ...
+                ];
     end
 end

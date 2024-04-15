@@ -16,44 +16,43 @@ Re = 6378e3;                                       % Mean Earth radius
 J2 = 1.08263e-3;                                   % J2 parameter of the Earth
 
 % Mission constraints
-R1 = 1e3;                                          % Keep-out zone radius 1 [m]
-R2 = 10;                                           % Keep-out zone radius 2 [m]
-L = 1.85;                                          % Graspling reach [m]
 Fmax = 0.5e-2;                                     % Maximum available acceleration [m/s^2]
 Tmax = 0.5e-2;                                     % Maximum available torque [rad/s^2]
 I = diag( [1 2 3] );                               % Inertia matrix of the chaser in the body frame [kg m2]
 It = diag( [3 2 1] );                              % Inertia matrix of the target in the body frame [kg m2]
 Lg = 10;                                           % Graspling distance [m]
 
-rdoc = [1 0 0; 0 1 0].';                           % Docking ports of the chaser and target in their respective body frames
+cx = 1;                                            % LOS X constraint
+cz = 1;                                            % LOS Z constraint
+xmin = 0.1;                                        % LOS X constraint [m]
+zmin = 0.1;                                        % LOS Z constraint [m]
+
+rdoc = [1 0 0; 0 1 0].';                           % Docking ports of the chaser and target in their respective body frames [m]
 
 vmax = 5;                                          % Maximum angular velocity of the chaser [m/s]
 omega_max = 1;                                     % Maximum angular velocity of the chaser [rad/s]
 
 % Mission constraints
-TOF = 1 * 3600;                                    % Maximum allowed phase time [s]
+TOF = 1 * 180;                                    % Maximum allowed phase time [s]
 
 % Target's initial conditions (relative position [m], velocity [m/s], LVLH MRP, LVLH angular velocity [rad/s])
-ST = [7.104981874434397e6 1.137298852087994e6 -0.756578094588272e6 -0.586250624037242e3 -1.213011751682090e3 -7.268579401702199e3 zeros(1,6)].';
+sigma = zeros(1,3);
+omega = 0 * deg2rad( [0 3.53 3.53] );
+ST = [7.104981874434397e6 1.137298852087994e6 -0.756578094588272e6 -0.586250624037242e3 -1.213011751682090e3 -7.268579401702199e3 sigma omega].';
 
 COE = OrbitalDynamics.ECI2COE(mu, ST, 1);          % Orbital elements of the target
 n = sqrt(mu/COE(1)^3);                             % Mean motion [rad/s]
 
 % Initial conditions (relative position [m], velocity [m/s], LVLH MRP, LVLH angular velocity [rad/s])
 sigma = zeros(1,3);                                                             % MRP
-omega = deg2rad( [0 3.53 3.53] );                                               % Angular velocity in the chaser body frame
+omega = zeros(1,3);                                                             % Angular velocity in the chaser body frame
 dsigma = 0.25 * omega * QuaternionAlgebra.Quat2Matrix( [sigma.'; -1] ).';       % Derivative of the MRP
 
-S0 = 1E-1 * [467.9492284850632 -77.2962065075666 -871.9827927879848 -1.7286747525940 -0.3307280703785 5.5751101965630 sigma dsigma].';  
+S0 = 0E-1 * [467.9492284850632 -77.2962065075666 -871.9827927879848 -1.7286747525940 -0.3307280703785 5.5751101965630 sigma dsigma].';
+% S0 = [1.5, 2.5 1.5, zeros(1,3) sigma, dsigma].';
 
 %% Final boundary conditions
-% Assemble the state vector
-sigma_f = [0.33; 0; 0.33];            % Final reference attitude 
-omega_f = zeros(3,1);           % Final reference angular velocity 
-
-dsigma_f = 0.25 * QuaternionAlgebra.Quat2Matrix( [sigma_f; -1] ) * omega_f;
-
-SF = [zeros(6,1); sigma_f; dsigma_f];               % Final reference conditions
+SF = zeros(12,1);               % Final reference conditions
 
 %% Scaling 
 ts = 1 / n;                     % Characteristic time 
@@ -73,9 +72,10 @@ Tmax = Tmax / Tau;              % Normalized torque
 vmax = vmax / Vc;               % Normalised linear velocity 
 omega_max = omega_max * ts;     % Normalised angular velocity 
 
-rdoc = rdoc / Lc;               % Normalised docking ports
-
 Lg = Lg / Lc;                   % Normalised distance to the spacecraft
+
+xmin = xmin / Lc;               % Normalised LOS X constraint
+zmin = zmin / Lc;               % Normalised LOS Z constraint
 
 % Normalized COE
 COE([1 7])  = COE([1 7]) / Lc;  % Normalized target COE
@@ -122,28 +122,41 @@ params(24) = vmax;                      % Maximum linear velocity
 params(25) = omega_max;                 % Maximum angular velocity
 params(26) = Lg;                        % Graspling reach [m]
 
-% Numerical solver definition
-L = 2;                           % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 6;              % Dimension of the configuration vector. Note the difference with the state vector
-ControlDimension = 6;            % Dimension of the control vector
+params(27) = cx;                        % Normalised LOS X constraint 
+params(28) = cz;                        % Normalized LOS Z constraint
+params(29) = xmin;                      % Normalised LOS X constraint
+params(30) = zmin;                      % Normalised LOS Z constraint
 
-basis = 'Legendre';                    % Polynomial basis to be use
-time_distribution = 'Legendre';        % Distribution of time intervals
-N = 5;                                % Polynomial order in the state vector expansion
-m = 30;                                % Number of sampling points
+params(31) = cos(deg2rad(5));           % LOS pointing constraint
+
+% Numerical solver definition
+L = 2;                                  % Degree of the dynamics (maximum derivative order of the ODE system)
+StateDimension = 6;                     % Dimension of the configuration vector. Note the difference with the state vector
+ControlDimension = 6;                   % Dimension of the control vector
+
+basis = 'Legendre';                     % Polynomial basis to be use
+time_distribution = 'Legendre';         % Distribution of time intervals
+N = 4;                                  % Polynomial order in the state vector expansion
+m = 15;                                 % Number of sampling points
  
 solver = Solver(basis, N, time_distribution, m);
+
+Grid = solver.gridding(m);
+
+params(35) = m;                         % Number of points to be used in the optimization
 
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 60 / ts;                                          % Sampling time
+Ts = 5 / ts;                                          % Sampling time
 
 % Numerial setup
 GoOn = true;                                            % Convergence boolean
 iter = 1;                                               % Initial iteration
 maxIter = ceil(TOF/Ts);                                 % Maximum number of iterations
 elapsed_time = 0;                                       % Elapsed time
+
+comp_time = zeros(1, maxIter);                          % Computational time taken for the solver
 
 % Preallocation
 St = [];                                                % Target trajectory
@@ -181,15 +194,31 @@ noise = mvnrnd(zeros(1,6), blkdiag(Sigma_r, Sigma_v), maxIter).';        % Noisy
 
 while (GoOn && iter < maxIter)
     % Prediction of target's attitude state
-    
+    theta_space = 0.5 * (Grid.tau + 1) * (params(6) - params(5));
+    prediction_span = theta_space; 
+
+    for i = 1:size(theta_space,2)
+        % Conversion to time 
+        prediction_span(i) = OrbitalDynamics.KeplerEquation(n, params(3), theta_space(1), theta_space(i));
+    end
+
+    y0_att = [QuaternionAlgebra.MPR2Quat(1, 1, y0(7:9), true); y0(10:12)];
+    [~, st] = ode45(@(t,s)attitude_dynamics(It, t, s), prediction_span, y0_att, options);
+
+    st(end,:)
+
+    qt = st(:,1:4).';                                  % Quaternion evolution
+    omega_f = st(end,5:7);                             % Final angular velocity
+    params(32:34) = omega_f;                           % Final angular velocity
+    params(36:35 + 4 * (m+1)) = reshape(qt, 1, []);    % Target's quaternion evolution
 
     % Optimization (feedback phase)
     tic
     OptProblem = ISSFD_2024.RendezvousADR(S0([1:3 7:9 4:6 10:12]), SF([1:3 7:9 4:6 10:12]), L, StateDimension, ControlDimension, params);
     [S, ~, u, t0, tf, tau, exitflag, ~, P] = solver.solve(OptProblem);
 
-    if (iter == 1 && exitflag ~= -2)
-        params(27:29) = S(1:3,end).';
+    if (exitflag ~= -2)
+        params(35 + 4 * (params(35)+1) + 1 : 35 + 4 * (params(35)+1) + 9) = S([1:6 10:12],end).';
     end
 
     % Control vector
@@ -207,14 +236,14 @@ while (GoOn && iter < maxIter)
     Pnew = [PolynomialBases.Legendre().modal_projection(u(1:3,:)); ...
             PolynomialBases.Legendre().modal_projection(u(4:6,:))];
     
-    comp_time = toc / ts;
+    comp_time(iter) = toc / ts;
 
     % Plant dynamics 
     if ( iter == 1 )
         Pu = zeros(ControlDimension, size(u,2));
-        span = linspace(0, comp_time, 10);
+        span = linspace(0, comp_time(iter), 10);
     else
-        span = linspace(t(end), t(end) + comp_time, 10);
+        span = linspace(t(end), t(end) + comp_time(iter), 10);
     end
 
     [tspan, s] = ode45(@(t,s)j2_dynamics(mu, J2, Re, Pu, t0, tf, Fmax, Tmax, n, params(3), It, I, t-elapsed_time, s), span, y0, options); 
@@ -381,6 +410,8 @@ C(10:12,:) = C(10:12,:) / ts;   % Normalised derivative of the MRP
 U(1:3,:) = U(1:3,:) * gamma;    % Linear control acceleration
 U(4:6,:) = U(4:6,:) * Tau;      % Angular control acceleration
 
+comp_time = comp_time * ts;
+
 %% Save results 
 save Rendezvous_ISSFD2024.mat;
 
@@ -396,7 +427,8 @@ xlabel('$t$')
 ylabel('$\boldmath{\rho}$ [m]', 'Interpreter', 'latex')
 plot(t, C(1:3,:));
 yline(Lg * Lc, 'k--')
-legend('$x$', '$y$', '$z$', '$L_g$')
+legend('$x$', '$y$', '$z$', '$L_g$', 'Autoupdate', 'off')
+yline(-Lg * Lc, 'k--')
 hold off
 grid on;
 xlim([0 t(end)])
@@ -418,6 +450,7 @@ hold on
 xlabel('$t$')
 ylabel('$\boldmath{\sigma}$', 'Interpreter','latex')
 plot(t, C(7:9,:));
+yline(QuaternionAlgebra.MPR2Quat(1, 1, qt(:,end), false), 'k--')
 legend('$\sigma_x$', '$\sigma_y$', '$\sigma_z$')
 hold off
 grid on;
@@ -428,6 +461,7 @@ hold on
 xlabel('$t$')
 ylabel('$\omega$ [rad/s]')
 plot(t, C(10:12,:) );
+yline(omega_f, 'k--')
 legend('$\omega_x$', '$\omega_y$', '$\omega_z$')
 hold off
 grid on;
@@ -487,6 +521,12 @@ if false
         delete(H)
     end
 end
+
+figure 
+stem(1:iter, log( comp_time(1:iter) ) );
+grid on
+xlabel('Comp. time [s]')
+ylabel('Time step')
 
 %% Auxiliary functions 
 % CW dynamics 
@@ -573,7 +613,7 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, Tmax, n, e, It, Ic, t, 
     thrust = u(1:3,:);%QuaternionAlgebra.RotateVector(inv_qm, 0 * u(1:3,:));
 
     dr(13:15,1) = s(16:18);                                                             % Position derivative
-    dr(16:18,1) = Qt.' * thrust - mu * s(13:15,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
+    dr(16:18,1) = Qt.' * 0 * thrust - mu * s(13:15,:) ./ sqrt( rsquare ).^3 .* [a; a; b];   % Velocity derivative
 
     % Torque
     tau = u(4:6,:);
@@ -595,6 +635,19 @@ function [dr] = j2_dynamics(mu, J2, Re, P, t0, tf, Fmax, Tmax, n, e, It, Ic, t, 
     rb = QuaternionAlgebra.RotateVector(qm, Qt * s(13:15,:));
 
     dr(22:24,1) = Ic \ (tau - Ic * alpha + cross(Ic * omega_t, omega_t) + mu ./ sqrt( rsquare )^5 .* cross(rb, Ic * rb));   % Target attitude dynamics
+end
+
+% Attitude dynamics 
+function [dq] = attitude_dynamics(I, t, s)
+    % Variables 
+    q = s(1:4,1);       % Attitude quaternion 
+    omega = s(5:7,1);   % Angular velocity 
+
+    % Kinematics 
+    dq(1:4,1) = 0.5 * QuaternionAlgebra.right_isoclinic([omega; 0]) * q + 1E-3 * (1 - dot(q,q,1)) * q;
+
+    % Dynamics 
+    dq(5:7,1) = I \ cross(I * omega, omega);
 end
 
 % Compute the final true anomaly considering multiple revolutions 
