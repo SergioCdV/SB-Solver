@@ -42,7 +42,7 @@ ControlDimension = 3;           % Dimension of the control vector
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
+n = 9;                                 % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
@@ -65,15 +65,17 @@ for i = 1:iter
     initial_coe = mvnrnd(initial_mean, diag(initial_sig), 1);
     initial_coe(1) = initial_coe(1) / r0;
     S0 = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
-    S0 = S0(1:end-1);
 
     final_coe = mvnrnd(final_mean, diag(final_sig), 1);
     final_coe(end) = 2*pi * rand;
     final_coe(1) = final_coe(1) / r0;
     SF = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
-    SF = SF(1:end-1);
 
-    problem_params = [mu; T; S0(end); final_coe(end)];      % Problem parameters
+    problem_params = [mu; T; S0(end); SF(end)];                      % Problem parameters
+
+    % Regularized motion
+    S0 = S0(1:end-1);
+    SF = SF(1:end-1);
 
     % Create the problems 
     StateDimension = 5;                                     % Dimension of the configuration vector. Note the difference with the state vector
@@ -117,7 +119,7 @@ GenHistogram(ToF(1,:), ToF(2,:), 2, 'r', 'b', '$L_f$');
 
 %% Plots
 % Main plots 
-[S] = OrbitalDynamics.equinoctial2ECI(mu, [C(1:5,:); tau], true);
+[S] = OrbitalDynamics.equinoctial2ECI(mu, [C(1:5,:); C(6,:) + tau], true);
 x = S(1,:);
 y = S(2,:); 
 z = S(3,:);

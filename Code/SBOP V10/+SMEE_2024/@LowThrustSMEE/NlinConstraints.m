@@ -20,5 +20,5 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
         ];                 
 
     % Equalities
-    ceq = [cos(l(end))-cos(params(4)) sin(l(end))-sin(params(4))];
+    ceq = [cos(tf + s(6,end))-cos(params(4)) sin(tf + s(6,end))-sin(params(4))];
 end
