@@ -33,8 +33,8 @@ function [s] = coe2state(mu, elements)
     % Compute the angular momentum norm
     h = sqrt(mu*p);                                             % Angular momentum of the orbit
     
-    % Compute the mean anomaly
-    theta = OrbitalDynamics.kepler(elements);                   % True anomaly in the orbit
+    % True anomaly in the orbit
+    theta = OrbitalDynamics.KeplerSolver(elements(2), elements(6));             
     
     % Compute the perifocal state vector
     r = (p/(1+e*cos(theta)))*[cos(theta); sin(theta); 0];       % Position vector in the perifocal frame

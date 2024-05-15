@@ -11,12 +11,12 @@ clear
 
 %% Problem definition 
 % Mission constraints
-Tc = 180;                              % Characteristic time [s]
+Tc = 300;                              % Characteristic time [s]
 T0 = 0;                                % Initial clcok
-TOF = 1 * Tc;                        % Mission TOF
+TOF = 0.3 * Tc;                          % Mission TOF
 Omega_max = [pi; 2*pi];                % Maximum angular velocity of the joints [rad/s]
-vmax = 5;                              % Maximum linear velocity [m]
-omega_max = 2;                         % Maximum angular velocity of the end-effector [rad/s]
+vmax = 2;                              % Maximum linear velocity [m]
+omega_max = deg2rad(20);               % Maximum angular velocity of the end-effector [rad/s]
 epsilon = 1e-4^2;                      % Numerical tolerance for the Jacobian determinant
 
 % Linear problem data
@@ -37,7 +37,7 @@ params(41:46) = ones(6,1);
 
 % Final conditions of the end-effector (reference position and attitude)
 sigma = [0.33;0.01;0.33];
-params(47:58) = [0.1; -0.05; 0.01; sigma; zeros(3,1); zeros(3,1)].';
+params(47:58) = [0.2; -0.05; 0.01; sigma; zeros(3,1); deg2rad([0 0 5]).'].';
 
 S0 = [0 deg2rad(-151.31) deg2rad(142.22) deg2rad(-145) deg2rad(89.37) deg2rad(125)].';
 %S0 = [0 deg2rad(-135) pi/2 deg2rad(-135) pi/2 pi/2].';
@@ -58,13 +58,15 @@ solver = Solver(basis, n, time_distribution, m);
 %% Optimization (NMPC-RTI)
 % Setup
 options = odeset('AbsTol', 1e-22, 'RelTol', 2.25e-14);  % Integration tolerances
-Ts = 3;                                                 % Sampling time [s]
+Ts = 2;                                                 % Sampling time [s]
 
 % Numerical setup 
 GoOn = true;                                            % Convergence boolean
 iter = 1;                                               % Initial iteration
 maxIter = ceil(TOF/Ts) + 1;                             % Maximum number of iterations
 elapsed_time = 0;                                       % Elapsed time
+
+comp_time = zeros(1, maxIter);
 
 % Preallocation
 C = [];                                                 % Relative trajectory
@@ -103,14 +105,14 @@ while (GoOn && iter < maxIter)
     
     Pnew = PolynomialBases.Legendre().modal_projection(u);
 
-    comp_time = toc;
+    comp_time(iter) = toc;
     
     % Plant dynamics
     if ( iter == 1 )
         Pu = zeros(ControlDimension, size(u,2));
-        span = linspace(0, comp_time, 10);
+        span = linspace(0, comp_time(iter), 10);
     else
-        span = linspace(t(end), t(end) + comp_time, 10);
+        span = linspace(t(end), t(end) + comp_time(iter), 10);
     end
 
     [tspan, s] = ode45(@(t,s)robot_kinematics(t, s, Pu, t0, tf, Omega_max), span, y0, options);
@@ -203,7 +205,7 @@ while (GoOn && iter < maxIter)
     % Update initial conditions
     y0 = mod(s(end,:), 2*pi);
     S0 = y0.';
-    params(1) = elapsed_time;                        % Initial time [s]
+%     params(1) = elapsed_time;                        % Initial time [s]
 
     % Navigation system
     noise = mvnrnd(zeros(1,size(y0,2)), Sigma, 1).';          % Noisy state vector
@@ -225,6 +227,8 @@ C = C.';                        % Output trajectory
 % Check for singularities 
 detJ = zeros(1, length(t)); 
 v = zeros(StateDimension, length(t));
+r_eff = zeros(3, length(t));
+sigma = zeros(3, length(t));
 
 for i = 1:length(t)
     % Compute the Jacobian 
@@ -235,27 +239,32 @@ for i = 1:length(t)
 
     % Compute the frame velocities
     v(:,i) = J * C(7:12,i);
+
+    % End-effector system
+    r_eff(:,i) = T(1:3,end);                     % End effector position 
+
+    R = T(1:3,end-2:end);                   % Final rotation matrix
+    q = QuaternionAlgebra.Matrix2Quat(R);   % Associated quaternion
+    
+    sigma(:,i) = QuaternionAlgebra.MPR2Quat(1, 1, q, false);
 end
 
 % Final position and attitude error
-R = T(1:3,end-2:end);                   % Final rotation matrix
-q = QuaternionAlgebra.Matrix2Quat(R);   % Associated quaternion
-
-sigma = QuaternionAlgebra.MPR2Quat(1, 1, q, false);
-
 r_ref = params(47:49).';                % Reference position
 sigma_ref = params(50:52).';            % Reference attitude
 v_ref = params(53:58).';                % Reference velocity
 
-r_eff = T(1:3,end);                     % End effector position 
-res(1:3,1) = r_eff - r_ref;             % Error to the reference position
-res(4:6,1) = sigma - sigma_ref;         % Error to the reference attitude 
+res(1:3,1) = r_eff(:,end) - r_ref;      % Error to the reference position
+res(4:6,1) = sigma(:,end) - sigma_ref;  % Error to the reference attitude 
 res(7:12,1) = v(:,end) - v_ref;         % Error to the velocities
 
 % Close loop cost 
 close_cost = trapz(linspace(0, elapsed_time, size(U,2)), dot(U,U,1));
 
 C(1:6,:) = mod(C(1:6,:), 2*pi);
+
+%% Save results 
+save Manipulator_ISSFD2024.mat;
 
 %% Plots
 % State representation
@@ -265,6 +274,42 @@ xlabel('$t$ [s]')
 ylabel('$\mathbf{\theta}$ [deg]')
 plot(t, rad2deg(C(1:6,:)));
 legend('$\theta_1$', '$\theta_2$', '$\theta_3$', '$\theta_4$', '$\theta_5$', '$\theta_6$')
+hold off
+grid on;
+xlim([0 t(end)])
+yticklabels(strrep(yticklabels, '-', '$-$'));
+
+figure
+hold on
+xlabel('$t$ [s]')
+ylabel('$\mathbf{r}_e$ [m]')
+plot(t, r_eff);
+yline(params(47:49), 'k--')
+legend('$r_x$', '$r_y$', '$r_z$', '$r_{ref}^x$', '$r_{ref}^y$', '$r_{ref}^z$')
+hold off
+grid on;
+xlim([0 t(end)])
+yticklabels(strrep(yticklabels, '-', '$-$'));
+
+figure
+hold on
+xlabel('$t$ [s]')
+ylabel('$\mathbf{r}_e$ [m]')
+plot(t, sigma);
+yline(params(50:52), 'k--')
+legend('$\sigma_x$', '$\sigma_y$', '$\sigma_z$', '$\sigma_{ref}^x$', '$\sigma_{ref}^y$', '$\sigma_{ref}^z$')
+hold off
+grid on;
+xlim([0 t(end)])
+yticklabels(strrep(yticklabels, '-', '$-$'));
+
+figure
+hold on
+xlabel('$t$ [s]')
+ylabel('$\mathbf{r}_e$ [m]')
+plot(t, v(4:6,:));
+yline(params(56:58), 'k--')
+legend('$\omega_x$', '$\omega_y$', '$\omega_z$', '$\omega_{ref}^x$', '$\omega_{ref}^y$', '$\omega_{ref}^z$')
 hold off
 grid on;
 xlim([0 t(end)])
@@ -308,6 +353,13 @@ hold off
 legend('off')
 grid on;
 xlim([0 t(end)])
+
+figure 
+stem(1:iter, comp_time(1:iter) );
+grid on
+ylabel('Comp. time [s]')
+xlabel('Time step')
+xlim([0 iter])
 
 %% Auxiliary function 
 % Robot kinematics 

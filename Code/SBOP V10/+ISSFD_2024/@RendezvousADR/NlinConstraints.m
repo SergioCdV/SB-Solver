@@ -36,13 +36,13 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     rf = rb(1:3,end); 
 
     % LOS constraint
-%     cx = params(27); 
-%     cz = params(28); 
-%     xmin = params(29); 
-%     zmin = params(30);
-% 
-%     Alos = [0 -1 0; cx -1 0; -cx -1 0; 0 -1 cz; 0 -1 -cz];
-%     Clos = [0; cx * xmin; cx * xmin; cz * zmin; cz * zmin]; 
+    cx = params(27); 
+    cz = params(28); 
+    xmin = params(29); 
+    zmin = params(30);
+
+    Alos = [0 -1 0; cx -1 0; -cx -1 0; 0 -1 cz; 0 -1 -cz];
+    Clos = [0; cx * xmin; cx * xmin; cz * zmin; cz * zmin]; 
 
     qc = QuaternionAlgebra.MPR2Quat(1, 1, sigma, true);                     % Quaternion between the two body frames 
     inv_qc = QuaternionAlgebra.quaternion_inverse(qc);                      % Rotation from chaser body frame to LVLH axes
@@ -54,7 +54,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
         rb(:,i) = QuaternionAlgebra.RotateVector(q, rb(:,i));               % Rotation to target axes
     end
 
-%     LOS = Alos * rb - Clos;
+    LOS = Alos * rb - Clos;
 
     % LOS pointing constraint
     dock_chaser = reshape(params(18:20), 3, 1);                     % Docking port of the chaser in the chaser's body frame
@@ -69,18 +69,18 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
 
     % Inequalities
     c = [
-%             dot(u(1:3,:), u(1:3,:), 1) - params(7)^2 ...         % Constraint on the force magnitude (second order cone)
-%             reshape(+v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
-%             reshape(-v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
+            dot(u(1:3,:), u(1:3,:), 1) - params(7)^2 ...         % Constraint on the force magnitude (second order cone)
+            reshape(+v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
+            reshape(-v - params(24), 1, []) ...                  % Maximum linear velocity of the chaser
             reshape(+u(4:6,:) - params(8), 1, []) ...            % Constraint on the torque magnitude (infinty norm)
             reshape(-u(4:6,:) - params(8), 1, [])...             % Constraint on the torque magnitude (infinty norm)
             reshape(+Omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
             reshape(-Omega - params(25), 1, []) ...              % Maximum angular velocity of the chaser
             LOS_angle ...                                        % LOS angle constraint
-            reshape(+omega_res - 1E-3, 1, []) ...                % Angular velocity sync constraint
-            reshape(-omega_res - 1E-3, 1, []) ...                % Angular velocity sync constraint
             dot(rf, rf, 1) - params(26)^2 ...                    % Graspling constraint
-%             reshape(LOS, 1, [])                                  % LOS constraint
+            reshape(LOS, 1, []) ...                              % LOS constraint
+%             reshape(+omega_res - 1E-4, 1, []) ...                % Angular velocity sync constraint
+%             reshape(-omega_res - 1E-4, 1, []) ...                % Angular velocity sync constraint
         ];      
 
     % Equality constraints

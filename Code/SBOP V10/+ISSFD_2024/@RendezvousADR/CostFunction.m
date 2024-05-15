@@ -22,14 +22,15 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
                     zeros(3,1); ...
                     dsigma
                 ]; 
+        diff = zeros(3,1);
     else
         beta_ref = [
                     params(35 + 4 * (params(35)+1) + 1 : 35 + 4 * (params(35)+1) + 9).';
                     ];
         beta_ref = [beta_ref(1:6); zeros(3,1); beta(7:9)];
+        diff = s(1:12,end) - beta_ref;
     end
     
-    diff = s(1:12,end) - beta_ref;
     M = dot(diff, diff);
 
     L = dot(u(1:3,:), u(1:3,:), 1) + dot(u(4:6,:), u(4:6,:), 1);     

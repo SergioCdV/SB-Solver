@@ -1,8 +1,12 @@
 %% Project: SBOPT %%
 % Date: 01/08/22
+% Date: 26/04/2024
 
 %% 3D low-thrust transfer %% 
-% This script provides a main interface to solve 3D low-thrust transfers in MEE coordinates %
+% This script provides a main interface to solve 3D low-thrust transfers in classical MEE coordinates, no regularization %
+
+% The transfer example is provided in Peterson, Arya and Junking, 2023, Connecting the Equinoctial Elements and Rodrigues Parameters: A New Set of
+% Elements
 
 %% Set up 
 close all
@@ -12,48 +16,73 @@ clear
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
 n = 7;                                 % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+m = 200;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
 L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 5;             % Dimension of the configuration vector. Note the difference with the state vector
+StateDimension = 7;             % Dimension of the configuration vector. Note the difference with the state vector
 ControlDimension = 3;           % Dimension of the control vector
 
 % System data 
 r0 = 149597870700;              % 1 AU [m]
 mu = 1.32712440042e+20;         % Gavitational parameter of the Sun [m^3 s^−2] 
-t0 = sqrt(r0^3/mu);             % Fundamental time unit 
-Vc = r0/t0;                     % Characteristic velocity
+Tc = sqrt(r0^3/mu);             % Fundamental time unit 
+Vc = r0/Tc;                     % Characteristic velocity
 
 mu = 1;                         % Normalized parameter
-gamma = r0/t0^2;                % Characteristic acceleration
+gamma = r0/Tc^2;                % Characteristic acceleration
 
 % Earth's orbital elements
 initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)]; 
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
+
+initial_coe = [1.497251E11, 0.0173, 2.8152, 7.6438E-05, 5.2940, 0.7221];
+
 initial_coe(1) = initial_coe(1) / r0;
 S0 = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
+
+% Initial mass 
+m0 = 2800;          % Initial mass [kg]
+S0 = [S0; m0];
 
 % Mars' orbital elements 
 final_coe = [1.1*r0 1e-3 deg2rad(0) deg2rad(60) deg2rad(0)]; 
 thetaf = deg2rad(100);
 final_coe = [final_coe thetaf];
+
+final_coe = [2.83738E11, 0.3765, 2.2567, 1.2593, 2.60614, 0.634857];
+
 final_coe(1) = final_coe(1) / r0;
 SF = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
 
+% Final mass 
+m0 = 2800;          % Final mass [kg]
+SF = [SF; m0];
+
 % Spacecraft parameters 
-T = 0.5e-3;              % Maximum acceleration 
+g0 = 9.81;               % Reference gravity acceleration [m / s^2]
+Isp = 3000;              % Spacecraft specific impulse [s]
+
+Isp = Isp / Tc;          % Normalized Isp
+g0 = g0 / gamma;         % Normalized g0
+
+T = 0.45;                % Maximum thrust [N] 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T; S0(6); SF(6); 1e-3];
-S0 = S0(1:5);
-SF = SF(1:5);
+c = Isp * g0;            % Exhaust velocity
+
+% Mission clocks
+t0 = 0;                  % Initial normalized clock
+tf = 1720 * 86400 / Tc;  % Final normalized clock
+
+% Problem parameters
+problem_params = [mu; T; t0; tf; c; final_coe(end)];
 
 % Create the problem
-OptProblem = Problems.LowThrustMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
+OptProblem = SMEE_2024.LTransferMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    
@@ -67,7 +96,7 @@ time = zeros(1,iter);
 setup.resultsFlag = false; 
 for i = 1:iter
     tic 
-    [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
+    [C, dV, u, Tc, tf, tau, exitflag, output] = solver.solve(OptProblem);
     time(i) = toc;
 end
 
@@ -75,8 +104,7 @@ time = mean(time);
 
 %% Plots
 % Main plots 
-C = [C(1:5,:); tau; C(6:end,:)];
-[S] = OrbitalDynamics.equinoctial2ECI(mu, C, true);
+[S] = OrbitalDynamics.equinoctial2ECI(mu, C(1:6,:), true);
 x = S(1,:);
 y = S(2,:); 
 z = S(3,:);
