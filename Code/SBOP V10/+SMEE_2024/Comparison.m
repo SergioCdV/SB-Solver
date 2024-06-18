@@ -49,7 +49,7 @@ solver = Solver(basis, n, time_distribution, m);
 
 %% Optimization
 % Average results 
-iter = 100; 
+iter = 1000; 
 time = zeros(2,iter);                   % Convergence time
 conv = zeros(2,iter);                   % Convergence flags
 feval = zeros(2,iter);                  % Function evaluations
@@ -106,6 +106,8 @@ for i = 1:iter
     iterations(2,i) = output.iterations;
     cost(2,i) = dV; 
     ToF(2,i) = tf + C(6,end);
+
+    fprintf('Iteration: %d\n', i);
 end
 
 %% Post-processing of results
