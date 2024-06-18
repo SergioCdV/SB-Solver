@@ -42,14 +42,14 @@ ControlDimension = 3;           % Dimension of the control vector
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 9;                                 % Polynomial order in the state vector expansion
+n = 7;                                 % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Optimization
 % Average results 
-iter = 10; 
+iter = 100; 
 time = zeros(2,iter);                   % Convergence time
 conv = zeros(2,iter);                   % Convergence flags
 feval = zeros(2,iter);                  % Function evaluations
@@ -105,17 +105,17 @@ for i = 1:iter
     feval(2,i) = output.funcCount;
     iterations(2,i) = output.iterations;
     cost(2,i) = dV; 
-    ToF(2,i) = tf;
+    ToF(2,i) = tf + C(6,end);
 end
 
 %% Post-processing of results
 % Compute the different histograms
-GenHistogram(time(1,:), time(2,:), 2, 'r', 'b', 'Comp. time [s]');
+GenHistogram(time(1,:), time(2,:), 100, 'r', 'b', 'Comp. time [s]');
 GenHistogram(conv(1,:), conv(2,:), 2, 'r', 'b', 'Convergence');
-GenHistogram(feval(1,:), feval(2,:), 2, 'r', 'b', 'Func. evaluations');
-GenHistogram(iterations(1,:), iterations(2,:), 2, 'r', 'b', 'Iterations');
-GenHistogram(cost(1,:), cost(2,:), 2, 'r', 'b', '$J$');
-GenHistogram(ToF(1,:), ToF(2,:), 2, 'r', 'b', '$L_f$');
+GenHistogram(feval(1,:), feval(2,:), 100, 'r', 'b', 'Func. evaluations');
+GenHistogram(iterations(1,:), iterations(2,:), 100, 'r', 'b', 'Iterations');
+GenHistogram(cost(1,:), cost(2,:), 100, 'r', 'b', '$J$');
+GenHistogram(ToF(1,:), ToF(2,:), 100, 'r', 'b', '$L_f$');
 
 %% Plots
 % Main plots 
@@ -260,11 +260,13 @@ function GenHistogram(datos1, datos2, numBins, color1, color2, xlab)
     figure;
 
     % Crear el primer histograma
-    histogram(datos1, numBins, 'FaceColor', color1, 'FaceAlpha', 0.5, 'Normalization', 'probability');
+    idx = abs( datos1 - mean(datos1,2) ) < 3 * std(datos1, [], 2);
+    histogram(datos1(1,idx), numBins, 'FaceColor', color1, 'FaceAlpha', 0.5, 'Normalization', 'probability');
     hold on; % Mantener el primer histograma para superponer el segundo
 
     % Crear el segundo histograma
-    histogram(datos2, numBins, 'FaceColor', color2, 'FaceAlpha', 0.5, 'Normalization', 'probability');
+    idx = abs( datos2 - mean(datos2,2) ) < 3 * std(datos2, [], 2);
+    histogram(datos2(1,idx), numBins, 'FaceColor', color2, 'FaceAlpha', 0.5, 'Normalization', 'probability');
 
     % Personalizar el gráfico
     xlabel(xlab);
