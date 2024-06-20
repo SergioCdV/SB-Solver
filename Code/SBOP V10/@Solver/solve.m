@@ -113,7 +113,7 @@ function [C, cost, u, t0, tf, t, exitflag, output, P] = solve(obj, Problem)
     t = t(1,:);
     
     % Results 
-    obj.display_results(exitflag, cost, output);
+    % obj.display_results(exitflag, cost, output);
 end
 
 %% Auxiliary functions 
