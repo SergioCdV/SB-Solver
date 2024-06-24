@@ -55,6 +55,9 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
     for i = 1:size(S,2)
         B = OrbitalDynamics.MEE_matrix(mu, l(i), S(1:5,i));
         u(1,i) = ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i))^2 + ( a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i) )^2;
-        u(1,i) = sqrt( u(1,i) ) .* sign( ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i) ) / sin(l(i)) );
+
+        Delta(1,1) = ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i) ) / sin(l(i));
+        Delta(2,1) = ( a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i) ) / cos(l(i));
+        u(1,i) = sqrt( u(1,i) ) * sign( Delta(1,1) ) * ( sign(Delta(1,1)) == sign(Delta(2,1)) );
     end
 end

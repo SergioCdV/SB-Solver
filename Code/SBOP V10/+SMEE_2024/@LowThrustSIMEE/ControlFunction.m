@@ -6,6 +6,7 @@
 
 function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
     % Constants
+    eps = 1E-5;
     mu = params(1);     % Gravitational parameter
 
     % Preallocation 
@@ -34,12 +35,19 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
     % Normal component
     beta = (1 - sigma_norm).^2 + (64 * (1 + sigma_norm).^2 - 4) .* k.^2;
     u(3,:) = 4 * (1-sigma_norm.^2) .* delta .* dtheta .* sqrt( a(4,:).^2 + a(5,:).^2 + a(6,:).^2 ./ beta );
-    u(3,:) = u(3,:) .* sign( a(6,:) .* dtheta / (delta .* (-k) ./ w) );
+
+    Delta(1,:) = a(4,:) ./ ( (1 - S(4,:).^2 + S(5,:).^2 ) .* cos(l) - 2 * S(4,:) .* S(5,:) .* sin(l) );
+    Delta(2,:) = a(5,:) ./ ( (1 + S(4,:).^2 - S(5,:).^2 ) .* sin(l) - 2 * S(4,:) .* S(5,:) .* cos(l) );
+    
+    u(3,:) = u(3,:) .* sign( Delta(1,:) ) .* ( sign(Delta(1,:)) == sign(Delta(2,:)) );
 
     % Radial component
     for i = 1:size(S,2)
         B = OrbitalDynamics.SMEE_matrix(mu, l(i), S(1:5,i));
         u(1,i) = ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i))^2 + ( a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i) )^2;
-        u(1,i) = sqrt( u(1,i) ) .* sign( ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i) ) / sin(l(i)) );
+
+        Delta(1,1) = ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i) ) / sin(l(i));
+        Delta(2,1) = ( a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i) ) / cos(l(i));
+        u(1,i) = sqrt( u(1,i) ) * sign( Delta(1,1) ) * ( sign(Delta(1,1)) == sign(Delta(2,1)) );
     end
 end

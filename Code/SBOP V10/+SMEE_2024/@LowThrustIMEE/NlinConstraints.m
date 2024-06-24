@@ -15,7 +15,7 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
 
     % Inequality constraints
     c = [
-%             -s(1,:); ...                                % Sundman transformation positiveness
+%             -s(12,:); ...                               % Sundman transformation positiveness
             dot(u,u,1)-(params(2)).^2 ...               % Thrust modulation
         ];                 
 

@@ -30,7 +30,7 @@ final_mean = [2.83738E11, 0.3765, 2.2567, 1.2593, 2.60614, 0.634857];
 final_sig = [1E3, 0.005, 0.1, 0.1, 0.1, 2*pi].^2;
 
 % Spacecraft parameters 
-T = 5E-3;                       % Maximum acceleration [m/s^2] 
+T = 5E-4;                       % Maximum acceleration [m/s^2] 
 T = T/gamma;                    % Normalized acceleration
 
 % Mission clocks
@@ -40,16 +40,16 @@ L = 1;                          % Degree of the dynamics (maximum derivative ord
 ControlDimension = 3;           % Dimension of the control vector
 
 %% Numerical solver definition 
-basis = 'Chebyshev';                    % Polynomial basis to be use
-time_distribution = 'Chebyshev';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
-m = 100;                               % Number of sampling points
+basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Legendre';        % Distribution of time intervals
+n = 10;                                 % Polynomial order in the state vector expansion
+m = 200;                               % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Optimization
 % Average results 
-iter = 5; 
+iter = 2; 
 time = zeros(3,iter);                   % Convergence time
 conv = zeros(3,iter);                   % Convergence flags
 feval = zeros(3,iter);                  % Function evaluations
@@ -150,7 +150,7 @@ mu_cost = mean(cost,2);
 mu_tof = mean(ToF,2);
 
 %% Plots
-type = 'IMEE';
+type = 'SIMEE';
 
 switch type 
     case 'MEE'
@@ -221,12 +221,14 @@ plot3(x,y,z,'k','LineWidth',1);
 plot3(x(end),y(end),z(end),'*k');
 grid on;
 
+%%
+
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(Tau, sqrt(dot(U,U,1))*gamma, 'k','LineWidth',1)
-plot(Tau, U, 'LineWidth', 0.3)
-yline(T, '--k')
+plot(Tau, sqrt(dot(U,U,1)) * gamma, 'k','LineWidth',1)
+plot(Tau, U * gamma, 'LineWidth', 0.3)
+yline(T * gamma, '--k')
 xlabel('$L_f$')
 xlim([min(Tau) max(Tau)])
 ylabel('$\mathbf{a}$')
