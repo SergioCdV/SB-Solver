@@ -6,15 +6,14 @@
 
 function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     % Sundman transformation 
-    mu = params(1);                                         % Gravitational parameter
-    
-    l = t(1,:);
-    w = 1 + s(2,:) .* cos(l) + s(3,:) .* sin(l);
-    k = s(4,:) .* sin(l) - s(5,:) .* cos(l);
+    mu = params(1);                                                 % Gravitational parameter
 
-    gamma = sqrt(mu * s(1,:)) .* (w ./ s(1,:)).^2 + sqrt(s(1,:) / mu) .* k ./ w .* u(3,:);
+    l = t(1,:) + s(6,:);
+    w = 1 + s(2,:) .* cos(l) + s(3,:) .* sin(l);
+
+    gamma = sqrt(mu * s(1,:)) .* (w ./ s(1,:)).^2;
 
     % Minimum energy cost function 
     M = 0; 
     L = sqrt( dot(u,u,1) ) .* gamma;
-end 
+end

@@ -40,22 +40,22 @@ L = 1;                          % Degree of the dynamics (maximum derivative ord
 ControlDimension = 3;           % Dimension of the control vector
 
 %% Numerical solver definition 
-basis = 'Legendre';                    % Polynomial basis to be use
-time_distribution = 'Legendre';        % Distribution of time intervals
-n = 15;                                 % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+basis = 'Chebyshev';                    % Polynomial basis to be use
+time_distribution = 'Chebyshev';        % Distribution of time intervals
+n = 7;                                 % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Optimization
 % Average results 
-iter = 2; 
-time = zeros(2,iter);                   % Convergence time
-conv = zeros(2,iter);                   % Convergence flags
-feval = zeros(2,iter);                  % Function evaluations
-iterations = zeros(2,iter);             % Iterations
-cost = zeros(2,iter);                   % Cost function
-ToF = zeros(2,iter);                    % Time of Flight
+iter = 5; 
+time = zeros(3,iter);                   % Convergence time
+conv = zeros(3,iter);                   % Convergence flags
+feval = zeros(3,iter);                  % Function evaluations
+iterations = zeros(3,iter);             % Iterations
+cost = zeros(3,iter);                   % Cost function
+ToF = zeros(3,iter);                    % Time of Flight
 
 setup.resultsFlag = false; 
 
@@ -87,28 +87,42 @@ if (1)
         StateDimension = 6;                                     % Dimension of the configuration vector. Note the difference with the state vector
         S0 = [S0; 0];
         SF = [SF; 0];
-        OptProblemSMEE = SMEE_2024.LowThrustSMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
+        OptProblemIMEE = SMEE_2024.LowThrustIMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
+
+        S0(4:5,1) = S0(4:5,1) ./ ( 1 + sqrt( 1 + dot(S0(4:5,1), S0(4:5,1),1) ) );       % Initial MRP
+        SF(4:5,1) = SF(4:5,1) ./ ( 1 + sqrt( 1 + dot(SF(4:5,1), SF(4:5,1),1) ) );       % Final MRP
+        OptProblemSIMEE = SMEE_2024.LowThrustSIMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
     
-        % Optimization in classical MEEs
+        % Optimization in classical regularized MEEs
         tic 
-        [C, dV, u, Tc, tf, tau, exitflag, output] = solver.solve(OptProblemRMEE);
+        [C_mee, dV, u_mee, Tc, tf, tau_mee, exitflag, output] = solver.solve(OptProblemRMEE);
         time(1,i) = toc;
         conv(1,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
         feval(1,i) = output.funcCount;
         iterations(1,i) = output.iterations;
         cost(1,i) = dV; 
         ToF(1,i) = tf;
-    
-        % Optimization in classical SMEEs
+
+        % Optimization in classical regularized ideal MEEs
         tic 
-        [C, dV, u, Tc, tf, tau, exitflag, output] = solver.solve(OptProblemSMEE);
+        [C_imee, dV, u_imee, Tc, tf, tau_imee, exitflag, output] = solver.solve(OptProblemIMEE);
         time(2,i) = toc;
         conv(2,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
         feval(2,i) = output.funcCount;
         iterations(2,i) = output.iterations;
         cost(2,i) = dV; 
-        ToF(2,i) = tf + C(6,end);
-    
+        ToF(2,i) = tf + C_imee(6,end);
+
+        % Optimization in classical regularized stereographic ideal MEEs
+        tic 
+        [C_simee, dV, u_simee, Tc, tf, tau_simee, exitflag, output] = solver.solve(OptProblemSIMEE);
+        time(3,i) = toc;
+        conv(3,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
+        feval(3,i) = output.funcCount;
+        iterations(3,i) = output.iterations;
+        cost(3,i) = dV; 
+        ToF(3,i) = tf + C_simee(6,end);
+   
         fprintf('Iteration: %d\n', i);
     end
 
@@ -120,13 +134,13 @@ end
 
 %% Post-processing of results
 % Compute the different histograms
-GenHistogram(conv(1,:), conv(2,:), 2, 'r', 'b', 'Convergence');
+GenHistogram(conv(1,:), conv(2,:), conv(3,:), 2, 'r', 'b', 'g', 'Convergence');
 
-GenHistogram(time(1,:), time(2,:), 20, 'r', 'b', 'Comp. time [s]');
-GenHistogram(feval(1,:), feval(2,:), 20, 'r', 'b', 'Func. evaluations');
-GenHistogram(iterations(1,:), iterations(2,:), 20, 'r', 'b', 'Iterations');
-GenHistogram(cost(1,:), cost(2,:), 20, 'r', 'b', '$J$');
-GenHistogram(ToF(1,:), ToF(2,:), 20, 'r', 'b', '$l_f$');
+GenHistogram(time(1,:), time(2,:), time(3,:), 20, 'r', 'b', 'g', 'Comp. time [s]');
+GenHistogram(feval(1,:), feval(2,:), feval(3,:), 20, 'r', 'b', 'g', 'Func. evaluations');
+GenHistogram(iterations(1,:), iterations(2,:), iterations(3,:), 20, 'r', 'b', 'g', 'Iterations');
+GenHistogram(cost(1,:), cost(2,:), cost(3,:), 20, 'r', 'b', 'g', '$J$');
+GenHistogram(ToF(1,:), ToF(2,:), ToF(3,:), 20, 'r', 'b', 'g', '$l_f$');
 
 mu_conv = sum(conv,2) / size(conv,2);
 mu_time = mean(time,2);
@@ -136,8 +150,31 @@ mu_cost = mean(cost,2);
 mu_tof = mean(ToF,2);
 
 %% Plots
+type = 'IMEE';
+
+switch type 
+    case 'MEE'
+        C = C_mee;
+        U = u_mee;
+        Tau = tau_mee;
+    case 'IMEE' 
+        C = C_imee;
+        U = u_imee;
+        Tau = tau_imee + C_imee(6,:);
+    case 'SIMEE'
+        C = C_simee;
+        U = u_simee;
+        Tau = tau_simee + C_simee(6,:);
+
+        % Transformation to RP
+        norm_s = dot(C(4:5,:),C(4:5,:),1);
+        C(4:5, norm_s > 1) = -C(4:5, norm_s > 1) ./ norm_s(norm_s > 1);  
+        norm_s = dot(C(4:5,:),C(4:5,:),1);
+        C(4:5,:) = 2 * C(4:5,:) ./ (1 - dot(C(4:5,:),C(4:5,:),1));
+end
+
 % Main plots 
-[S] = OrbitalDynamics.equinoctial2ECI(mu, [C(1:5,:); C(6,:) + tau], true);
+[S] = OrbitalDynamics.equinoctial2ECI(mu, [C(1:5,:); Tau], true);
 x = S(1,:);
 y = S(2,:); 
 z = S(3,:);
@@ -179,7 +216,6 @@ yticklabels(strrep(yticklabels, '-', '$-$'));
 zticklabels(strrep(zticklabels, '-', '$-$'));
 axis('equal')
 
-    
 legend('off')
 plot3(x,y,z,'k','LineWidth',1);
 plot3(x(end),y(end),z(end),'*k');
@@ -188,85 +224,87 @@ grid on;
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau + C(6,:), sqrt(dot(u,u,1))*gamma, 'k','LineWidth',1)
-plot(tau + C(6,:), u, 'LineWidth', 0.3)
+plot(Tau, sqrt(dot(U,U,1))*gamma, 'k','LineWidth',1)
+plot(Tau, U, 'LineWidth', 0.3)
 yline(T, '--k')
 xlabel('$L_f$')
-xlim([min(tau + C(6,:)) max(tau + C(6,:))])
+xlim([min(Tau) max(Tau)])
 ylabel('$\mathbf{a}$')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')
 grid on;
 
 figure 
 hold on
-plot(tau + C(6,:), rad2deg(atan2(u(2,:),u(1,:)))); 
+plot(Tau, rad2deg(atan2(U(2,:),U(1,:)))); 
 hold off 
 grid on;
 xlabel('$L_f$')
-xlim([min(tau + C(6,:)) max(tau + C(6,:))])
+xlim([min(Tau) max(Tau)])
 ylabel('$\theta$')
 title('Thrust in-plane angle')
 
 figure 
 hold on
-plot(tau + C(6,:), rad2deg(atan2(u(3,:),sqrt(u(1,:).^2+u(2,:).^2)))); 
+plot(Tau, rad2deg(atan2(U(3,:), sqrt(U(1,:).^2+U(2,:).^2)))); 
 hold off 
 grid on;
 xlabel('$L_f$')
-xlim([min(tau + C(6,:)) max(tau + C(6,:))])
+xlim([min(Tau) max(Tau)])
 ylabel('$\phi$')
 title('Thrust out-of-plane angle')
 
 % Position coordinates
-figure_coordinates = figure;
-title('Spacecraft position coordinates in time')
-hold on
+% figure_coordinates = figure;
+% title('Spacecraft position coordinates in time')
+% hold on
 
-subplot(3,1,1)
-hold on
-plot(tau + C(6,:), xM, 'LineStyle','-.','Color','b','LineWidth',0.3)
-plot(tau + C(6,:), xE, 'LineStyle','--','Color','r','LineWidth',0.3)
-plot(tau + C(6,:), x, 'k','LineWidth',1)
-plot(tau(1) + C(6,1), x(1),'*k','DisplayName','')
-plot(tau(end) + C(6,end),x(end),'*k','DisplayName','')
-xlabel('$L_f$')
-xlim([min(tau + C(6,:)) max(tau + C(6,:))])
-ylabel('$x$ [AU]')
-grid on;
+% subplot(3,1,1)
+% hold on
+% plot(tau + C(6,:), xM, 'LineStyle','-.','Color','b','LineWidth',0.3)
+% plot(tau + C(6,:), xE, 'LineStyle','--','Color','r','LineWidth',0.3)
+% plot(tau + C(6,:), x, 'k','LineWidth',1)
+% plot(tau(1) + C(6,1), x(1),'*k','DisplayName','')
+% plot(tau(end) + C(6,end),x(end),'*k','DisplayName','')
+% xlabel('$L_f$')
+% xlim([min(tau + C(6,:)) max(tau + C(6,:))])
+% ylabel('$x$ [AU]')
+% grid on;
+% 
+% subplot(3,1,2)
+% hold on
+% plot(tau+ C(6,:), yM, '-.','LineWidth',0.3)
+% plot(tau+ C(6,:), yE, '--','LineWidth',0.3)
+% plot(tau+ C(6,:), y, 'k','LineWidth',1)
+% plot(tau(1) + C(6,1), y(1),'*k','DisplayName','')
+% plot(tau(end) + C(6,end),y(end),'*k','DisplayName','')
+% xlabel('$L_f$')
+% xlim([min(tau + C(6,:)) max(tau + C(6,:))])
+% ylabel('$y$ [AU]')
+% grid on;
+% 
+% subplot(3,1,3)
+% hold on
+% plot(tau + C(6,:), zM, '-.','LineWidth',0.3)
+% plot(tau + C(6,:), zE, '--','LineWidth',0.3)
+% plot(tau + C(6,:), z, 'k','LineWidth',1)
+% plot(tau(1) + C(6,1), z(1),'*k','DisplayName','')
+% plot(tau(end) + C(6,end),z(end),'*k','DisplayName','')
+% xlabel('$L_f$')
+% xlim([min(tau + C(6,:)) max(tau + C(6,:))])
+% ylabel('$z$ [AU]')
+% grid on;
 
-subplot(3,1,2)
-hold on
-plot(tau+ C(6,:), yM, '-.','LineWidth',0.3)
-plot(tau+ C(6,:), yE, '--','LineWidth',0.3)
-plot(tau+ C(6,:), y, 'k','LineWidth',1)
-plot(tau(1) + C(6,1), y(1),'*k','DisplayName','')
-plot(tau(end) + C(6,end),y(end),'*k','DisplayName','')
-xlabel('$L_f$')
-xlim([min(tau + C(6,:)) max(tau + C(6,:))])
-ylabel('$y$ [AU]')
-grid on;
-
-subplot(3,1,3)
-hold on
-plot(tau + C(6,:), zM, '-.','LineWidth',0.3)
-plot(tau + C(6,:), zE, '--','LineWidth',0.3)
-plot(tau + C(6,:), z, 'k','LineWidth',1)
-plot(tau(1) + C(6,1), z(1),'*k','DisplayName','')
-plot(tau(end) + C(6,end),z(end),'*k','DisplayName','')
-xlabel('$L_f$')
-xlim([min(tau + C(6,:)) max(tau + C(6,:))])
-ylabel('$z$ [AU]')
-grid on;
-
-function GenHistogram(datos1, datos2, numBins, color1, color2, xlab)
+function GenHistogram(datos1, datos2, datos3, numBins, color1, color2, color3, xlab)
     % generarHistogramaComparativo genera y muestra histogramas comparativos de dos conjuntos de datos
     %
     % Inputs:
     %   datos1   - Vector de datos para el primer histograma
     %   datos2   - Vector de datos para el segundo histograma
+    %   datos3   - Vector de datos para el tercer histograma
     %   numBins  - Número de bins (barras) para los histogramas
     %   color1   - Color de las barras del primer histograma (opcional)
     %   color2   - Color de las barras del segundo histograma (opcional)
+    %   color3   - Color de las barras del tercer histograma (opcional)
     %
     % Ejemplo de uso:
     %   generarHistogramaComparativo(randn(1000,1), randn(1000,1)*2, 20, 'r', 'b');
@@ -275,26 +313,37 @@ function GenHistogram(datos1, datos2, numBins, color1, color2, xlab)
     if nargin < 4
         color1 = 'b'; % Color por defecto para el primer histograma es azul
         color2 = 'r'; % Color por defecto para el segundo histograma es rojo
+        color3 = 'g'; % Color por defecto para el tercer histograma es verde
     elseif nargin < 5
         color2 = 'r'; % Color por defecto para el segundo histograma es rojo
     end
     
     % Outliers
-    idx = abs( datos1 - mean(datos1,2) ) < 3 * std(datos1, [], 2);
-    datos1 = datos1(1,idx);
-    idx = abs( datos2 - mean(datos2,2) ) < 3 * std(datos2, [], 2);
-    datos2 = datos2(1,idx);
+    if any( diff(datos1) )
+        idx = abs( datos1 - mean(datos1,2) ) < 3 * std(datos1, [], 2);
+        datos1 = datos1(1,idx);
+    end
+
+    if any( diff(datos2) )
+        idx = abs( datos2 - mean(datos2,2) ) < 3 * std(datos2, [], 2);
+        datos2 = datos2(1,idx);
+    end
+
+    if any( diff(datos3) )
+        idx = abs( datos3 - mean(datos3,2) ) < 3 * std(datos3, [], 2);
+        datos3 = datos3(1,idx);
+    end
 
     % Crear la figura
     figure;
     hold on; % Mantener el primer histograma para superponer el segundo
 
     % Crear el primer histograma
-    subplot(1,2,1)
+    subplot(1,3,1)
     if numBins ~= 2
         histogram(datos1, numBins, 'FaceColor', color1, 'FaceAlpha', 0.5, 'Normalization', 'probability');
     else
-        histogram(datos1(1,idx), numBins, 'BinEdges', [-0.5, 0.5, 1.5], 'FaceColor', color1, 'FaceAlpha', 0.5, 'Normalization', 'probability');
+        histogram(datos1, numBins, 'BinEdges', [-0.5, 0.5, 1.5], 'FaceColor', color1, 'FaceAlpha', 0.5, 'Normalization', 'probability');
     end
     xlabel(xlab);
     ylabel('Prob.');
@@ -302,7 +351,7 @@ function GenHistogram(datos1, datos2, numBins, color1, color2, xlab)
     title('MEE')
 
 %     Crear el segundo histograma
-    subplot(1,2,2)
+    subplot(1,3,2)
     if numBins ~= 2
         histogram(datos2, numBins, 'FaceColor', color2, 'FaceAlpha', 0.5, 'Normalization', 'probability');
     else
@@ -311,22 +360,39 @@ function GenHistogram(datos1, datos2, numBins, color1, color2, xlab)
     xlabel(xlab);
     ylabel('Prob.');
     grid on;
+    title('IMEE')
+
+%     Crear el tercer histograma
+    subplot(1,3,3)
+    if numBins ~= 2
+        histogram(datos3, numBins, 'FaceColor', color3, 'FaceAlpha', 0.5, 'Normalization', 'probability');
+    else
+        histogram(datos3, numBins, 'BinEdges', [-0.5, 0.5, 1.5], 'FaceColor', color3, 'FaceAlpha', 0.5, 'Normalization', 'probability');
+    end
+    xlabel(xlab);
+    ylabel('Prob.');
+    grid on;
     title('SIMEE')
 
     figure
-    binRange = linspace(min([datos1 datos2]), max([datos1 datos2]), numBins);
+    if numBins == 2
+        binRange = [0 1];
+    else
+        binRange = linspace(min([datos1 datos2 datos3]), max([datos1 datos2 datos3]), numBins);
+    end
     y1 = histcounts(datos1, [binRange Inf]);   
     y2 = histcounts(datos2, [binRange Inf]);
+    y3 = histcounts(datos3, [binRange Inf]);
 
     if numBins == 2
-        bar( binRange, [y1;y2]', 'histc');
+        bar( binRange, [y1;y2;y3]', 'histc');
         ylabel('N. cases');
     else
-        bar( binRange, 100 * [y1;y2]' / max( [size(datos1,2), size(datos2,2)] ), 'histc');
+        bar( binRange, 100 * [y1;y2;y3]' / max( [size(datos1,2), size(datos2,2)] ), 'histc');
         ylabel('Prob. $[\%]$');
     end
 
-    legend('MEE', 'SIMEE')
+    legend('MEE', 'IMEE', 'SIMEE')
     grid on;
     xlabel(xlab);
 

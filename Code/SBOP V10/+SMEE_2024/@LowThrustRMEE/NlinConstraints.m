@@ -9,13 +9,11 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
     mu = params(1);     % Gravitational parameter
 
     % Timing equation 
-    w = 1 + s(2,:) .* cos(t(1,:)) + s(3,:) .* sin(t(1,:));
-    k = s(4,:) .* sin(t(1,:)) - s(5,:) .* cos(t(1,:));
+    l = t(1,:);
+    w = 1 + s(2,:) .* cos(l) + s(3,:) .* sin(l);
+    k = s(4,:) .* sin(l) - s(5,:) .* cos(l);
 
     dtheta = sqrt(mu * s(1,:)) .* (w ./ s(1,:)).^2 + sqrt(s(1,:) / mu) .* k ./ w .* u(3,:);
-
-    % Dimensions 
-    u = u ./ dtheta;
 
     % Inequality constraints
     c = [
@@ -24,5 +22,5 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
         ];                 
 
     % Equalities
-    ceq = [cos(tf)-cos(params(4)) sin(tf)-sin(params(4))];
+    ceq = [cos(t(1,end))-cos(params(4)) sin(t(1,end))-sin(params(4))];
 end

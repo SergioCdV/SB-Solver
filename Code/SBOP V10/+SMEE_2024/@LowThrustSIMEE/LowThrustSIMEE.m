@@ -3,16 +3,16 @@
 % Date: 26/04/2024
 
 %% Low-thurst MEE problem %% 
-% Implementation of optimal low-thrust 3D orbital transfers in stereographic MEE coodinates %
+% Implementation of optimal low-thrust 3D orbital transfers in stereographic ideal MEE coodinates %
 
-classdef LowThrustSMEE < Problems.AbstractProblem 
+classdef LowThrustSIMEE < Problems.AbstractProblem 
     % Fundamental definition of the problem
     properties  
     end
 
     methods 
         % Constructor 
-        function [obj] = LowThrustSMEE(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+        function [obj] = LowThrustSIMEE(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
             super_arguments{1} = myInitial;
             super_arguments{2} = myFinal;
             super_arguments{3} = myDerDeg;
