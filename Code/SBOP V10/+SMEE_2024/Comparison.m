@@ -12,6 +12,8 @@
 close all
 clear
 
+rng(13)
+
 %% Problem definition 
 % System data 
 r0 = 149597870700;              % 1 AU [m]
@@ -30,7 +32,7 @@ final_mean = [2.83738E11, 0.3765, 2.2567, 1.2593, 2.60614, 0.634857];
 final_sig = [1E3, 0.005, 0.1, 0.1, 0.1, 2*pi].^2;
 
 % Spacecraft parameters 
-T = 5E-4;                       % Maximum acceleration [m/s^2] 
+T = 5E-3;                       % Maximum acceleration [m/s^2] 
 T = T/gamma;                    % Normalized acceleration
 
 % Mission clocks
@@ -40,16 +42,16 @@ L = 1;                          % Degree of the dynamics (maximum derivative ord
 ControlDimension = 3;           % Dimension of the control vector
 
 %% Numerical solver definition 
-basis = 'Legendre';                    % Polynomial basis to be use
-time_distribution = 'Legendre';        % Distribution of time intervals
-n = 10;                                 % Polynomial order in the state vector expansion
-m = 200;                               % Number of sampling points
+basis = 'Chebyshev';                    % Polynomial basis to be use
+time_distribution = 'Chebyshev';        % Distribution of time intervals
+n = 7;                                 % Polynomial order in the state vector expansion
+m = 150;                               % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Optimization
 % Average results 
-iter = 2; 
+iter = 1000; 
 time = zeros(3,iter);                   % Convergence time
 conv = zeros(3,iter);                   % Convergence flags
 feval = zeros(3,iter);                  % Function evaluations
@@ -59,39 +61,56 @@ ToF = zeros(3,iter);                    % Time of Flight
 
 setup.resultsFlag = false; 
 
-if (1)
+S0 = zeros(6,iter);
+SF = zeros(6,iter);
 
-    % Optimization of the transfers
+if (0)
+    % Generate the problems 
     for i = 1:iter
         % Random boundary conditions 
         initial_coe = mvnrnd(initial_mean, diag(initial_sig), 1);
         initial_coe(1) = initial_coe(1) / r0;
-        S0 = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
+        S0(1:6,i) = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
     
         final_coe = mvnrnd(final_mean, diag(final_sig), 1);
         final_coe(end) = 2*pi * rand;
         final_coe(1) = final_coe(1) / r0;
-        SF = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
-    
-        problem_params = [mu; T; S0(end); SF(end)];                      % Problem parameters
+        SF(1:6,i) = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
+    end
+
+    index = 1; 
+
+    % Save problems
+    save +SMEE_2024\random_problems.mat
+else
+    % Load problems 
+    load +SMEE_2024\random_problems.mat
+end
+
+% Compute the transfers
+if (1)
+    % Optimization of the transfers
+    for i = index:iter
+        % Problem parameters
+        problem_params = [mu; T; S0(end,i); SF(end,i)];                      
     
         % Regularized motion
-        S0 = S0(1:end-1);
-        SF = SF(1:end-1);
+        s0 = S0(1:end-1,i);
+        sf = SF(1:end-1,i);
     
         % Create the problems 
         StateDimension = 5;                                     % Dimension of the configuration vector. Note the difference with the state vector
     
-        OptProblemRMEE = SMEE_2024.LowThrustRMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
+        OptProblemRMEE = SMEE_2024.LowThrustRMEE(s0, sf, L, StateDimension, ControlDimension, problem_params);
     
         StateDimension = 6;                                     % Dimension of the configuration vector. Note the difference with the state vector
-        S0 = [S0; 0];
-        SF = [SF; 0];
-        OptProblemIMEE = SMEE_2024.LowThrustIMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
+        s0 = [s0; 0];
+        sf = [sf; 0];
+        OptProblemIMEE = SMEE_2024.LowThrustIMEE(S0, sf, L, StateDimension, ControlDimension, problem_params);
 
-        S0(4:5,1) = S0(4:5,1) ./ ( 1 + sqrt( 1 + dot(S0(4:5,1), S0(4:5,1),1) ) );       % Initial MRP
-        SF(4:5,1) = SF(4:5,1) ./ ( 1 + sqrt( 1 + dot(SF(4:5,1), SF(4:5,1),1) ) );       % Final MRP
-        OptProblemSIMEE = SMEE_2024.LowThrustSIMEE(S0, SF, L, StateDimension, ControlDimension, problem_params);
+        s0(4:5,1) = s0(4:5,1) ./ ( 1 + sqrt( 1 + dot(s0(4:5,1), s0(4:5,1),1) ) );       % Initial MRP
+        sf(4:5,1) = sf(4:5,1) ./ ( 1 + sqrt( 1 + dot(sf(4:5,1), sf(4:5,1),1) ) );       % Final MRP
+        OptProblemSIMEE = SMEE_2024.LowThrustSIMEE(s0, sf, L, StateDimension, ControlDimension, problem_params);
     
         % Optimization in classical regularized MEEs
         tic 
@@ -124,12 +143,12 @@ if (1)
         ToF(3,i) = tf + C_simee(6,end);
    
         fprintf('Iteration: %d\n', i);
+%         save('+SMEE_2024\random_problems.mat', 'index')
     end
 
+    save('+SMEE_2024\final_comparison.mat')
 else
-
     load('+SMEE_2024\comparison_I.mat');
-
 end
 
 %% Post-processing of results
