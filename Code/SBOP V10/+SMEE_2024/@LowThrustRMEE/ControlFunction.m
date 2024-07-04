@@ -22,7 +22,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
     dthetau = delta .* k ./ w;
     
     % Linear terms of the equations of motion
-    a = S(6:10,:);                     % Inertial acceleration field
+    a = S(6:10,:);          % Inertial acceleration field
 
     % Normal component
     eps = 1E-10;            % Convergence tolerance
@@ -56,8 +56,13 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
         B = OrbitalDynamics.MEE_matrix(mu, l(i), S(1:5,i));
         u(1,i) = ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i))^2 + ( a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i) )^2;
 
-        Delta(1,1) = ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i) ) / sin(l(i));
-        Delta(2,1) = ( a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i) ) / cos(l(i));
+        a_term = a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i); 
+        b_term = a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i);
+        u(1,i) = ( a_term )^2 + ( b_term )^2;
+
+        Delta(1,1) = a_term / sin( l(i) );
+        Delta(2,1) = b_term / cos( l(i) );
+        
         u(1,i) = sqrt( u(1,i) ) * sign( Delta(1,1) ) * ( sign(Delta(1,1)) == sign(Delta(2,1)) );
     end
 end

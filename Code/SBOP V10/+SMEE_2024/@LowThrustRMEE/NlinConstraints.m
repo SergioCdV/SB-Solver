@@ -17,10 +17,12 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
 
     % Inequality constraints
     c = [
-            -dtheta ...                    % The time law is monotonically increasing
-            dot(u,u,1)-params(2).^2 ...    % Thrust modulation
+            -dtheta ...                     % The time law is monotonically increasing
+            dot(u,u,1) - params(2)^2 ...    % Thrust modulation
         ];                 
 
     % Equalities
-    ceq = [cos(t(1,end))-cos(params(4)) sin(t(1,end))-sin(params(4))];
+%     ceq = [cos(t(1,end))-cos(params(4)) sin(t(1,end))-sin(params(4))];
+%     ceq = [dot(t(2,:), 1./dtheta) - params(6)];
+    ceq = [];
 end

@@ -14,11 +14,17 @@ function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)
 %     dtheta = sqrt(mu * s(1,:)) .* (w ./ s(1,:)).^2; 
 
     % Inequality constraints
+    u_square = dot(u,u,1);
     c = [
-%             -s(12,:); ...                               % Sundman transformation positiveness
-            dot(u,u,1)-(params(2)).^2 ...               % Thrust modulation
-        ];                 
+               u_square - params(2)^2 ...
+%             -dtheta ...
+%             +u_square - (1.01 * 1) ...               % Thrust modulation
+%             -u_square + (0.99 * 1) ...               % Thrust modulation
+%             +dot(t(2,:), 1 ./ dtheta) - 1.001 * params(6) ...
+%             -dot(t(2,:), 1 ./ dtheta) + 0.999 * params(6) ...
+        ];
 
     % Equalities
-    ceq = [cos(t(1,end) + beta)-cos(params(4)) sin(t(1,end) + beta)-sin(params(4))];
+%     ceq = [cos(t(1,end) + beta)-cos(params(4)) sin(t(1,end) + beta)-sin(params(4))];
+    ceq = [];
 end

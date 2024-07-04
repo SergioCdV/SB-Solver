@@ -1,6 +1,6 @@
 %% Project: SBOPT %%
 % Date: 01/08/22
-% Date: 15/05/2024
+% Date: 29/06/2024
 
 %% Comparison of classical MEE against ideal MEE %% 
 % This script provides a comparison in terms of performance between classical Modified Equinoctial Elements and Ideal Stereographic ones %
@@ -16,85 +16,64 @@ rng(13)
 
 %% Problem definition 
 % System data 
-r0 = 149597870700;              % 1 AU [m]
-mu = 1.32712440042e+20;         % Gavitational parameter of the Sun [m^3 s^−2] 
-Tc = sqrt(r0^3/mu);             % Fundamental time unit 
-Vc = r0/Tc;                     % Characteristic velocity
-gamma = r0/Tc^2;                % Characteristic acceleration
 mu = 1;                         % Normalized parameter
 
 % Earth's orbital elements
-initial_mean = [1.497251E11, 0.0173, 2.8152, 7.6438E-05, 5.2940, 0.7221];
-initial_sig = [1E3, 0.005, 0.1, 5E-6, 0.1, 0].^2;
+initial_mean = [1, 0, 0, 0, 0, 0];
 
 % 138925(2001 AU43) orbital elements 
-final_mean = [2.83738E11, 0.3765, 2.2567, 1 * 1.2593, 2.60614, 0.634857];
-final_sig = [1E3, 0.005, 0.1, 0.1, 0.1, 2*pi].^2;
+final_mean = [1.1, 0, 0, 0, 0, 0];
 
 % Spacecraft parameters 
-T = 5E-4;                       % Maximum acceleration [m/s^2] 
-T = T/gamma;                    % Normalized acceleration
+T = 0.01;                       % Normalized acceleration
 
 % Mission clocks
 t0 = 0;                         % Initial normalized clock
+tf = 50;                        % Final normalized clock
 
 L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-ControlDimension = 3;           % Dimension of the control vector
+ControlDimension = 2;           % Dimension of the control vector
 
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
-m = 250;                               % Number of sampling points
+n = 7;                                  % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Optimization
 setup.resultsFlag = false; 
 
-if (1)
-    % Average results 
-    iter = 5; 
-    time = zeros(3,iter);                   % Convergence time
-    conv = zeros(3,iter);                   % Convergence flags
-    feval = zeros(3,iter);                  % Function evaluations
-    iterations = zeros(3,iter);             % Iterations
-    cost = zeros(3,iter);                   % Cost function
-    ToF = zeros(3,iter);                    % Time of Flight
-    false_positive = zeros(3,iter);         % False positive flag
-    
-    S0 = zeros(6,iter);
-    SF = zeros(6,iter);
+% Average results 
+iter = 1;                               % Number of revolutions 
+time = zeros(3,iter);                   % Convergence time
+conv = zeros(3,iter);                   % Convergence flags
+feval = zeros(3,iter);                  % Function evaluations
+iterations = zeros(3,iter);             % Iterations
+cost = zeros(3,iter);                   % Cost function
+ToF = zeros(3,iter);                    % Time of Flight
+false_positive = zeros(3,iter);         % False positive flag
 
-    % Generate the problems 
-    for i = 1:iter
-        % Random boundary conditions 
-        initial_coe = mvnrnd(initial_mean, diag(initial_sig), 1);
-        initial_coe(1) = initial_coe(1) / r0;
-        S0(1:6,i) = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
-    
-        final_coe = mvnrnd(final_mean, diag(final_sig), 1);
-        final_coe(end) = 2*pi * rand;
-        final_coe(1) = final_coe(1) / r0;
-        SF(1:6,i) = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
-    end
+S0 = zeros(6,iter);
+SF = zeros(6,iter);
 
-    index = 1; 
+% Generate the problems 
+for i = 1:iter
+    % Random boundary conditions 
+    initial_coe = initial_mean;
+    S0(1:6,i) = OrbitalDynamics.coe2equinoctial(initial_coe, true).';       % Initial MEEs
 
-    % Save problems
-    save +SMEE_2024\random_problems.mat
-else
-    % Load problems 
-    load +SMEE_2024\random_problems_II.mat
-    load +SMEE_2024\final_comparison_II.mat
-end
+    final_coe = final_mean;
+    SF(1:6,i) = OrbitalDynamics.coe2equinoctial(final_coe, true).';         % Final MEEs
+end 
 
 % Compute the transfers
 if (1)
     % Optimization of the transfers
-    for i = index:iter
+    for i = 1:iter
         % Problem parameters
-        problem_params = [mu; T; S0(end,i); SF(end,i); 5];                      
+        problem_params = [mu; T; S0(end,i); SF(end,i); 3; tf-t0];                      
     
         % Regularized motion
         s0 = S0(1:end-1,i);
@@ -112,32 +91,32 @@ if (1)
 
         s0(4:5,1) = s0(4:5,1) ./ ( 1 + sqrt( 1 + dot(s0(4:5,1), s0(4:5,1),1) ) );       % Initial MRP
         sf(4:5,1) = sf(4:5,1) ./ ( 1 + sqrt( 1 + dot(sf(4:5,1), sf(4:5,1),1) ) );       % Final MRP
+
         OptProblemSIMEE = SMEE_2024.LowThrustSIMEE(s0, sf, L, StateDimension, ControlDimension, problem_params);
     
         % Optimization in classical regularized MEEs
-        tic 
-        [C_mee, dV, u_mee, Tc, tf, tau_mee, exitflag, output] = solver.solve(OptProblemRMEE);
-            
-        % Additional check 
-        w = 1 + C_mee(2,:) .* cos(tau_mee) + C_mee(3,:) .* sin(tau_mee); 
-        r = C_mee(1,:) ./ w;
-        false_positive(1,i) = ( max(r) > 10 );
-
-        % Results
-        time(1,i) = toc;
-        conv(1,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
-        feval(1,i) = output.funcCount;
-        iterations(1,i) = output.iterations;
-        cost(1,i) = dV; 
-        ToF(1,i) = tau_mee(1,end);
+%         tic 
+%         [C_mee, dV, u_mee, Tc, tf, tau_mee, exitflag, output] = solver.solve(OptProblemRMEE);
+%             
+%         % Additional check 
+%         w = 1 + C_mee(2,:) .* cos(tau_mee) + C_mee(3,:) .* sin(tau_mee); 
+%         r = C_mee(1,:) ./ w;
+%         false_positive(1,i) = ( max(r) > 10 );
+% 
+%         % Results
+%         time(1,i) = toc;
+%         conv(1,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
+%         feval(1,i) = output.funcCount;
+%         iterations(1,i) = output.iterations;
+%         cost(1,i) = dV; 
+%         ToF(1,i) = tf;
 
         % Optimization in classical regularized ideal MEEs
         tic 
         [C_imee, dV, u_imee, Tc, tf, tau_imee, exitflag, output] = solver.solve(OptProblemIMEE);
         
         % Additional check 
-        l = tau_imee + C_imee(6,:);
-        w = 1 + C_imee(2,:) .* cos( l ) + C_imee(3,:) .* sin( l ); 
+        w = 1 + C_imee(2,:) .* cos( tau_imee + C_imee(6,:) ) + C_imee(3,:) .* sin( tau_imee + C_imee(6,:) ); 
         r = C_imee(1,:) ./ w;
         false_positive(2,i) = ( max(r) > 10 );
 
@@ -147,44 +126,33 @@ if (1)
         feval(2,i) = output.funcCount;
         iterations(2,i) = output.iterations;
         cost(2,i) = dV; 
-        ToF(2,i) = tau_imee(1,end) + C_imee(6,end);
+        ToF(2,i) = tf + C_imee(6,end);
 
         % Optimization in classical regularized stereographic ideal MEEs
-        tic 
-        [C_simee, dV, u_simee, Tc, tf, tau_simee, exitflag, output] = solver.solve(OptProblemSIMEE);
-                
-        % Additional check 
-        l = tau_simee + C_simee(6,:);
-        w = 1 + C_simee(2,:) .* cos( l ) + C_simee(3,:) .* sin( l ); 
-        r = C_simee(1,:) ./ w;
-        false_positive(3,i) = ( max(r) > 10 );
-
-        % Results
-        time(3,i) = toc;
-        conv(3,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
-        feval(3,i) = output.funcCount;
-        iterations(3,i) = output.iterations;
-        cost(3,i) = dV; 
-        ToF(3,i) = tau_simee(1,end) + C_simee(6,end);
+%         tic 
+%         [C_simee, dV, u_simee, Tc, tf, tau_simee, exitflag, output] = solver.solve(OptProblemSIMEE);
+%                 
+%         % Additional check 
+%         w = 1 + C_simee(2,:) .* cos( tau_simee + C_simee(6,:) ) + C_simee(3,:) .* sin( tau_simee + C_simee(6,:) ); 
+%         r = C_simee(1,:) ./ w;
+%         false_positive(3,i) = ( max(r) > 10 );
+% 
+%         % Results
+%         time(3,i) = toc;
+%         conv(3,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
+%         feval(3,i) = output.funcCount;
+%         iterations(3,i) = output.iterations;
+%         cost(3,i) = dV; 
+%         ToF(3,i) = tf + C_simee(6,end);
    
         fprintf('Iteration: %d\n', i);
     end
 
-    % save('+SMEE_2024\final_comparison_II.mat')
+    % save('+SMEE_2024\rev_comparison.mat')
 end
 
 %% Post-processing of results
-% Compute the different histograms
-GenHistogram(conv(1,:), conv(2,:), conv(3,:), 2, 'r', 'b', 'g', 'Convergence');
-
-GenHistogram(false_positive(1,:) & conv(1,:), false_positive(2,:) & conv(2,:), false_positive(3,:) & conv(3,:), 2, 'r', 'b', 'g', 'False positive');
-
-GenHistogram(time(1,:), time(2,:), time(3,:), 20, 'r', 'b', 'g', 'Comp. time [s]');
-GenHistogram(feval(1,:), feval(2,:), feval(3,:), 20, 'r', 'b', 'g', 'Func. evaluations');
-GenHistogram(iterations(1,:), iterations(2,:), iterations(3,:), 20, 'r', 'b', 'g', 'Iterations');
-GenHistogram(cost(1,:), cost(2,:), cost(3,:), 20, 'r', 'b', 'g', '$J$');
-GenHistogram(ToF(1,:), ToF(2,:), ToF(3,:), 20, 'r', 'b', 'g', '$l_f$');
-
+% Mean values
 mu_conv = sum(conv,2) / size(conv,2);
 mu_time = mean(time,2);
 mu_feval = mean(feval,2);
@@ -192,8 +160,19 @@ mu_iter = mean(iterations,2);
 mu_cost = mean(cost,2);
 mu_tof = mean(ToF,2);
 
+% Compute the different histograms
+% GenHistogram(conv(1,:), conv(2,:), conv(3,:), 2, 'r', 'b', 'g', 'Convergence');
+% 
+% GenHistogram(false_positive(1,:) & conv(1,:), ~false_positive(2,:) & conv(2,:), false_positive(3,:) & conv(3,:), 2, 'r', 'b', 'g', 'False positive');
+% 
+% GenHistogram(time(1,:), time(2,:), time(3,:), 20, 'r', 'b', 'g', 'Comp. time [s]');
+% GenHistogram(feval(1,:), feval(2,:), feval(3,:), 20, 'r', 'b', 'g', 'Func. evaluations');
+% GenHistogram(iterations(1,:), iterations(2,:), iterations(3,:), 20, 'r', 'b', 'g', 'Iterations');
+% GenHistogram(cost(1,:), cost(2,:), cost(3,:), 20, 'r', 'b', 'g', '$J$');
+% GenHistogram(ToF(1,:), ToF(2,:), ToF(3,:), 20, 'r', 'b', 'g', '$l_f$');
+
 %% Plots
-type = 'SIMEE';
+type = 'IMEE';
 
 switch type 
     case 'MEE'
@@ -234,6 +213,7 @@ yE = s(2,:);
 zE = s(3,:);
     
 % Mars's orbit
+final_coe = OrbitalDynamics.coe2equinoctial( [C(1:5,end); Tau(end)], false);
 for i = 1:length(thetaE)
     s(:,i) = OrbitalDynamics.coe2state(mu, [final_coe(1:end-1) thetaE(i)]);
 end
@@ -268,12 +248,12 @@ grid on;
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(Tau, sqrt(dot(U,U,1)) * gamma, 'k','LineWidth',1)
-plot(Tau, U * gamma, 'LineWidth', 0.3)
-yline(T * gamma, '--k')
+plot(Tau, sqrt(dot(U,U,1)), 'k','LineWidth',1)
+plot(Tau, U, 'LineWidth', 0.3)
+yline(T, '--k')
 xlabel('$L_f$')
 xlim([min(Tau) max(Tau)])
-ylabel('$\mathbf{u} [\textrm{m}/\textrm{s}^2]$')
+ylabel('$\mathbf{u}$')
 legend('$u_{max}$','$u_r$','$u_t$','$u_n$')
 grid on;
 
@@ -380,66 +360,18 @@ function GenHistogram(datos1, datos2, datos3, numBins, color1, color2, color3, x
 
     % Crear la figura
     figure;
-    hold on; % Mantener el primer histograma para superponer el segundo
+    hold on; 
 
-    % Crear el primer histograma
-    subplot(1,3,1)
-    if numBins ~= 2
-        histogram(datos1, numBins, 'FaceColor', color1, 'FaceAlpha', 0.5, 'Normalization', 'probability');
-    else
-        histogram(datos1, numBins, 'BinEdges', [-0.5, 0.5, 1.5], 'FaceColor', color1, 'FaceAlpha', 0.5, 'Normalization', 'probability');
-    end
-    xlabel(xlab);
-    ylabel('Prob.');
-    grid on;
-    title('MEE')
+    plot(1:size(datos1,2), datos1, 'Color', color1, 'Marker', 'o')
+    plot(1:size(datos2,2), datos2, 'Color', color2, 'Marker', 'square')
+    plot(1:size(datos3,2), datos3, 'Color', color3, 'Marker', '^')
 
-%     Crear el segundo histograma
-    subplot(1,3,2)
-    if numBins ~= 2
-        histogram(datos2, numBins, 'FaceColor', color2, 'FaceAlpha', 0.5, 'Normalization', 'probability');
-    else
-        histogram(datos2, numBins, 'BinEdges', [-0.5, 0.5, 1.5], 'FaceColor', color2, 'FaceAlpha', 0.5, 'Normalization', 'probability');
-    end
-    xlabel(xlab);
-    ylabel('Prob.');
-    grid on;
-    title('IMEE')
-
-%     Crear el tercer histograma
-    subplot(1,3,3)
-    if numBins ~= 2
-        histogram(datos3, numBins, 'FaceColor', color3, 'FaceAlpha', 0.5, 'Normalization', 'probability');
-    else
-        histogram(datos3, numBins, 'BinEdges', [-0.5, 0.5, 1.5], 'FaceColor', color3, 'FaceAlpha', 0.5, 'Normalization', 'probability');
-    end
-    xlabel(xlab);
-    ylabel('Prob.');
-    grid on;
-    title('SIMEE')
-
-    figure
-    if numBins == 2
-        binRange = [0 1];
-    else
-        binRange = linspace(min([datos1 datos2 datos3]), max([datos1 datos2 datos3]), numBins);
-    end
-    y1 = histcounts(datos1, [binRange Inf]);   
-    y2 = histcounts(datos2, [binRange Inf]);
-    y3 = histcounts(datos3, [binRange Inf]);
-
-    if numBins == 2
-        bar( binRange, [y1;y2;y3]', 'histc');
-        ylabel('N. cases');
-    else
-        bar( binRange, 100 * [y1;y2;y3]' / max( [size(datos1,2), size(datos2,2)] ), 'histc');
-        ylabel('Prob. $[\%]$');
-    end
-
+    ylabel(xlab);
+    xlabel('$N$');
     legend('MEE', 'IMEE', 'SIMEE')
     grid on;
-    xlabel(xlab);
 
     % Personalizar el gráfico
     hold off;
 end
+

@@ -7,7 +7,7 @@
 function [beta, t0, tf] = InitialGuess(obj, params, initial, final)    
     % New initial TOF (anomaly)
     t0 = params(3);
-    tf = params(4) + 10 * pi;
+    tf = params(4) + 2 * params(5) * pi;
     
     beta = [];
 end
