@@ -5,8 +5,7 @@
 %% Comparison of classical MEE against ideal MEE %% 
 % This script provides a comparison in terms of performance between classical Modified Equinoctial Elements and Ideal Stereographic ones %
 
-% The transfer example is provided in Peterson, Arya and Junking, 2023, Connecting the Equinoctial Elements and Rodrigues Parameters: A New Set of
-% Elements
+% The transfer example is given by a open-revolution planar transfer
 
 %% Set up 
 close all
@@ -51,7 +50,7 @@ solver = Solver(basis, n, time_distribution, m);
 setup.resultsFlag = false; 
 
 % Average results 
-iter = 25;                               % Number of revolutions 
+iter = 1;                               % Number of revolutions 
 time = zeros(3,iter);                   % Convergence time
 conv = zeros(3,iter);                   % Convergence flags
 feval = zeros(3,iter);                  % Function evaluations
@@ -154,7 +153,9 @@ if (1)
         fprintf('Iteration: %d\n', i);
     end
 
-    % save('+SMEE_2024\rev_comparison.mat')
+    % save('+SMEE_2024\planar_transfer.mat')
+else
+    load('+SMEE_2024\planar_transfer.mat')
 end
 
 %% Post-processing of results
@@ -178,7 +179,7 @@ mu_tof = mean(ToF,2);
 % GenHistogram(ToF(1,:), ToF(2,:), ToF(3,:), 20, 'r', 'b', 'g', '$l_f$');
 
 %% Plots
-type = 'MEE';
+type = 'SIMEE';
 
 switch type 
     case 'MEE'

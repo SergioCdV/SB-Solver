@@ -27,7 +27,7 @@ mu = 1;                         % Normalized parameter
 initial_mean = [1.497251E11, 0.0173, 2.8152, 7.6438E-05, 5.2940, 0.7221];
 
 % 138925(2001 AU43) orbital elements 
-final_mean = [2.83738E11, 0.3765, 2.2567, 1 * 1.2593, 2.60614, 0.634857];
+final_mean = [2.83738E11, 0.3765, 2.2567, 1.2593, 2.60614, 0.634857];
 
 % Spacecraft parameters 
 T = 5E-4;                       % Maximum acceleration [m/s^2] 
@@ -40,10 +40,10 @@ L = 1;                          % Degree of the dynamics (maximum derivative ord
 ControlDimension = 3;           % Dimension of the control vector
 
 %% Numerical solver definition 
-basis = 'Chebyshev';                    % Polynomial basis to be use
-time_distribution = 'Chebyshev';        % Distribution of time intervals
-n = 7;                                 % Polynomial order in the state vector expansion
-m = 500;                               % Number of sampling points
+basis = 'Legendre';                    % Polynomial basis to be use
+time_distribution = 'Legendre';        % Distribution of time intervals
+n = 10;                                 % Polynomial order in the state vector expansion
+m = 100;                               % Number of sampling points
 
 solver = Solver(basis, n, time_distribution, m);
 
@@ -51,7 +51,7 @@ solver = Solver(basis, n, time_distribution, m);
 setup.resultsFlag = false; 
 
 % Average results 
-iter = 10;                              % Number of revolutions 
+iter = 1;                              % Number of revolutions 
 time = zeros(3,iter);                   % Convergence time
 conv = zeros(3,iter);                   % Convergence flags
 feval = zeros(3,iter);                  % Function evaluations
@@ -82,7 +82,7 @@ if (1)
     % Optimization of the transfers
     for i = index:iter
         % Problem parameters
-        problem_params = [mu; T; S0(end,i); SF(end,i); i];                      
+        problem_params = [mu; T; S0(end,i); SF(end,i); 1 + i];                      
     
         % Regularized motion
         s0 = S0(1:end-1,i);
@@ -96,7 +96,7 @@ if (1)
         StateDimension = 6;                                     % Dimension of the configuration vector. Note the difference with the state vector
         s0 = [s0; 0];
         sf = [sf; 0];
-        OptProblemIMEE = SMEE_2024.LowThrustIMEE(S0, sf, L, StateDimension, ControlDimension, problem_params);
+        OptProblemIMEE = SMEE_2024.LowThrustIMEE(s0, sf, L, StateDimension, ControlDimension, problem_params);
 
         s0(4:5,1) = s0(4:5,1) ./ ( 1 + sqrt( 1 + dot(s0(4:5,1), s0(4:5,1),1) ) );       % Initial MRP
         sf(4:5,1) = sf(4:5,1) ./ ( 1 + sqrt( 1 + dot(sf(4:5,1), sf(4:5,1),1) ) );       % Final MRP
@@ -107,7 +107,8 @@ if (1)
         [C_mee, dV, u_mee, Tc, tf, tau_mee, exitflag, output] = solver.solve(OptProblemRMEE);
             
         % Additional check 
-        w = 1 + C_mee(2,:) .* cos(tau_mee) + C_mee(3,:) .* sin(tau_mee); 
+        l = tau_mee;
+        w = 1 + C_mee(2,:) .* cos(l) + C_mee(3,:) .* sin(l); 
         r = C_mee(1,:) ./ w;
         false_positive(1,i) = ( max(r) > 10 );
 
@@ -117,7 +118,7 @@ if (1)
         feval(1,i) = output.funcCount;
         iterations(1,i) = output.iterations;
         cost(1,i) = dV; 
-        ToF(1,i) = tf;
+        ToF(1,i) = l(end);
 
         % Optimization in classical regularized ideal MEEs
         tic 
@@ -138,22 +139,22 @@ if (1)
         ToF(2,i) = tau_imee(1,end) + C_imee(6,end);
 
         % Optimization in classical regularized stereographic ideal MEEs
-        tic 
-        [C_simee, dV, u_simee, Tc, tf, tau_simee, exitflag, output] = solver.solve(OptProblemSIMEE);
-                
-        % Additional check 
-        l = tau_simee + C_simee(6,:);
-        w = 1 + C_simee(2,:) .* cos( l ) + C_simee(3,:) .* sin( l ); 
-        r = C_simee(1,:) ./ w;
-        false_positive(3,i) = ( max(r) > 10 );
-
-        % Results
-        time(3,i) = toc;
-        conv(3,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
-        feval(3,i) = output.funcCount;
-        iterations(3,i) = output.iterations;
-        cost(3,i) = dV; 
-        ToF(3,i) = tau_simee(1,end) + C_simee(6,end);
+%         tic 
+%         [C_simee, dV, u_simee, Tc, tf, tau_simee, exitflag, output] = solver.solve(OptProblemSIMEE);
+%                 
+%         % Additional check 
+%         l = tau_simee + C_simee(6,:);
+%         w = 1 + C_simee(2,:) .* cos( l ) + C_simee(3,:) .* sin( l ); 
+%         r = C_simee(1,:) ./ w;
+%         false_positive(3,i) = ( max(r) > 10 );
+% 
+%         % Results
+%         time(3,i) = toc;
+%         conv(3,i) = 1 * (exitflag > 0) + 0 * (exitflag <= 0);
+%         feval(3,i) = output.funcCount;
+%         iterations(3,i) = output.iterations;
+%         cost(3,i) = dV; 
+%         ToF(3,i) = tau_simee(1,end) + C_simee(6,end);
    
         fprintf('Iteration: %d\n', i);
     end
@@ -171,18 +172,18 @@ mu_cost = mean(cost,2);
 mu_tof = mean(ToF,2);
 
 % Compute the different histograms
-GenHistogram(conv(1,:), conv(2,:), conv(3,:), 2, 'r', 'b', 'g', 'Convergence');
-
-GenHistogram(false_positive(1,:) & conv(1,:), ~false_positive(2,:) & conv(2,:), false_positive(3,:) & conv(3,:), 2, 'r', 'b', 'g', 'False positive');
-
-GenHistogram(time(1,:), time(2,:), time(3,:), 20, 'r', 'b', 'g', 'Comp. time [s]');
-GenHistogram(feval(1,:), feval(2,:), feval(3,:), 20, 'r', 'b', 'g', 'Func. evaluations');
-GenHistogram(iterations(1,:), iterations(2,:), iterations(3,:), 20, 'r', 'b', 'g', 'Iterations');
-GenHistogram(cost(1,:), cost(2,:), cost(3,:), 20, 'r', 'b', 'g', '$J$');
-GenHistogram(ToF(1,:), ToF(2,:), ToF(3,:), 20, 'r', 'b', 'g', '$l_f$');
+% GenHistogram(conv(1,:), conv(2,:), conv(3,:), 2, 'r', 'b', 'g', 'Convergence');
+% 
+% GenHistogram(false_positive(1,:) & conv(1,:), false_positive(2,:) & conv(2,:), false_positive(3,:) & conv(3,:), 2, 'r', 'b', 'g', 'False positive');
+% 
+% GenHistogram(time(1,:), time(2,:), time(3,:), 20, 'r', 'b', 'g', 'Comp. time [s]');
+% GenHistogram(feval(1,:), feval(2,:), feval(3,:), 20, 'r', 'b', 'g', 'Func. evaluations');
+% GenHistogram(iterations(1,:), iterations(2,:), iterations(3,:), 20, 'r', 'b', 'g', 'Iterations');
+% GenHistogram(cost(1,:), cost(2,:), cost(3,:), 20, 'r', 'b', 'g', '$J$');
+% GenHistogram(ToF(1,:), ToF(2,:), ToF(3,:), 20, 'r', 'b', 'g', '$l_f$');
 
 %% Plots
-type = 'SIMEE';
+type = 'IMEE';
 
 switch type 
     case 'MEE'
@@ -202,7 +203,7 @@ switch type
         norm_s = dot(C(4:5,:),C(4:5,:),1);
         C(4:5, norm_s > 1) = -C(4:5, norm_s > 1) ./ norm_s(norm_s > 1);  
         norm_s = dot(C(4:5,:),C(4:5,:),1);
-        C(4:5,:) = 2 * C(4:5,:) ./ (1 - dot(C(4:5,:),C(4:5,:),1));
+        C(4:5,:) = 2 * C(4:5,:) ./ (1 - norm_s);
 end
 
 % Main plots 
@@ -234,9 +235,9 @@ zM = s(3,:);
 figure_orbits = figure;
 view(3)
 hold on
-xlabel('$x$ [AU]')
-ylabel('$y$ [AU]')
-zlabel('$z$ [AU]')
+xlabel('$x$ [-]')
+ylabel('$y$ [-]')
+zlabel('$z$ [-]')
 plot3(xE,yE,zE,'LineStyle','--','Color','r','LineWidth',1);   % Earth's orbit
 plot3(xM,yM,zM,'LineStyle','-.','Color','b','LineWidth',1);   % Mars' orbit
 plot3(x,y,z,'k','LineWidth',0.3);
@@ -249,7 +250,7 @@ grid on;
 xticklabels(strrep(xticklabels, '-', '$-$'));
 yticklabels(strrep(yticklabels, '-', '$-$'));
 zticklabels(strrep(zticklabels, '-', '$-$'));
-axis('equal')
+% axis('equal')
 grid on;
 
 %%
@@ -260,10 +261,10 @@ hold on
 plot(Tau, sqrt(dot(U,U,1)) * gamma, 'k','LineWidth',1)
 plot(Tau, U * gamma, 'LineWidth', 0.3)
 yline(T * gamma, '--k')
-xlabel('$L_f$')
+xlabel('$l$')
 xlim([min(Tau) max(Tau)])
 ylabel('$\mathbf{u} [\textrm{m}/\textrm{s}^2]$')
-legend('$u_{max}$','$u_r$','$u_t$','$u_n$')
+legend('$\|\mathbf{u}\|$', '$u_r$','$u_t$','$u_n$', '$u_{max}$')
 grid on;
 
 figure 
@@ -271,7 +272,7 @@ hold on
 plot(Tau, rad2deg(atan2(U(2,:),U(1,:)))); 
 hold off 
 grid on;
-xlabel('$L_f$')
+xlabel('$l$')
 xlim([min(Tau) max(Tau)])
 ylabel('$\theta$')
 title('Thrust in-plane angle')
@@ -281,7 +282,7 @@ hold on
 plot(Tau, rad2deg(atan2(U(3,:), sqrt(U(1,:).^2+U(2,:).^2)))); 
 hold off 
 grid on;
-xlabel('$L_f$')
+xlabel('$l$')
 xlim([min(Tau) max(Tau)])
 ylabel('$\phi$')
 title('Thrust out-of-plane angle')

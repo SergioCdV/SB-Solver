@@ -24,4 +24,5 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
     Aeq = zeros(1,Dim);
     Aeq(1,end-size(beta,1)-1) = 1;               % The initial time will be L_0
     beq = zeros(1,1);
+    beq(1) = params(4);
 end

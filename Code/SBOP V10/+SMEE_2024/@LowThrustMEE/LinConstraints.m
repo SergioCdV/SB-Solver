@@ -22,7 +22,10 @@ function [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P)
 
     % Linear constraints
     Aeq = zeros(1,Dim);
-    Aeq(1,end-size(beta,1)-1) = 1;               % The initial time will be L_0
+    Aeq(1,end-size(beta,1)-1) = 1;               % The initial time will be t_0
+    Aeq(2,end-size(beta,1)-1) = -1;              % The time difference is fixed
+    Aeq(2,end-size(beta,1)) = 1;                 % The time difference is fixed
     beq = zeros(1,1);
     beq(1) = params(3);
+    beq(2) = params(6);
 end

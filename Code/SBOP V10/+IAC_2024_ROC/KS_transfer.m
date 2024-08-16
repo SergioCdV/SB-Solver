@@ -1,8 +1,8 @@
 %% Project: SBOPT %%
 % Date: 01/08/22
 
-%% 3D low-thrust transfer %% 
-% This script provides a main interface to solve 3D low-thrust transfers in DROMO %
+%% KS low-thrust transfer %% 
+% This script provides a main interface to solve 3D low-thrust transfers in KS coordinates %
 
 %% Set up 
 close all
@@ -11,15 +11,15 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 10;                                 % Polynomial order in the state vector expansion
-m = 200;                                % Number of sampling points
-
+n = 10;                                  % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
+ 
 solver = Solver(basis, n, time_distribution, m);
 
 %% Problem definition 
-L = 1;                          % Degree of the dynamics (maximum derivative order of the ODE system)
-StateDimension = 6;             % Dimension of the configuration vector. Note the difference with the state vector
-ControlDimension = 3;           % Dimension of the control vector
+L = 2;                          % Degree of the dynamics (maximum derivative order of the ODE system)
+StateDimension = 4;             % Dimension of the configuration vector. Note the difference with the state vector
+ControlDimension = 4;           % Dimension of the control vector
 
 % System data 
 r0 = 149597870700;              % 1 AU [m]
@@ -30,47 +30,46 @@ Vc = r0/t0;                     % Characteristic velocity
 mu = 1;                         % Normalized parameter
 gamma = r0/t0^2;                % Characteristic acceleration
 
-% Earth's orbital elements
-initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)]; 
+% Boundary conditions
+initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)];               % Earth's orbital elements
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 initial_coe(1) = initial_coe(1) / r0;
-S0 = OrbitalDynamics.coe2dromo(mu, initial_coe);                  % Initial DROMO
+S0 = coe2state(mu, initial_coe);
+E0 = [-mu/(2 * initial_coe(1)); 0];
 
-% Mars' orbital elements 
-final_coe = [2*r0 1e-3 deg2rad(10) deg2rad(10) deg2rad(0)]; 
-thetaf = deg2rad(100);
-final_coe = [final_coe thetaf];
+% S0 = cylindrical2cartesian(R, false);
+final_coe = [2.05*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)];   % Mars' orbital elements 
+thetaf = deg2rad(120);
+final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
-SF = OrbitalDynamics.coe2dromo(mu, final_coe);                    % Final DROMO
+SF = coe2state(mu, final_coe);
+EF = [-mu/(2 * final_coe(1)); 0];
 
 % Spacecraft parameters 
 T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T; final_coe(2); S0(8); OrbitalDynamics.kepler(final_coe)];
-S0 = S0(1:7);
-SF = SF(1:7);
-
-S0 = [S0(1:3); QuaternionAlgebra.MPR2Quat(1, 1, S0(4:7), false)];
-SF = [SF(1:3); QuaternionAlgebra.MPR2Quat(1, 1, SF(4:7), false)];
-
-if (norm(S0(4:6)) >= 1)
-    S0(4:6) = - S0(4:6) / dot(S0(4:6), S0(4:6));
-end
-
-if (norm(SF(4:6)) >= 1)
-    SF(4:6) = - SF(4:6) / dot(SF(4:6), SF(4:6));
-end
-
 % Create the problem
-OptProblem = Problems.DROMOR(S0, SF, L, StateDimension, ControlDimension, problem_params);
+S0 = LegoKS.state_mapping(S0(1:6), true); 
+S0 = [S0(1:4); E0(1); S0(5:8); E0(1)];
+SF = LegoKS.state_mapping(SF(1:6), true);
+SF = [SF(1:4); EF(1); SF(5:8); EF(1)];
+
+S0 = S0([1:4 6:9]);
+SF = SF([1:4 6:9]);
+
+problem_params = [mu; T; SF];
+
+OptProblem = IAC_2024_ROC.KSTransfer(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    
 tic
 [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
 toc 
+u = u./ dot(C(1:4,:), C(1:4,:), 1).^2; 
+u = u(1:3,:);
 
 % Average results 
 iter = 0; 
@@ -84,19 +83,16 @@ end
 
 time = mean(time);
 
-%% Plots
-% Main plots 
-C = [C(1:6,:); tau; C(7:end,:)];
+dV = dV * Vc;
 
-S = zeros(6,length(tau));
-for i = 1:length(tau)
-    if (norm(C(4:6,i)) > 1)
-        C(4:6,i) = -C(4:6,i) / dot(C(4:6,i),C(4:6,i));
-    end
-    aux = [C(1:3,i); QuaternionAlgebra.MPR2Quat(1,1,C(4:6,i),true); tau(i)];
-    S(:,i) = OrbitalDynamics.dromo2state(aux);
+%% Plots
+% Compute the true trajectory in Cartesian space 
+S = zeros(6,size(C,2));
+for i = 1:size(C,2)
+    S(:,i) = LegoKS.state_mapping( C([1:4 5:8],i), false );
 end
 
+% Main plots 
 x = S(1,:);
 y = S(2,:); 
 z = S(3,:);
@@ -104,15 +100,15 @@ z = S(3,:);
 % Earth's orbit
 thetaE = linspace(0, 2*pi, size(C,2));
 
-s = OrbitalDynamics.coe2state(mu, initial_coe);
-initial = OrbitalDynamics.cylindrical2cartesian(s, false).';
+s = coe2state(mu, initial_coe);
+initial = cylindrical2cartesian(s, false).';
 
-s = OrbitalDynamics.coe2state(mu, final_coe);
-final = OrbitalDynamics.cylindrical2cartesian(s, false).';
+s = coe2state(mu, final_coe);
+final = cylindrical2cartesian(s, false).';
     
 s = zeros(6,length(thetaE));
 for i = 1:length(thetaE)
-    s(:,i) = OrbitalDynamics.coe2state(mu, [initial_coe(1:end-1) initial(2)+thetaE(i)]);
+    s(:,i) = coe2state(mu, [initial_coe(1:end-1) thetaE(i)]);
 end
 xE = s(1,:);
 yE = s(2,:);
@@ -120,7 +116,7 @@ zE = s(3,:);
     
 % Mars's orbit
 for i = 1:length(thetaE)
-    s(:,i) = OrbitalDynamics.coe2state(mu, [final_coe(1:end-1) final(2)+thetaE(i)]);
+    s(:,i) = coe2state(mu, [final_coe(1:end-1) thetaE(i)]);
 end
 xM = s(1,:);
 yM = s(2,:);
@@ -135,8 +131,8 @@ ylabel('$Y$ coordinate')
 zlabel('$Z$ coordinate')
 plot3(0,0,0,'*k');
 plot3(x(1),y(1),z(1),'*k');
-plot3(xE,yE,zE,'LineStyle','--','Color','r','LineWidth',0.3);   % Earth's orbit
-plot3(xM,yM,zM,'LineStyle','-.','Color','b','LineWidth',0.3);   % Mars' orbit
+plot3(xE,yE,zE,'LineStyle','--','Color','r','LineWidth',0.3);   
+plot3(xM,yM,zM,'LineStyle','-.','Color','b','LineWidth',0.3);   
 hold on
 grid on; 
     
@@ -148,9 +144,9 @@ grid on;
 % Propulsive acceleration plot
 figure_propulsion = figure;
 hold on
-plot(tau, sqrt(dot(u,u,1))*gamma, 'k','LineWidth',1)
-plot(tau, u, 'LineWidth', 0.3)
-yline(T, '--k')
+plot(tau, sqrt(dot(u,u,1)) * gamma, 'k','LineWidth',1)
+plot(tau, u * gamma, 'LineWidth', 0.3)
+yline(T * gamma, '--k')
 xlabel('Flight time')
 ylabel('$\mathbf{a}$')
 legend('$a$','$a_\rho$','$a_\theta$','$a_z$')

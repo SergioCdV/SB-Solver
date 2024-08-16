@@ -9,5 +9,5 @@ function [beta, t0, tf] = InitialGuess(obj, params, initial, final)
     t0 = params(3);
     tf = params(4) + 2 * params(5) * pi;
     
-    beta = [0];
+    beta = 0;
 end

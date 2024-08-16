@@ -6,5 +6,5 @@
 
 function [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf)
     s0 = initial; 
-    sf = [final(1:7); beta];
+    sf = [final(1); beta; final(3:end)];
 end

@@ -54,7 +54,7 @@ setup.resultsFlag = false;
 
 if (1)
     % Average results 
-    iter = 5; 
+    iter = 1; 
     time = zeros(3,iter);                   % Convergence time
     conv = zeros(3,iter);                   % Convergence flags
     feval = zeros(3,iter);                  % Function evaluations
@@ -94,7 +94,8 @@ if (1)
     % Optimization of the transfers
     for i = index:iter
         % Problem parameters
-        problem_params = [mu; T; S0(end,i); SF(end,i); 5];                      
+        N = 10;%randi([1 10]);
+        problem_params = [mu; T; S0(end,i); SF(end,i); N];                      
     
         % Regularized motion
         s0 = S0(1:end-1,i);

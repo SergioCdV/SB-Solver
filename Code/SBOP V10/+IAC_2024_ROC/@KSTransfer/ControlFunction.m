@@ -21,7 +21,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     u = (2 * a - E .* s(1:4,:));
 
     for i = 1:size(u,2)
-        L = Problems.KSTransfer.KS_matrix(s(1:4,i));
+        L = LegoKS.KSmatrix( s(1:4,i) );
         u(:,i) = L * u(:,i);
     end
 end

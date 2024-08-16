@@ -6,10 +6,10 @@
 
 function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     % Differential time law
-    l = 2*s(1,:)-s(1,:).^2-s(2,:).^2;
-    gamma = (s(3,:).*l).^(3/2).*s(1,:);
+    l = 1 + s(1,:) .* cos(t) + s(2,:) .* sin(t);
+    gamma = s(3,:).^3 .* l.^2;
 
     % Mayer and Lagrange terms
     M = 0; 
-    L = dot(u,u,1).*gamma;
+    L = dot(u,u,1) ./ gamma;
 end

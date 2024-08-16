@@ -7,46 +7,51 @@
 function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
     % Constants
     mu = params(1);     % Gravitational parameter
-    maxIter = 100;      % Maximum number of iterations 
-    iter = 1;           % Initial iteration
-    GoOn = true;        % Convergence variable
 
     % Preallocation 
-    u = zeros(3,size(S,2));
-    u_ref = 1e3 * ones(size(u));
+    u = zeros(3, size(S,2));
+    old_u = u(3,:);
 
-    % Compute the auxiliary variables
-    while (GoOn)
-        w = 1+S(2,:).*cos(t(1,:))+S(3,:).*sin(t(1,:));
-        s = 1+S(4,:).^2+S(5,:).^2;
-        gamma = sqrt(S(1,:) * mu) .* (w./S(1,:)).^2 + sqrt(S(1,:)/mu)./w.*(S(4,:).*sin(t(1,:)) + S(5,:).*cos(t(1,:))) .* u(3,:);
+    % Auxiliary variables
+    l = S(6,:);
+    w = 1 + S(2,:) .* cos(l) + S(3,:) .* sin(l);
+    delta = sqrt( S(1,:) / mu );
+    dthetak = sqrt( mu * S(1,:) ) .* (w ./ S(1,:)).^2;
+    s = 1 + S(4,:).^2 + S(5,:).^2;
+    k = S(4,:) .* sin(l) - S(5,:) .* cos(l);
+    dthetau = delta .* k ./ w;
+    beta = delta .* s ./ (2 * w);
     
-        % Linear terms of the equations of motion
-        f = zeros(5,size(S,2));                     % Acceleration vector
-        a = gamma .* S(6:10,:);                     % Inertial acceleration field
-    
-        % Tangential component
-        alpha = 2*S(1,:)./w.*sqrt(S(1,:)/mu); 
-        u(2,:) = (a(1,:)-f(1,:))./alpha;
-    
-        % Normal component
-        beta = sqrt(S(1,:)/mu).*s./(2*w);
-        u(3,:) = sqrt(a(4,:).^2+a(5,:).^2)./beta;
-        u(3,:) = u(3,:).*sign( a(4,:)/cos(t(1,:)) );
-    
-        % Radial component
-        delta = sqrt(S(1,:)/mu);
-        for i = 1:size(S,2)
-            B = OrbitalDynamics.MEE_matrix(mu, t(1,i), S(1:5,i));
-            u(1,i) = (a(2,i)-B(2,2:3)*u(2:3,i))^2+(a(3,i)-B(3,2:3)*u(2:3,i))^2;
-        end
-        u(1,:) = sqrt(u(1,:))./delta;
+    % Linear terms of the equations of motion
+    a = S(7:12,:);          % Inertial acceleration field
 
-        GoOn = max(abs(u_ref(3,:)-u(3,:))) > params(5) && iter < maxIter;
+    % Normal component
+    eps = 1E-10;            % Convergence tolerance
+    iter = 1;               % Initial iteration
+    max_iter = 100;         % Maximum number of iterations
+    GoOn = true;            % Convergence flag
+    
+    % Iterations
+    C = sqrt( a(4,:).^2 + a(5,:).^2 ) ./ beta;
+    A = sign(a(4,:) ./ cos(l)); 
+    dtheta = dthetak;
+    u(3,:) = 0 * C .* A .* sign( dtheta );
 
-        if (GoOn)
-            u_ref = u;
-            iter = iter + 1;
-        end
+    % Tangential component
+    alpha = 2 * S(1,:) .* delta ./ w; 
+    u(2,:) = a(1,:) ./ alpha;
+
+    % Radial component
+    for i = 1:size(S,2)
+        B = OrbitalDynamics.MEE_matrix(mu, l(i), S(1:5,i));
+
+        a_term = a(2,i) / delta(i) - B(2,2:3) * u(2:3,i); 
+        b_term = a(3,i) / delta(i) - B(3,2:3) * u(2:3,i);
+        u(1,i) = ( a_term )^2 + ( b_term )^2;
+
+        Delta(1,1) = a_term / sin( l(i) );
+        Delta(2,1) = b_term / cos( l(i) );
+        
+        u(1,i) = sqrt( u(1,i) );% * sign( Delta(1,1) ) * ( sign(Delta(1,1)) == sign(Delta(2,1)) );
     end
 end

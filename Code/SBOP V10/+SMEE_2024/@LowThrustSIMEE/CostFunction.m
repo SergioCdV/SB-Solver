@@ -10,10 +10,10 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
 
     l = t(1,:) + s(6,:);
     w = 1 + s(2,:) .* cos(l) + s(3,:) .* sin(l);
-
     gamma = sqrt(mu * s(1,:)) .* (w ./ s(1,:)).^2;
 
     % Minimum energy cost function 
-    M = 0;%-s(1,end); 
-    L = sqrt( dot(u,u,1) ) .* gamma;%zeros(1,size(u,2)); %0;
+%     a = s(1,end) / (1 - s(2,end)^2 - s(3,end)^2);
+    M = 0;%mu / (2 * a); 
+    L = sqrt( dot(u,u,1) ) .* gamma;
 end

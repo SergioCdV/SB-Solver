@@ -19,38 +19,59 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
 
     % Auxiliary variables
     l = t(1,:) + S(6,:);
-    w = 1 + S(2,:) .* cos(l) + S(3,:) .* sin(l);
+    sin_l = sin(l);
+    cos_l = cos(l);
+    w = 1 + S(2,:) .* cos_l + S(3,:) .* sin_l;
     delta = sqrt( S(1,:) / mu );
-    k = S(5,:) .* cos(l) - S(4,:) .* sin(l);
+    r_h = delta ./ w;
     dtheta = sqrt(mu * S(1,:)) .* (w ./ S(1,:)).^2;
+    k = S(5,:) .* cos_l - S(4,:) .* sin_l;
     
     % Linear terms of the equations of motion
-    a = S(7:12,:);                     % Inertial acceleration field
+    a = S(7:12,:);                       % Inertial acceleration field
+
+    % Regularization 
+    a = a .* dtheta;                    
 
     % Tangential component
-    alpha = 2 * S(1,:) .* delta ./ (w .* dtheta); 
+    alpha = 2 * S(1,:) .* r_h; 
     u(2,:) = a(1,:) ./ alpha;
 
-    % Normal component
-    beta = (1 - sigma_norm).^2 + (64 * (1 + sigma_norm).^2 - 4) .* k.^2;
-    u(3,:) = 4 * (1-sigma_norm.^2) .* delta .* dtheta .* sqrt( a(4,:).^2 + a(5,:).^2 + a(6,:).^2 ./ beta );
+    % Normal componen.t
+    beta = ( r_h.^2 ./ (16 * (1 - sigma_norm).^2) ) .* ( (1 - sigma_norm.^2).^2 + k.^2 .* (64 + 4 * (1 + sigma_norm).^2) );
+    u(3,:) = sqrt( dot( a(4:6,:), a(4:6,:), 1 ) ./ beta );
 
-    Delta(1,:) = a(4,:) ./ ( (1 - S(4,:).^2 + S(5,:).^2 ) .* cos(l) - 2 * S(4,:) .* S(5,:) .* sin(l) );
-    Delta(2,:) = a(5,:) ./ ( (1 + S(4,:).^2 - S(5,:).^2 ) .* sin(l) - 2 * S(4,:) .* S(5,:) .* cos(l) );
+    A = (1 - S(4,:).^2 + S(5,:).^2) .* cos_l - 2 * S(4,:) .* S(5,:) .* sin_l;
+    idx_c = A ~= 0;
+    Delta(2,idx_c) = a(4,idx_c) ./ +A(idx_c);
+    Delta(2,~idx_c) = zeros(1,sum(~idx_c));
     
-    u(3,:) = u(3,:) .* sign( Delta(1,:) ) .* ( sign(Delta(1,:)) == sign(Delta(2,:)) );
+    B = (1 + S(4,:).^2 - S(5,:).^2) .* sin_l - 2 * S(4,:) .* S(5,:) .* cos_l;
+    idx_s = B ~= 0;
+    Delta(1,idx_s) = a(5,idx_s) ./ +B(idx_s);
+    Delta(1,~idx_s) = zeros(1,sum(~idx_s));
+
+    A = sign( Delta(1,:) ) .* ( sign(Delta(1,:)) == sign(Delta(2,:)) );
+    u(3,:) = u(3,:) .* A;
 
     % Radial component
+    ab_term = a(2:3,:);
+
     for i = 1:size(S,2)
         B = OrbitalDynamics.SMEE_matrix(mu, l(i), S(1:5,i));
-
-        a_term = a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i); 
-        b_term = a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i);
-        u(1,i) = ( a_term )^2 + ( b_term )^2;
-
-        Delta(1,1) = a_term / sin( l(i) );
-        Delta(2,1) = b_term / cos( l(i) );
-        
-        u(1,i) = sqrt( u(1,i) ) * sign( Delta(1,1) ) * ( sign(Delta(1,1)) == sign(Delta(2,1)) );
+        ab_term(:,i) = ab_term(:,i) - B(2:3,2:3) * u(2:3,i); 
     end
+
+    ab_term = ab_term ./ delta;
+
+    idx_s = sin_l ~= 0;
+    Delta(1,idx_s) = ab_term(1,idx_s) ./ +sin_l(idx_s);
+    Delta(1,~idx_s) = zeros(1,sum(~idx_s));
+
+    idx_c = cos_l ~= 0;
+    Delta(2,idx_c) = ab_term(2,idx_c) ./ -cos_l(idx_c);
+    Delta(2,~idx_c) = zeros(1,sum(~idx_c));
+
+    u(1,:) = sqrt( dot(ab_term, ab_term, 1) );
+    u(1,:) = u(1,:) .* sign( Delta(1,:) ) .* ( sign(Delta(1,:)) == sign(Delta(2,:)) );
 end

@@ -14,55 +14,67 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
 
     % Auxiliary variables
     l = t(1,:);
-    w = 1 + S(2,:) .* cos(l) + S(3,:) .* sin(l);
-    s = 1 + S(4,:).^2 + S(5,:).^2;
-    delta = sqrt( S(1,:) / mu);
-    k = S(4,:) .* sin(l) - S(5,:) .* cos(l);
+    sin_l = sin(l);
+    cos_l = cos(l);
+    w = 1 + S(2,:) .* cos_l + S(3,:) .* sin_l;
+    delta = sqrt( S(1,:) / mu );
+    r_h = delta ./ w;
     dthetak = sqrt( mu * S(1,:) ) .* (w ./ S(1,:)).^2;
-    dthetau = delta .* k ./ w;
+    s = 1 + S(4,:).^2 + S(5,:).^2;
+    k = S(4,:) .* sin_l - S(5,:) .* cos_l;
+    dthetau = r_h .* k;
+    beta = r_h .* s / 2;
     
     % Linear terms of the equations of motion
     a = S(6:10,:);          % Inertial acceleration field
 
     % Normal component
-    eps = 1E-10;            % Convergence tolerance
-    iter = 1;               % Initial iteration
-    max_iter = 100;         % Maximum number of iterations
-    GoOn = true;            % Convergence flag
-    
-    % Iterations
-    while (GoOn && iter < max_iter)
-        % Solve the equation
-        dtheta = dthetak + dthetau .* old_u;
-        beta = delta .*  s ./ (2 * w .* dtheta);
-        u(3,:) = sqrt( a(4,:).^2 + a(5,:).^2 ) ./ beta;
-        u(3,:) = u(3,:) .* sign( a(4,:) .* dtheta / cos(l) );
+    idx_c = cos_l ~= 0;
+    Delta(2,idx_c) = a(4,idx_c) .* w ./ +cos_l(idx_c);
+    Delta(2,~idx_c) = zeros(1,sum(~idx_c));
 
-        % Convergence flag
-        if norm(u(3,:) - old_u, 'inf') / norm(old_u, 'inf') < eps
-            GoOn = false;
-        else
-            iter = iter + 1;
-            old_u = u(3,:);
-        end
-    end
+    idx_s = sin_l ~= 0;
+    Delta(1,idx_s) = a(5,idx_s) .* w ./ +sin_l(idx_s);
+    Delta(1,~idx_s) = zeros(1,sum(~idx_s));
+
+    eps = 1E-7;
+    sign_delta = tanh(Delta / eps);
+    A = sign_delta(1,:) + sign_delta(2,:);
+    A = A / 2 .* sign_delta(1,:);
+
+    C = dot(a(4:5,:), a(4:5,:), 1) ./ beta.^2;
+    
+    ac = 1 - C .* dthetau.^2; 
+    bc = - 2 * C .* dthetak .* dthetau; 
+    cc = - C .* dthetak.^2;
+    ah(1,:) = ( -bc + sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
+    ah(2,:) = ( -bc - sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
+
+    u(3,:) = min(ah .* A, [], 1);
+    dtheta = dthetak + dthetau .* u(3,:);
 
     % Tangential component
-    alpha = 2 * S(1,:) .* delta ./ (w .* dtheta); 
-    u(2,:) = a(1,:) ./ alpha;
+    alpha = 2 * S(1,:) .* r_h; 
+    u(2,:) = a(1,:) .* dtheta ./ alpha;
 
     % Radial component
+    ab_term = a(2:3,:) .* dtheta;
+
     for i = 1:size(S,2)
         B = OrbitalDynamics.MEE_matrix(mu, l(i), S(1:5,i));
-        u(1,i) = ( a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i))^2 + ( a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i) )^2;
-
-        a_term = a(2,i) .* dtheta(i) ./ delta(i) - B(2,2:3) * u(2:3,i); 
-        b_term = a(3,i) .* dtheta(i) ./ delta(i) - B(3,2:3) * u(2:3,i);
-        u(1,i) = ( a_term )^2 + ( b_term )^2;
-
-        Delta(1,1) = a_term / sin( l(i) );
-        Delta(2,1) = b_term / cos( l(i) );
-        
-        u(1,i) = sqrt( u(1,i) ) * sign( Delta(1,1) ) * ( sign(Delta(1,1)) == sign(Delta(2,1)) );
+        ab_term(:,i) = ab_term(:,i) - B(2:3,2:3) * u(2:3,i);
     end
+
+    Delta(1,idx_s) = ab_term(1,idx_s) ./ +sin_l(idx_s);
+    Delta(1,~idx_s) = zeros(1,sum(~idx_s));
+
+    Delta(2,idx_c) = ab_term(2,idx_c) ./ -cos_l(idx_c);
+    Delta(2,~idx_c) = zeros(1,sum(~idx_c));
+
+    sign_delta = tanh(Delta / eps);
+    A = sign_delta(1,:) + sign_delta(2,:);
+    A = A / 2 .* sign_delta(1,:);
+
+    u(1,:) = sqrt( dot(ab_term, ab_term, 1) ./ delta.^2 );
+    u(1,:) = u(1,:) .* A;
 end
