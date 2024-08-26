@@ -11,8 +11,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 10;                                  % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+n = 25;                                  % Polynomial order in the state vector expansion
+m = 200;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -31,44 +31,48 @@ mu = 1;                         % Normalized parameter
 gamma = r0/t0^2;                % Characteristic acceleration
 
 % Boundary conditions
-initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)];               % Earth's orbital elements
+initial_coe = [r0 1e-3 0 deg2rad(0) deg2rad(0)];                % Initial orbital elements
 theta0 = deg2rad(0);
 initial_coe = [initial_coe theta0]; 
 initial_coe(1) = initial_coe(1) / r0;
-S0 = coe2state(mu, initial_coe);
-E0 = [-mu/(2 * initial_coe(1)); 0];
+e = initial_coe(2);
+sin_theta = sqrt(1-e.^2) .* sin(theta0) ./ (1+e.*cos(theta0));
+cos_theta = (cos(theta0)+e) ./ (1+e.*cos(theta0));
+E0 = atan2(sin_theta, cos_theta);
 
-% S0 = cylindrical2cartesian(R, false);
-final_coe = [2.05*r0 1e-3 deg2rad(0) deg2rad(10) deg2rad(0)];   % Mars' orbital elements 
+% Final orbital elements 
+final_coe = [1.05*r0 1e-3 deg2rad(10) deg2rad(10) deg2rad(0)];   
 thetaf = deg2rad(120);
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
-SF = coe2state(mu, final_coe);
-EF = [-mu/(2 * final_coe(1)); 0];
+e = final_coe(2);
+sin_theta = sqrt(1-e.^2) .* sin(thetaf) ./ (1+e.*cos(thetaf));
+cos_theta = (cos(thetaf)-e) ./ (1+e.*cos(thetaf));
+Ef = atan2(sin_theta, cos_theta);
+
+S0 = OrbitalDynamics.coe2state(mu, initial_coe);
+SF =  OrbitalDynamics.coe2state(mu, final_coe);
+
+S0 = LegoKS.state_mapping(S0(1:6), true, "Ecc"); 
+SF = LegoKS.state_mapping(SF(1:6), true, "Ecc");
 
 % Spacecraft parameters 
 T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-% Create the problem
-S0 = LegoKS.state_mapping(S0(1:6), true); 
-S0 = [S0(1:4); E0(1); S0(5:8); E0(1)];
-SF = LegoKS.state_mapping(SF(1:6), true);
-SF = [SF(1:4); EF(1); SF(5:8); EF(1)];
+problem_params = [mu; T; E0; Ef; 20];
 
-S0 = S0([1:4 6:9]);
-SF = SF([1:4 6:9]);
-
-problem_params = [mu; T; SF];
-
-OptProblem = IAC_2024_ROC.KSTransfer(S0, SF, L, StateDimension, ControlDimension, problem_params);
+% Definition of the problem
+OptProblem = IAC_2024_ROC.EccKSTransfer(S0, SF, L, StateDimension, ControlDimension, problem_params);
 
 %% Optimization
 % Simple solution    
 tic
 [C, dV, u, t0, tf, tau, exitflag, output] = solver.solve(OptProblem);
 toc 
-u = u./ dot(C(1:4,:), C(1:4,:), 1).^2; 
+
+% Dimensions
+u = u ./ dot(C(1:4,:), C(1:4,:), 1).^2; 
 u = u(1:3,:);
 
 % Average results 
@@ -87,10 +91,7 @@ dV = dV * Vc;
 
 %% Plots
 % Compute the true trajectory in Cartesian space 
-S = zeros(6,size(C,2));
-for i = 1:size(C,2)
-    S(:,i) = LegoKS.state_mapping( C([1:4 5:8],i), false );
-end
+S = LegoKS.state_mapping(C, false, "1");
 
 % Main plots 
 x = S(1,:);
@@ -100,15 +101,15 @@ z = S(3,:);
 % Earth's orbit
 thetaE = linspace(0, 2*pi, size(C,2));
 
-s = coe2state(mu, initial_coe);
-initial = cylindrical2cartesian(s, false).';
+s = OrbitalDynamics.coe2state(mu, initial_coe);
+initial = OrbitalDynamics.cylindrical2cartesian(s, false).';
 
-s = coe2state(mu, final_coe);
-final = cylindrical2cartesian(s, false).';
+s = OrbitalDynamics.coe2state(mu, final_coe);
+final = OrbitalDynamics.cylindrical2cartesian(s, false).';
     
 s = zeros(6,length(thetaE));
 for i = 1:length(thetaE)
-    s(:,i) = coe2state(mu, [initial_coe(1:end-1) thetaE(i)]);
+    s(:,i) = OrbitalDynamics.coe2state(mu, [initial_coe(1:end-1) thetaE(i)]);
 end
 xE = s(1,:);
 yE = s(2,:);
@@ -116,7 +117,7 @@ zE = s(3,:);
     
 % Mars's orbit
 for i = 1:length(thetaE)
-    s(:,i) = coe2state(mu, [final_coe(1:end-1) thetaE(i)]);
+    s(:,i) = OrbitalDynamics.coe2state(mu, [final_coe(1:end-1) thetaE(i)]);
 end
 xM = s(1,:);
 yM = s(2,:);

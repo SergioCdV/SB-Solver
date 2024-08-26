@@ -7,10 +7,10 @@
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)  
 
     % Inequality constraints
-    ct = dot(u,u,1)-params(2).^2;   % Thrust modulation
+    ct = dot(u,u,1)-params(2).^2;   
     c = [   
             -s(3,:) ...                                             % Positive definiteness of the angular momentum
-            ct ...
+            ct ...                                                  % Thrust modulation
             +dot(s(4:7,:), s(4:7,:), 1) - 1 ...                     % Quaternion norm constraint
             -dot(s(4:7,:), s(4:7,:), 1) + 0.99 ...                  % Quaternion norm constraint
         ].';

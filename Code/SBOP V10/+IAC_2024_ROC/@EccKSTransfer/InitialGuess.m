@@ -6,7 +6,7 @@
 
 function [beta, t0, tf] = InitialGuess(obj, params, initial, final)    
     % New initial TOF
-    t0 = 0;
-    tf = params(end);
+    t0 = params(end-2);
+    tf = params(end-1) + 2 * pi * params(end);
     beta = [0; 0];
 end

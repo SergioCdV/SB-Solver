@@ -19,7 +19,7 @@
 
 function [P] = boundary_conditions(obj, Problem, beta, t0, tf, tau, B, P0)
     % Boundary conditions
-    [s0, sf] = Problem.BoundaryConditions(Problem.initial, Problem.final, beta, t0, tf);
+    [s0, sf] = Problem.BoundaryConditions(Problem.initial, Problem.final, Problem.Params, beta, t0, tf);
 
     % Constants 
     m = Problem.StateDim;       % State dimension

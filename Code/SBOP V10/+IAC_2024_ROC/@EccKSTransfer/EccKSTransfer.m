@@ -1,17 +1,18 @@
 %% SBOPT %%
-% Date: 05/05/2023
+% Date: 16/08/2023
 
 %% KS orbital transfer problem %% 
-% Implementation of optimal low-thrust 3D orbital transfers in KS coodinates
+% Implementation of optimal low-thrust 3D orbital transfers in KS
+% coodinates and eccentric regularization
 
-classdef KSTransfer < Problems.AbstractProblem 
+classdef EccKSTransfer < Problems.AbstractProblem 
     % Fundamental definition of the problem
     properties  
     end
 
     methods 
         % Constructor 
-        function [obj] = KSTransfer(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
+        function [obj] = EccKSTransfer(myInitial, myFinal, myDerDeg, myStateDim, myControlDim, myParams)
             super_arguments{1} = myInitial;
             super_arguments{2} = myFinal;
             super_arguments{3} = myDerDeg;
