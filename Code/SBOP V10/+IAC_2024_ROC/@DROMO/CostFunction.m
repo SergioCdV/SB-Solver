@@ -10,6 +10,6 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     gamma = s(3,:).^3 .* l.^2;
 
     % Mayer and Lagrange terms
-    M = 0; 
-    L = dot(u,u,1) ./ gamma;
+    M = -0 * s(3,end)^2; 
+    L = dot(u, u, 1) ./ gamma;
 end

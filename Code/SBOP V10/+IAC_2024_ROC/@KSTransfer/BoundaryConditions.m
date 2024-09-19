@@ -11,6 +11,7 @@ function [s0, sf] = BoundaryConditions(obj, initial, final, params, beta, t0, tf
     s0 = R * initial; 
     
     % Final fiber
+%     final = beta(end-9:end-2);
     R = LegoKS.GroupAction( beta(end) );
     R = blkdiag(R,R);
     sf = R * final;

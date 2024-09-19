@@ -11,8 +11,8 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 25;                                  % Polynomial order in the state vector expansion
-m = 200;                                % Number of sampling points
+n = 10;                                  % Polynomial order in the state vector expansion
+m = 100;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
@@ -41,8 +41,9 @@ cos_theta = (cos(theta0)+e) ./ (1+e.*cos(theta0));
 E0 = atan2(sin_theta, cos_theta);
 
 % Final orbital elements 
-final_coe = [1.05*r0 1e-3 deg2rad(10) deg2rad(10) deg2rad(0)];   
-thetaf = deg2rad(120);
+final_coe = [2.2*r0 0.542 deg2rad(82.2) deg2rad(13.6) deg2rad(204.2)];   
+thetaf = deg2rad(114.4232);
+
 final_coe = [final_coe thetaf]; 
 final_coe(1) = final_coe(1) / r0;
 e = final_coe(2);
@@ -60,7 +61,7 @@ SF = LegoKS.state_mapping(SF(1:6), true, "Ecc");
 T = 0.5e-3;              % Maximum acceleration 
 T = T/gamma;             % Normalized acceleration
 
-problem_params = [mu; T; E0; Ef; 20];
+problem_params = [mu; T; E0; Ef; 5];
 
 % Definition of the problem
 OptProblem = IAC_2024_ROC.EccKSTransfer(S0, SF, L, StateDimension, ControlDimension, problem_params);

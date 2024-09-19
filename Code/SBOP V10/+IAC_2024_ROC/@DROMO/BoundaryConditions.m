@@ -4,7 +4,8 @@
 %% Boundary Conditions function %% 
 % Function implementation of the boundary conditions definition
 
-function [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf)
+function [s0, sf] = BoundaryConditions(obj, initial, final, params, beta, t0, tf)
     s0 = initial; 
     sf = [final(1); beta; final(3:end)];
+%     sf = [beta];
 end

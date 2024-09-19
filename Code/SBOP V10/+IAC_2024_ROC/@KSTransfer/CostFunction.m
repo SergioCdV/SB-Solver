@@ -13,6 +13,6 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     u = u ./ r.^2;
 
     % Cost function
-    M = 0;                                            % Mayer term
+    M = 0 * -r(end);                                            % Mayer term
     L = dot(u(1:4,:), u(1:4,:), 1) .* dtheta;         % Minimum time transfer
 end

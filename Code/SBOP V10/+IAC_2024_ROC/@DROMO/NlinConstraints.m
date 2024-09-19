@@ -6,13 +6,17 @@
 
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, t, s, u)  
 
-    % Inequality constraints
-    ct = dot(u,u,1)-params(2).^2;   
+    Tmax = 1.00 * params(2);
+    Tmin = 0.97 * params(2);
+
+    % Inequality constraints 
     c = [   
+            
             -s(3,:) ...                                             % Positive definiteness of the angular momentum
-            ct ...                                                  % Thrust modulation
-            +dot(s(4:7,:), s(4:7,:), 1) - 1 ...                     % Quaternion norm constraint
-            -dot(s(4:7,:), s(4:7,:), 1) + 0.99 ...                  % Quaternion norm constraint
+            +dot(s(4:7,:), s(4:7,:), 1) - 1.1 ...                  % Quaternion norm constraint
+            -dot(s(4:7,:), s(4:7,:), 1) + 0.9 ...                  % Quaternion norm constraint
+            +dot(u(1:3,:), u(1:3,:), 1) - (Tmax.^2) ...             % Thrust modulation
+%             -dot(u(1:2,:), u(1:2,:), 1) + (Tmin.^2) ...             % Thrust modulation
         ].';
 
     % Equalities 

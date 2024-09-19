@@ -31,7 +31,7 @@ classdef DROMO < Problems.AbstractProblem
         end
 
         % Problem transcription
-        [s0, sf] = BoundaryConditions(obj, initial, final, beta, t0, tf);
+        [s0, sf] = BoundaryConditions(obj, initial, final, params, beta, t0, tf);
         [u] = ControlFunction(obj, params, beta, t0, tf, t, s);
         [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u);
         [A, b, Aeq, beq] = LinConstraints(obj, params, beta, P);
