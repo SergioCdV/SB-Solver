@@ -5,5 +5,8 @@ function [R] = GroupAction(beta)
     cos_beta = cos(beta);
 
     % Rotation matrix
-    R = [cos_beta 0 0 -sin_beta; 0 cos_beta sin_beta 0; 0 -sin_beta cos_beta 0; sin_beta 0 0 cos_beta];
+    R = [cos_beta 0 0 -sin_beta; ... 
+        0 cos_beta sin_beta 0; ...
+        0 -sin_beta cos_beta 0; ...
+        sin_beta 0 0 cos_beta];
 end

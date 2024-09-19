@@ -10,7 +10,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
 
     % Preallocation 
     u = zeros(3, size(S,2));
-    old_u = u(3,:);
+%     old_u = u(3,:);
 
     % Auxiliary variables
     l = t(1,:);
@@ -29,18 +29,18 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
     a = S(6:10,:);          % Inertial acceleration field
 
     % Normal component
-    idx_c = cos_l ~= 0;
-    Delta(2,idx_c) = a(4,idx_c) .* w ./ +cos_l(idx_c);
-    Delta(2,~idx_c) = zeros(1,sum(~idx_c));
-
-    idx_s = sin_l ~= 0;
-    Delta(1,idx_s) = a(5,idx_s) .* w ./ +sin_l(idx_s);
-    Delta(1,~idx_s) = zeros(1,sum(~idx_s));
-
-    eps = 1E-7;
-    sign_delta = tanh(Delta / eps);
-    A = sign_delta(1,:) + sign_delta(2,:);
-    A = A / 2 .* sign_delta(1,:);
+%     idx_c = cos_l ~= 0;
+%     Delta(2,idx_c) = a(4,idx_c) .* w ./ +cos_l(idx_c);
+%     Delta(2,~idx_c) = zeros(1,sum(~idx_c));
+% 
+%     idx_s = sin_l ~= 0;
+%     Delta(1,idx_s) = a(5,idx_s) .* w ./ +sin_l(idx_s);
+%     Delta(1,~idx_s) = zeros(1,sum(~idx_s));
+% 
+%     eps = 1E-7;
+%     sign_delta = tanh(Delta / eps);
+%     A = sign_delta(1,:) + sign_delta(2,:);
+%     A = A / 2 .* sign_delta(1,:);
 
     C = dot(a(4:5,:), a(4:5,:), 1) ./ beta.^2;
     
@@ -50,7 +50,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
     ah(1,:) = ( -bc + sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
     ah(2,:) = ( -bc - sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
 
-    u(3,:) = min(ah .* A, [], 1);
+    u(3,:) = min(ah, [], 1);
     dtheta = dthetak + dthetau .* u(3,:);
 
     % Tangential component
@@ -65,16 +65,16 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
         ab_term(:,i) = ab_term(:,i) - B(2:3,2:3) * u(2:3,i);
     end
 
-    Delta(1,idx_s) = ab_term(1,idx_s) ./ +sin_l(idx_s);
-    Delta(1,~idx_s) = zeros(1,sum(~idx_s));
+%     Delta(1,idx_s) = ab_term(1,idx_s) ./ +sin_l(idx_s);
+%     Delta(1,~idx_s) = zeros(1,sum(~idx_s));
 
-    Delta(2,idx_c) = ab_term(2,idx_c) ./ -cos_l(idx_c);
-    Delta(2,~idx_c) = zeros(1,sum(~idx_c));
-
-    sign_delta = tanh(Delta / eps);
-    A = sign_delta(1,:) + sign_delta(2,:);
-    A = A / 2 .* sign_delta(1,:);
+%     Delta(2,idx_c) = ab_term(2,idx_c) ./ -cos_l(idx_c);
+%     Delta(2,~idx_c) = zeros(1,sum(~idx_c));
+% 
+%     sign_delta = tanh(Delta / eps);
+%     A = sign_delta(1,:) + sign_delta(2,:);
+%     A = A / 2 .* sign_delta(1,:);
 
     u(1,:) = sqrt( dot(ab_term, ab_term, 1) ./ delta.^2 );
-    u(1,:) = u(1,:) .* A;
+%     u(1,:) = u(1,:) .* A;
 end
