@@ -10,7 +10,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
 
     % Preallocation 
     u = zeros(3, size(S,2));
-%     old_u = u(3,:);
+    old_u = u(3,:);
 
     % Auxiliary variables
     l = t(1,:);
@@ -42,16 +42,37 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, S)
 %     A = sign_delta(1,:) + sign_delta(2,:);
 %     A = A / 2 .* sign_delta(1,:);
 
-    C = dot(a(4:5,:), a(4:5,:), 1) ./ beta.^2;
-    
-    ac = 1 - C .* dthetau.^2; 
-    bc = - 2 * C .* dthetak .* dthetau; 
-    cc = - C .* dthetak.^2;
-    ah(1,:) = ( -bc + sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
-    ah(2,:) = ( -bc - sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
+%     C = dot(a(4:5,:), a(4:5,:), 1) ./ beta.^2;
+%     
+%     ac = 1 - C .* dthetau.^2; 
+%     bc = - 2 * C .* dthetak .* dthetau; 
+%     cc = - C .* dthetak.^2;
+%     ah(1,:) = ( -bc + sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
+%     ah(2,:) = ( -bc - sqrt(bc.^2 - 4 * ac .* cc) ) ./ (2 * ac);
+% 
+%     u(3,:) = min(ah, [], 1);
+%     dtheta = dthetak + dthetau .* u(3,:);
 
-    u(3,:) = min(ah, [], 1);
-    dtheta = dthetak + dthetau .* u(3,:);
+    % Iterations
+    eps = 1E-10;            % Convergence tolerance
+    iter = 1;               % Initial iteration
+    max_iter = 100;         % Maximum number of iterations
+    GoOn = true;            % Convergence flag
+    while (GoOn && iter < max_iter)
+        % Solve the equation
+        dtheta = dthetak + dthetau .* old_u;
+        beta = delta .*  s ./ (2 * w .* dtheta);
+        u(3,:) = sqrt( a(4,:).^2 + a(5,:).^2 ) ./ beta;
+        u(3,:) = u(3,:) .* sign( a(4,:) .* dtheta / cos(l) );
+
+        % Convergence flag
+        if norm(u(3,:) - old_u, 'inf') / norm(old_u, 'inf') < eps
+            GoOn = false;
+        else
+            iter = iter + 1;
+            old_u = u(3,:);
+        end
+    end
 
     % Tangential component
     alpha = 2 * S(1,:) .* r_h; 

@@ -6,7 +6,7 @@
 
 function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     % Constants 
-    mu = params(1); 
+    mu = params(1);                                 % Gravitational constant of the system
 
     % Compute the energy 
     E = LegoKS.OscEnergy(mu, s);

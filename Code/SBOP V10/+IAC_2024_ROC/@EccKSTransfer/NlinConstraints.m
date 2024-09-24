@@ -6,17 +6,16 @@
 
 function [c, ceq] = NlinConstraints(obj, params, beta, t0, tf, tau, s, u)
     % Radius
-%     mu = params(1); 
-%     [~, alpha] = LegoKS.OscEnergy(mu, s, "Ecc");
     r = dot(s(1:4,:), s(1:4,:), 1);
 
+    % Thrust constraints
     Tmax = 1.00 * params(2);
     Tmin = 0.97 * params(2);
     
     % Inequality constraints
     c = [
-            r - 1.1 * r(end) ...                                       % Bound on the radial distance
-            r(1) - 1.1 * r ...                                         % Bound on the radial distance
+            r - 1.01 * r(end) ...                                       % Bound on the radial distance
+            r(1) - 1.01 * r ...                                         % Bound on the radial distance
             +dot(u(1:3,:), u(1:3,:), 1) - (Tmax.^2 .* r.^4) ...     % Thrust modulation
 %             -dot(u(1:2,:), u(1:2,:), 1) + (Tmin.^2 .* r.^4) ...     % Thrust modulation
         ];

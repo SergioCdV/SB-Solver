@@ -1,4 +1,3 @@
-
 %% Project: SBOPT %%
 % Date: 19/09/24
 
@@ -12,13 +11,13 @@ clear
 %% Numerical solver definition 
 basis = 'Legendre';                    % Polynomial basis to be use
 time_distribution = 'Legendre';        % Distribution of time intervals
-n = 7;                                  % Polynomial order in the state vector expansion
+n = 10;                                  % Polynomial order in the state vector expansion
 m = 100;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 % Formulation to be used
-formulation = 4;
+formulation = 3;
 N = 2;
         
 % Spacecraft parameters 
@@ -35,7 +34,7 @@ gamma = r0/t0^2;                % Characteristic acceleration
 
 %% Boundary conditions
 % Initial orbital elements
-initial_coe = [r0 0.015 deg2rad(183.121) deg2rad(0.004) deg2rad(281.914) deg2rad(0)];                
+initial_coe = [r0 0.015 deg2rad(0*183.121) deg2rad(0.004) deg2rad(281.914) deg2rad(0)];                
 theta0 = OrbitalDynamics.KeplerSolver(initial_coe(2), initial_coe(end));
 e = initial_coe(2);
 sin_theta = sqrt(1-e.^2) .* sin(theta0) ./ (1+e.*cos(theta0));
@@ -43,7 +42,7 @@ cos_theta = (cos(theta0)+e) ./ (1+e.*cos(theta0));
 E0 = atan2(sin_theta, cos_theta);
 
 % Final orbital elements 
-final_coe = [2.2*r0 0.542 deg2rad(82.2) deg2rad(13.6) deg2rad(204.2) deg2rad(114.4232)];  
+final_coe = [2.2*r0 0.542 deg2rad(0*82.2) deg2rad(13.6) deg2rad(204.2) deg2rad(114.4232)];  
 thetaf = OrbitalDynamics.KeplerSolver(final_coe(2), final_coe(end));
 e = final_coe(2);
 sin_theta = sqrt(1-e.^2) .* sin(thetaf) ./ (1+e.*cos(thetaf));
@@ -153,6 +152,8 @@ switch (formulation)
         % Compute the true trajectory in Cartesian space 
         S = LegoKS.KS_mapping(C, false, "1", mu);
 
+        Gamma = dot(C(1:4,:), C(1:4,:), 1);
+
     % Eccentric KS
     case 2         
         % Control vector
@@ -161,6 +162,9 @@ switch (formulation)
 
         % Compute the true trajectory in Cartesian space 
         S = LegoKS.KS_mapping(C, false, "Ecc", mu);
+
+        [~, h] = LegoKS.OscEnergy(mu, C, "Ecc");
+        Gamma = dot(C(1:4,:), C(1:4,:), 1) ./ sqrt(mu .* h);
 
     % DROMO 
     case 3
@@ -171,11 +175,17 @@ switch (formulation)
         for i = 1:length(tau)
             S(:,i) = OrbitalDynamics.dromo2state(C(1:8,i));
         end
+
+        Gamma = C(3,:).^3 .* (1 + C(1,:) .* cos(tau) + C(2,:) .* sin(tau)).^2;
+        Gamma = 1./Gamma;
     
      % MEE 
     case 4
         S = OrbitalDynamics.equinoctial2ECI(mu, [C(1:5,:); tau], true);
 end
+
+% Time of flight
+deltaT = trapz(tau, Gamma);
 
 %% Plots
 % Main plots 
@@ -228,6 +238,11 @@ legend('off')
 plot3(x, y, z, 'k', 'LineWidth', 1);
 plot3(x(end), y(end), z(end), '*k');
 grid on;
+xticklabels(strrep(xticklabels, '-', '$-$'));
+yticklabels(strrep(yticklabels, '-', '$-$'));
+zticklabels(strrep(zticklabels, '-', '$-$'));
+
+%%
 
 % Propulsive acceleration plot
 figure_propulsion = figure;
@@ -237,9 +252,12 @@ plot(tau, u * gamma, 'LineWidth', 0.3)
 yline(T * gamma, '--k')
 xlabel('$s$')
 ylabel('$\mathbf{a}$')
-legend('$a$','$a_1$','$a_2$','$a_3$')
+legend('$\|\mathbf{a}\|_2$','$a_1$','$a_2$','$a_3$')
 grid on;
+xlim([min(tau) max(tau)])
+yticklabels(strrep(yticklabels, '-', '$-$'));
 
+%%
 figure 
 hold on
 plot(tau, rad2deg(atan2(u(2,:),u(1,:)))); 

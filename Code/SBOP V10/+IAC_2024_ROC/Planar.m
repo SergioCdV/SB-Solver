@@ -1,8 +1,8 @@
 %% Project: SBOPT %%
 % Date: 19/09/24
 
-%% Earth-Mars transfer %% 
-% This script provides a main interface to solve 3D low-thrust transfers from the Earth to the Mars %
+%% Planar transfer %% 
+% This script provides a main interface to solve 3D low-thrust transfers from LEO to GEO %
 
 %% Set up 
 close all
@@ -11,17 +11,17 @@ clear
 %% Numerical solver definition 
 basis = 'Bernstein';                    % Polynomial basis to be use
 time_distribution = 'Bernstein';        % Distribution of time intervals
-n = 15;                                  % Polynomial order in the state vector expansion
-m = 100;                                % Number of sampling points
+n = 10;                                  % Polynomial order in the state vector expansion
+m = 200;                                % Number of sampling points
  
 solver = Solver(basis, n, time_distribution, m);
 
 % Formulation to be used
 formulation = 3;
-N = 1;
+N = 2;
         
 % Spacecraft parameters 
-T = 0.5E-3;              % Maximum acceleration 
+T = 0.2E-3;              % Maximum acceleration 
 
 % System data 
 r0 = 149597870700;              % 1 AU [m]
@@ -34,7 +34,7 @@ gamma = r0/t0^2;                % Characteristic acceleration
 
 %% Boundary conditions
 % Initial orbital elements
-initial_coe = [r0 0.015 deg2rad(183.121) deg2rad(0.004) deg2rad(281.914) deg2rad(0)];                
+initial_coe = [r0 0 deg2rad(0) deg2rad(0) deg2rad(0) deg2rad(0)];                
 theta0 = OrbitalDynamics.KeplerSolver(initial_coe(2), initial_coe(end));
 e = initial_coe(2);
 sin_theta = sqrt(1-e.^2) .* sin(theta0) ./ (1+e.*cos(theta0));
@@ -42,15 +42,12 @@ cos_theta = (cos(theta0)+e) ./ (1+e.*cos(theta0));
 E0 = atan2(sin_theta, cos_theta);
 
 % Final orbital elements 
-final_coe = [1.5236*r0 0.0934 deg2rad(49.4723) deg2rad(1.8464) deg2rad(286.7860)];
-thetaf = deg2rad(355.2065);
+final_coe = [7*r0 0 deg2rad(0) deg2rad(0) deg2rad(0) deg2rad(270)];  
+thetaf = OrbitalDynamics.KeplerSolver(final_coe(2), final_coe(end));
 e = final_coe(2);
 sin_theta = sqrt(1-e.^2) .* sin(thetaf) ./ (1+e.*cos(thetaf));
 cos_theta = (cos(thetaf)-e) ./ (1+e.*cos(thetaf));
 Ef = atan2(sin_theta, cos_theta);
-Mf = Ef - e * sin(Ef);
-
-final_coe = [final_coe Mf];   
 
 %% Normalization 
 initial_coe(1) = initial_coe(1) / r0;   % Normalized initial osculating semi major axis
@@ -154,7 +151,7 @@ switch (formulation)
 
         % Compute the true trajectory in Cartesian space 
         S = LegoKS.KS_mapping(C, false, "1", mu);
-        
+
         Gamma = dot(C(1:4,:), C(1:4,:), 1);
 
     % Eccentric KS
@@ -165,6 +162,7 @@ switch (formulation)
 
         % Compute the true trajectory in Cartesian space 
         S = LegoKS.KS_mapping(C, false, "Ecc", mu);
+
         [~, h] = LegoKS.OscEnergy(mu, C, "Ecc");
         Gamma = dot(C(1:4,:), C(1:4,:), 1) ./ sqrt(mu .* h);
 
@@ -184,11 +182,6 @@ switch (formulation)
      % MEE 
     case 4
         S = OrbitalDynamics.equinoctial2ECI(mu, [C(1:5,:); tau], true);
-
-        l = tau;
-        w = 1 + C(2,:) .* cos(l) + C(3,:) .* sin(l);
-        k = C(4,:) .* sin(l) - C(5,:) .* cos(l);
-        Gamma = sqrt(mu * C(1,:)) .* (w ./ C(1,:)).^2 + sqrt(C(1,:) / mu) .* k ./ w .* u(3,:);
 end
 
 % Time of flight
@@ -265,7 +258,6 @@ xlim([min(tau) max(tau)])
 yticklabels(strrep(yticklabels, '-', '$-$'));
 
 %%
-
 figure 
 hold on
 plot(tau, rad2deg(atan2(u(2,:),u(1,:)))); 

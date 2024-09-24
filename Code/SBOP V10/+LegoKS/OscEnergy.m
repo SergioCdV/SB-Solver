@@ -23,7 +23,7 @@ function [E, alpha] = OscEnergy(mu, s, sundman_n)
 
         case "Ecc"
             r = dot(s(1:4,:), s(1:4,:), 1);                                 % Radius vector
-            alpha = 2 ./ r ./ (1 + 4 ./ r .* dot(s(5:8,:), s(5:8,:), 1));   % Inverse of the negative energy
+            alpha = 2 ./ (r + 4 .* dot(s(5:8,:), s(5:8,:), 1));             % Inverse of the negative energy
             E = - mu / 2 * alpha;                                           % Energy value   
 
         case "Nu"
