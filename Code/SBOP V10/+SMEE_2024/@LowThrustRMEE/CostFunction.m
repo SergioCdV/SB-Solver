@@ -16,5 +16,5 @@ function [M, L] = CostFunction(obj, params, beta, t0, tf, t, s, u)
     % Minimum energy cost function 
 %     a = s(1,end) / (1 - s(2,end)^2 - s(3,end)^2);
     M = 0;%mu / (2 * a); 
-    L = sqrt( dot(u,u,1) ) .* gamma; 
+    L = dot(u, u, 1) .* gamma; 
 end 

@@ -25,7 +25,6 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
     for i = 1:size(u,2)
         L = LegoKS.KSmatrix( s(1:4,i) );
         Binv = I - aux(i) * (s(5:8,i) * s(5:8,i).');
-        B = I + 4 / r(i) * (s(5:8,i) * s(5:8,i).');
         u(:,i) = ( L * Binv ) * u(:,i);
     end
 end

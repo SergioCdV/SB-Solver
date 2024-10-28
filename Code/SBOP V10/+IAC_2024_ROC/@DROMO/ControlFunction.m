@@ -25,7 +25,7 @@ function [u] = ControlFunction(obj, params, beta, t0, tf, t, s)
                  epsilon(4,:) .* a(5,:) + epsilon(1,:) .* a(6,:) - epsilon(3,:) .* a(4,:) - epsilon(2,:) .* a(7,:); ...
                  epsilon(4,:) .* a(6,:) - epsilon(2,:) .* a(4,:) - epsilon(1,:) .* a(5,:) - epsilon(3,:) .* a(7,:)];
     
-    omega = omega ./ sqrt( dot(epsilon, epsilon, 1) );
+%     omega = omega ./ sqrt( dot(epsilon, epsilon, 1) );
 
     u(3,:) = sqrt( dot(omega, omega, 1) ) .* gamma;
 
